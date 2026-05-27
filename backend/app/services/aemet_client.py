@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 import httpx
@@ -6,8 +6,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.models.datos_metereologicos import DatosMetereologicos
+from app.models.tools4milk import LecturaMeteo
 from app.time_utils import utc_now
+
+ESTACION_ID = "villalba_lugo"
 
 
 class AemetClient:
@@ -17,24 +19,29 @@ class AemetClient:
     longitud = -8.1278
 
     async def sincronizar_datos(self, db: Session) -> dict[str, object]:
-        if settings.aemet_api_key.strip():
-            try:
-                records = await self._fetch_real_forecast()
-            except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
-                return {
-                    "status": "error",
-                    "modo": "aemet_real",
-                    "error": str(exc) or exc.__class__.__name__,
-                    "registros_insertados": 0,
-                    "registros_actualizados": 0,
-                    "timestamp": utc_now().isoformat(),
-                }
-            return self._upsert_records(db, records, mode="aemet_real")
+        if not settings.aemet_api_key.strip():
+            return {
+                "status": "skipped",
+                "modo": "sin_api_key",
+                "mensaje": "No hay API key de AEMET configurada. Configura AEMET_API_KEY para activar la sincronización.",
+                "registros_insertados": 0,
+                "registros_actualizados": 0,
+                "timestamp": utc_now().isoformat(),
+            }
 
-        records = self._generated_records()
-        summary = self._upsert_records(db, records, mode="simulado_sin_api_key")
-        summary["status"] = "success"
-        return summary
+        try:
+            records = await self._fetch_real_forecast()
+        except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
+            return {
+                "status": "error",
+                "modo": "aemet_real",
+                "error": str(exc) or exc.__class__.__name__,
+                "registros_insertados": 0,
+                "registros_actualizados": 0,
+                "timestamp": utc_now().isoformat(),
+            }
+
+        return self._upsert_records(db, records)
 
     async def _fetch_real_forecast(self) -> list[dict[str, Any]]:
         endpoint = f"{self.api_base_url}/prediccion/especifica/municipio/diaria/{settings.aemet_municipio_id}"
@@ -63,74 +70,46 @@ class AemetClient:
         fecha = datetime.fromisoformat(day["fecha"].replace("Z", "+00:00")).replace(tzinfo=None)
         maxima = self._to_float(day.get("temperatura", {}).get("maxima"))
         minima = self._to_float(day.get("temperatura", {}).get("minima"))
-        temperatura_media = self._average(maxima, minima)
+        temperatura_c = self._average(maxima, minima)
         humedad = self._average(
             self._to_float(day.get("humedadRelativa", {}).get("maxima")),
             self._to_float(day.get("humedadRelativa", {}).get("minima")),
         )
-        precipitacion = self._max_period_value(day.get("probPrecipitacion", []))
-        viento = self._first_wind_speed(day.get("viento", []))
-        estado_cielo = self._first_description(day.get("estadoCielo", []))
+        precipitacion_mm = self._max_period_value(day.get("probPrecipitacion", []))
+        viento_km_h = self._first_wind_speed(day.get("viento", []))
 
         return {
-            "fecha_hora": fecha.replace(hour=12, minute=0, second=0, microsecond=0),
-            "temperatura_media": temperatura_media,
-            "temperatura_maxima": maxima,
-            "temperatura_minima": minima,
+            "ts": fecha.replace(hour=12, minute=0, second=0, microsecond=0),
+            "estacion_id": ESTACION_ID,
+            "temperatura_c": temperatura_c,
             "humedad_relativa": humedad,
-            "precipitacion": precipitacion,
-            "velocidad_viento": viento,
-            "presion_atmosferica": None,
-            "estado_cielo": estado_cielo or "sin descripcion",
-            "ubicacion": self.location_name,
-            "latitud": self.latitud,
-            "longitud": self.longitud,
-            "fuente": "AEMET",
+            "precipitacion_mm": precipitacion_mm,
+            "viento_km_h": viento_km_h,
         }
 
-    def _generated_records(self) -> list[dict[str, Any]]:
-        records: list[dict[str, Any]] = []
-        base = utc_now().replace(hour=12, minute=0, second=0, microsecond=0)
-        for offset in range(7):
-            records.append(
-                {
-                    "fecha_hora": (base + timedelta(days=offset)).replace(tzinfo=None),
-                    "temperatura_media": 16.5 + offset * 0.3,
-                    "temperatura_maxima": 21 + offset * 0.4,
-                    "temperatura_minima": 10 + offset * 0.2,
-                    "humedad_relativa": 65,
-                    "precipitacion": 0 if offset % 3 else 1.5,
-                    "velocidad_viento": 4.5,
-                    "presion_atmosferica": 1013,
-                    "estado_cielo": "parcialmente nublado",
-                    "ubicacion": self.location_name,
-                    "latitud": self.latitud,
-                    "longitud": self.longitud,
-                    "fuente": "AEMET",
-                }
-            )
-        return records
-
-    def _upsert_records(self, db: Session, records: list[dict[str, Any]], mode: str) -> dict[str, object]:
+    def _upsert_records(self, db: Session, records: list[dict[str, Any]]) -> dict[str, object]:
         inserted = 0
         updated = 0
 
         for record in records:
             existing = db.execute(
-                select(DatosMetereologicos).where(DatosMetereologicos.fecha_hora == record["fecha_hora"])
+                select(LecturaMeteo).where(
+                    LecturaMeteo.ts == record["ts"],
+                    LecturaMeteo.estacion_id == record["estacion_id"],
+                )
             ).scalar_one_or_none()
             if existing:
                 for key, value in record.items():
                     setattr(existing, key, value)
                 updated += 1
                 continue
-            db.add(DatosMetereologicos(**record))
+            db.add(LecturaMeteo(**record))
             inserted += 1
 
         db.commit()
         return {
             "status": "success",
-            "modo": mode,
+            "modo": "aemet_real",
             "registros_insertados": inserted,
             "registros_actualizados": updated,
             "timestamp": utc_now().isoformat(),
@@ -160,14 +139,6 @@ class AemetClient:
             value = self._to_float(item.get("velocidad"))
             if value is not None:
                 return value
-        return None
-
-    @staticmethod
-    def _first_description(entries: list[dict[str, Any]]) -> str | None:
-        for item in entries:
-            description = item.get("descripcion") or item.get("value")
-            if description:
-                return str(description)
         return None
 
 

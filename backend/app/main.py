@@ -1,4 +1,5 @@
 import json
+import logging
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 from uuid import uuid4
@@ -10,19 +11,41 @@ from sqlalchemy import inspect, text
 from app.config import settings
 from app.database import Base, engine
 from app.openapi import install_openapi
-from app.routers import assistant, auth, frontend_core, simulation, weather
+from app.routers import assistant, audit, auth, frontend_core, handovers, health, orders, shifts, simulation, weather
 from app.security import hash_password
-from app.services.frontend_seed import ensure_frontend_seed_data
 from app.time_utils import utc_now
+
+logger = logging.getLogger("tools4milk.startup")
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    logger.info("[startup] validating config...")
     validate_production_config()
+
+    logger.info("[startup] connecting to database at %s ...", settings.database_url.split("@")[-1])
+    try:
+        with engine.connect() as _conn:
+            _conn.execute(text("SELECT 1"))
+        logger.info("[startup] database connection OK")
+    except Exception as exc:
+        logger.error("[startup] CANNOT CONNECT TO DATABASE: %s", exc)
+        raise RuntimeError(
+            f"Database not reachable ({settings.database_url.split('@')[-1]}). "
+            "Ensure the db container is running and port 5432 is exposed. "
+            f"Original error: {exc}"
+        ) from exc
+
+    logger.info("[startup] running create_all (Core* tables) ...")
     Base.metadata.create_all(bind=engine)
+
+    logger.info("[startup] ensuring runtime schema ...")
     ensure_runtime_schema()
+
+    logger.info("[startup] seeding demo users ...")
     seed_demo_user()
-    seed_frontend_data()
+
+    logger.info("[startup] startup complete.")
     yield
 
 
@@ -132,13 +155,6 @@ def seed_demo_user() -> None:
             )
 
 
-def seed_frontend_data() -> None:
-    from sqlalchemy.orm import Session
-
-    with Session(engine) as db:
-        ensure_frontend_seed_data(db)
-
-
 def parse_cors_origins() -> list[str]:
     origins = settings.cors_origins
     if isinstance(origins, list):
@@ -181,7 +197,7 @@ app.add_middleware(
 
 
 @app.get("/health", tags=["Frontend Core"])
-def health() -> dict[str, str]:
+def health_check() -> dict[str, str]:
     return {
         "status": "ok",
         "database": "ok",
@@ -189,9 +205,14 @@ def health() -> dict[str, str]:
     }
 
 
+app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(assistant.router)
 app.include_router(frontend_core.router)
 app.include_router(weather.router)
 app.include_router(simulation.router)
+app.include_router(audit.router)
+app.include_router(orders.router)
+app.include_router(shifts.router)
+app.include_router(handovers.router)
 install_openapi(app)

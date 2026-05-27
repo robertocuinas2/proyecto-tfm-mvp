@@ -6,7 +6,10 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from app.config import settings
 
 
-connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
+if settings.database_url.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+else:
+    connect_args = {"connect_timeout": 10}
 
 engine = create_engine(
     settings.database_url,

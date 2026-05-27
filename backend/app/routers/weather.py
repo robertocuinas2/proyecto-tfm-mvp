@@ -5,56 +5,50 @@ from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import DatosMetereologicos
+from app.models.tools4milk import LecturaMeteo
 from app.services.aemet_client import aemet_client
 
-
 router = APIRouter(prefix="/api/v1/weather", tags=["Weather"])
+
+_NO_DATA = {"data": None, "message": "No hay datos meteorológicos cargados"}
 
 
 @router.get("/current")
 def weather_current(db: Annotated[Session, Depends(get_db)]) -> dict[str, Any]:
-    dato = db.execute(
-        select(DatosMetereologicos).order_by(desc(DatosMetereologicos.fecha_hora)).limit(1)
+    row = db.execute(
+        select(LecturaMeteo).order_by(desc(LecturaMeteo.ts)).limit(1)
     ).scalar_one_or_none()
-    if dato is None:
-        return {
-            "temperatura": 17.5,
-            "temperatura_actual": 17.5,
-            "humedad": 65,
-            "descripcion": "Sin datos recientes",
-            "impacto_productivo": "normal",
-            "fecha": None,
-        }
+    if row is None:
+        return _NO_DATA
     return {
-        "temperatura": dato.temperatura_media,
-        "temperatura_actual": dato.temperatura_media,
-        "humedad": dato.humedad_relativa,
-        "descripcion": dato.estado_cielo,
+        "temperatura": float(row.temperatura_c) if row.temperatura_c is not None else None,
+        "temperatura_actual": float(row.temperatura_c) if row.temperatura_c is not None else None,
+        "humedad": float(row.humedad_relativa) if row.humedad_relativa is not None else None,
+        "descripcion": None,
         "impacto_productivo": "normal",
-        "fecha": dato.fecha_hora.isoformat() if dato.fecha_hora else None,
-        "ubicacion": dato.ubicacion,
+        "fecha": row.ts.isoformat() if row.ts else None,
+        "ubicacion": "Villalba, Lugo",
     }
 
 
 @router.get("/forecast")
 def weather_forecast(db: Annotated[Session, Depends(get_db)]) -> dict[str, Any]:
     rows = db.execute(
-        select(DatosMetereologicos).order_by(DatosMetereologicos.fecha_hora).limit(7)
+        select(LecturaMeteo).order_by(LecturaMeteo.ts).limit(7)
     ).scalars().all()
     return {
         "ubicacion": "Villalba, Lugo",
         "dias": [
             {
-                "fecha": row.fecha_hora.isoformat() if row.fecha_hora else None,
-                "temperatura_media": row.temperatura_media,
-                "temperatura_maxima": row.temperatura_maxima,
-                "temperatura_minima": row.temperatura_minima,
-                "humedad": row.humedad_relativa,
-                "precipitacion": row.precipitacion,
-                "viento": row.velocidad_viento,
-                "descripcion": row.estado_cielo,
-                "fuente": row.fuente,
+                "fecha": row.ts.isoformat() if row.ts else None,
+                "temperatura_media": float(row.temperatura_c) if row.temperatura_c is not None else None,
+                "temperatura_maxima": None,
+                "temperatura_minima": None,
+                "humedad": float(row.humedad_relativa) if row.humedad_relativa is not None else None,
+                "precipitacion": float(row.precipitacion_mm) if row.precipitacion_mm is not None else None,
+                "viento": float(row.viento_km_h) if row.viento_km_h is not None else None,
+                "descripcion": None,
+                "fuente": "AEMET",
             }
             for row in rows
         ],
@@ -67,18 +61,18 @@ def weather_historical(
     dias_atras: Annotated[int, Query(ge=1, le=365)] = 30,
 ) -> dict[str, Any]:
     rows = db.execute(
-        select(DatosMetereologicos).order_by(desc(DatosMetereologicos.fecha_hora)).limit(dias_atras)
+        select(LecturaMeteo).order_by(desc(LecturaMeteo.ts)).limit(dias_atras)
     ).scalars().all()
     return {
         "ubicacion": "Villalba, Lugo",
         "dias_atras": dias_atras,
         "datos": [
             {
-                "fecha": row.fecha_hora.isoformat() if row.fecha_hora else None,
-                "temperatura_media": row.temperatura_media,
-                "humedad": row.humedad_relativa,
-                "descripcion": row.estado_cielo,
-                "fuente": row.fuente,
+                "fecha": row.ts.isoformat() if row.ts else None,
+                "temperatura_media": float(row.temperatura_c) if row.temperatura_c is not None else None,
+                "humedad": float(row.humedad_relativa) if row.humedad_relativa is not None else None,
+                "descripcion": None,
+                "fuente": "AEMET",
             }
             for row in rows
         ],

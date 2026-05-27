@@ -4,13 +4,18 @@ services:
     container_name: tfm_postgres
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: tfm_mvp
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tools4milk
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/sql:/sql
+      # init.sql solo se ejecuta la primera vez que se crea el volumen.
+      # Para resetear: docker-compose down -v && docker-compose up -d db
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tools4milk"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -19,7 +24,7 @@ services:
     build: ./backend
     container_name: tfm-backend
     environment:
-      DATABASE_URL: postgresql+psycopg://postgres:password@db:5432/tfm_mvp
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/tools4milk
       ENVIRONMENT: ${ENVIRONMENT:-development}
       SECRET_KEY: ${SECRET_KEY:-tools4milk-dev-secret-change-me}
       CORS_ORIGINS: '["http://localhost","http://localhost:80","http://127.0.0.1"]'

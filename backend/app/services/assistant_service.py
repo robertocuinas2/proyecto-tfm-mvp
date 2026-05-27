@@ -20,7 +20,6 @@ from app.models import (
     CoreZone,
     Usuario,
 )
-from app.services.frontend_seed import ensure_frontend_seed_data
 from app.time_utils import utc_now
 
 
@@ -41,7 +40,6 @@ def handle_assistant_message(
     confirmed: bool = False,
     draft: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    ensure_frontend_seed_data(db)
     if confirmed and draft:
         return _execute_draft(db, user, draft)
 
