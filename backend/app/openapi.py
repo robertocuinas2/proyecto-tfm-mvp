@@ -3,6 +3,8 @@ from typing import Any
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 
+from app.config import settings
+
 
 def install_openapi(app: FastAPI) -> None:
     def custom_openapi() -> dict[str, Any]:
@@ -15,7 +17,7 @@ def install_openapi(app: FastAPI) -> None:
             description=app.description,
             routes=app.routes,
         )
-        schema["servers"] = [{"url": "http://localhost:8000", "description": "Local API"}]
+        schema["servers"] = [{"url": settings.app_url, "description": "API"}]
         schema["x-tagGroups"] = [
             {"name": "Core", "tags": ["Auth", "Frontend Core", "Weather"]},
         ]
