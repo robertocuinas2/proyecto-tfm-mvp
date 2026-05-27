@@ -185,7 +185,7 @@ def health() -> dict[str, str]:
     return {
         "status": "ok",
         "database": "ok",
-        "environment": "development",
+        "environment": settings.environment,
     }
 
 

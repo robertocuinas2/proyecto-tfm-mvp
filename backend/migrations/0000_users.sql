@@ -9,6 +9,9 @@ CREATE TABLE IF NOT EXISTS usuarios (
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS role VARCHAR(40) DEFAULT 'operario';
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS debe_cambiar_contrasena BOOLEAN DEFAULT FALSE;
+
 CREATE INDEX IF NOT EXISTS ix_usuarios_username ON usuarios (username);
 CREATE INDEX IF NOT EXISTS ix_usuarios_email ON usuarios (email);
 CREATE INDEX IF NOT EXISTS ix_usuarios_role ON usuarios (role);
