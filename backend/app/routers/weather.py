@@ -10,7 +10,15 @@ from app.services.aemet_client import aemet_client
 
 router = APIRouter(prefix="/api/v1/weather", tags=["Weather"])
 
-_NO_DATA = {"data": None, "message": "No hay datos meteorológicos cargados"}
+_NO_DATA: dict[str, Any] = {
+    "temperatura_actual": None,
+    "temperatura": None,
+    "humedad": None,
+    "descripcion": "No hay datos meteorológicos cargados",
+    "impacto_productivo": None,
+    "fecha": None,
+    "ubicacion": "Villalba, Lugo",
+}
 
 
 @router.get("/current")

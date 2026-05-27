@@ -4,6 +4,8 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator
 from uuid import uuid4
 
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s - %(message)s")
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect, text
@@ -194,6 +196,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/", tags=["Health"])
+def root() -> dict[str, str]:
+    return {"status": "ok", "service": "Tools4Milk API", "docs": "/docs"}
 
 
 @app.get("/health", tags=["Frontend Core"])
