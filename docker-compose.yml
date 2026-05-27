@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: tfm_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: tfm_mvp
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/sql:/sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: tfm-backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:password@db:5432/tfm_mvp
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      SECRET_KEY: ${SECRET_KEY:-tools4milk-dev-secret-change-me}
+      CORS_ORIGINS: '["http://localhost","http://localhost:80","http://127.0.0.1"]'
+      PYTHONUNBUFFERED: 1
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: sh -c "python scripts/apply_migrations.py && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ""
+    container_name: tfm-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: ""
+      PORT: 3000
+    depends_on:
+      - backend
+
+  nginx:
+    image: nginx:alpine
+    container_name: tfm-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  postgres_data:

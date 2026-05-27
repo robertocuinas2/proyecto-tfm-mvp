@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+@theme {
+  --font-heading: "Space Grotesk", "Segoe UI", Arial, sans-serif;
+  --font-body: "DM Sans", "Segoe UI", Arial, sans-serif;
+
+  --color-brand: #17663d;
+  --color-brand-mid: #22c55e;
+  --color-brand-light: #eaf6ef;
+  --color-brand-dark: #071109;
+
+  --color-app-bg: #eef3f0;
+  --color-app-surface: #ffffff;
+  --color-app-border: #d9e6de;
+  --color-app-text: #101b14;
+  --color-app-dim: #65786d;
+
+  --color-tv-bg: #030a05;
+  --color-tv-surface: #102117;
+  --color-tv-surface2: #13291c;
+  --color-tv-border: #23402e;
+  --color-tv-text: #f1f8f3;
+  --color-tv-dim: #7fa18d;
+  --color-tv-accent: #35e479;
+
+  --color-state-critica: #dc2626;
+  --color-state-atencion: #d97706;
+  --color-state-ok: #16a34a;
+  --color-state-info: #2563eb;
+  --color-state-neutral: #64748b;
+
+  --shadow-brand: 0 18px 60px rgba(23, 102, 61, 0.34);
+  --shadow-panel: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-deck: 0 30px 80px rgba(0, 0, 0, 0.34);
+  --shadow-critical: 0 4px 14px #dc262644;
+}
+
+:root {
+  --brand: #17663d;
+  --brand-mid: #22c55e;
+  --brand-light: #eaf6ef;
+  --brand-dark: #071109;
+  --app-bg: #eef3f0;
+  --app-surface: #ffffff;
+  --app-border: #d9e6de;
+  --app-text: #101b14;
+  --app-text-dim: #65786d;
+  --tv-bg: #030a05;
+  --tv-panel: #102117;
+  --tv-panel-soft: #13291c;
+  --tv-line: #23402e;
+  --tv-muted: #7fa18d;
+  --tv-accent: #35e479;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--tv-bg);
+  color: var(--app-text);
+  font-family: var(--font-body), sans-serif;
+  text-rendering: geometricPrecision;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  outline-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid var(--tv-accent);
+  outline-offset: 3px;
+}
+
+[aria-live] {
+  min-height: 1px;
+}
+
+::selection {
+  background: var(--brand);
+  color: white;
+}
+
+.t4m-logo {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.16) 0 22%,
+      transparent 22% 44%,
+      rgba(255, 255, 255, 0.08) 44% 66%,
+      transparent 66%
+    ),
+    linear-gradient(135deg, #35d978 0%, #147844 100%);
+}

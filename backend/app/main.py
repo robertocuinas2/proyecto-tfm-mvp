@@ -1,0 +1,197 @@
+import json
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
+from uuid import uuid4
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import inspect, text
+
+from app.config import settings
+from app.database import Base, engine
+from app.openapi import install_openapi
+from app.routers import assistant, auth, frontend_core, simulation, weather
+from app.security import hash_password
+from app.services.frontend_seed import ensure_frontend_seed_data
+from app.time_utils import utc_now
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    validate_production_config()
+    Base.metadata.create_all(bind=engine)
+    ensure_runtime_schema()
+    seed_demo_user()
+    seed_frontend_data()
+    yield
+
+
+def validate_production_config() -> None:
+    if settings.environment.lower() != "production":
+        return
+
+    if settings.secret_key == "tools4milk-dev-secret-change-me" or len(settings.secret_key) < 32:
+        raise RuntimeError("SECRET_KEY must be changed before running in production")
+
+    origins = parse_cors_origins()
+    if not origins or "*" in origins:
+        raise RuntimeError("CORS_ORIGINS must be explicit before running in production")
+
+
+def ensure_runtime_schema() -> None:
+    inspector = inspect(engine)
+    if "usuarios" not in inspector.get_table_names():
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("usuarios")}
+    statements: list[str] = []
+    if "role" not in columns:
+        statements.append("ALTER TABLE usuarios ADD COLUMN role VARCHAR(40) DEFAULT 'operario'")
+    if "debe_cambiar_contrasena" not in columns:
+        statements.append("ALTER TABLE usuarios ADD COLUMN debe_cambiar_contrasena BOOLEAN DEFAULT FALSE")
+
+    if not statements:
+        return
+
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))
+
+
+def seed_demo_user() -> None:
+    user_columns = {column["name"] for column in inspect(engine).get_columns("usuarios")}
+    legacy_password_change_column = "debe_cambiar_contrase\u00f1a"
+    demo_users = [
+        ("admin", "admin@tools4milk.local", "admin"),
+        ("roberto.castro", "roberto.castro@tools4milk.local", "admin"),
+        ("operario.zona", "operario.zona@tools4milk.local", "operario"),
+        ("laura.fernandez", "laura.fernandez@tools4milk.local", "alimentacion"),
+        ("dr.mendez", "dr.mendez@tools4milk.local", "veterinario"),
+    ]
+
+    with engine.begin() as connection:
+        for username, email, role in demo_users:
+            password_hash = hash_password("testpass123")
+            values = {
+                "username": username,
+                "email": email,
+                "hashed_password": password_hash,
+                "role": role,
+                "activo": True,
+            }
+            result = connection.execute(
+                text(
+                    "UPDATE usuarios "
+                    "SET email = :email, hashed_password = :hashed_password, role = :role, activo = :activo "
+                    "WHERE username = :username"
+                ),
+                values,
+            )
+            if result.rowcount:
+                continue
+
+            insert_columns = [
+                "id",
+                "username",
+                "email",
+                "hashed_password",
+                "role",
+                "activo",
+                "fecha_creacion",
+            ]
+            insert_placeholders = [
+                ":id",
+                ":username",
+                ":email",
+                ":hashed_password",
+                ":role",
+                ":activo",
+                ":fecha_creacion",
+            ]
+            insert_values = {
+                **values,
+                "id": str(uuid4()),
+                "fecha_creacion": utc_now(),
+            }
+            if legacy_password_change_column in user_columns:
+                insert_columns.append(f'"{legacy_password_change_column}"')
+                insert_placeholders.append(":legacy_password_change")
+                insert_values["legacy_password_change"] = False
+            if "debe_cambiar_contrasena" in user_columns:
+                insert_columns.append("debe_cambiar_contrasena")
+                insert_placeholders.append(":debe_cambiar_contrasena")
+                insert_values["debe_cambiar_contrasena"] = False
+
+            connection.execute(
+                text(
+                    "INSERT INTO usuarios "
+                    f"({', '.join(insert_columns)}) "
+                    f"VALUES ({', '.join(insert_placeholders)})"
+                ),
+                insert_values,
+            )
+
+
+def seed_frontend_data() -> None:
+    from sqlalchemy.orm import Session
+
+    with Session(engine) as db:
+        ensure_frontend_seed_data(db)
+
+
+def parse_cors_origins() -> list[str]:
+    origins = settings.cors_origins
+    if isinstance(origins, list):
+        return origins
+    try:
+        parsed = json.loads(origins)
+        if isinstance(parsed, list) and all(isinstance(item, str) for item in parsed):
+            return parsed
+    except json.JSONDecodeError:
+        pass
+    return [item.strip() for item in origins.split(",") if item.strip()]
+
+
+app = FastAPI(
+    title="Tools4Milk API",
+    version="1.0.0",
+    description=(
+        "API para la plataforma Tools4Milk: TV por zona, tablet operativa, "
+        "LeanFarming, alertas, predicciones, calidad de leche y meteorologia."
+    ),
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_tags=[
+        {"name": "Auth", "description": "Autenticacion JWT y sesion de usuario."},
+        {"name": "Assistant", "description": "Asistente operativo interno con confirmacion previa."},
+        {"name": "Frontend Core", "description": "Endpoints usados por TV y tablet."},
+        {"name": "Simulation", "description": "Actividad operativa simulada para prototipos y demos."},
+        {"name": "Weather", "description": "Datos meteorologicos y sincronizacion AEMET."},
+    ],
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=parse_cors_origins(),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/health", tags=["Frontend Core"])
+def health() -> dict[str, str]:
+    return {
+        "status": "ok",
+        "database": "ok",
+        "environment": "development",
+    }
+
+
+app.include_router(auth.router)
+app.include_router(assistant.router)
+app.include_router(frontend_core.router)
+app.include_router(weather.router)
+app.include_router(simulation.router)
+install_openapi(app)
