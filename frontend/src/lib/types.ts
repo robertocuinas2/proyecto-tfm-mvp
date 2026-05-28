@@ -281,6 +281,28 @@ export type ShiftHandoversResponse = {
   resumenes: ShiftHandover[];
 };
 
+// ── Audit Log ────────────────────────────────────────────────────────────────
+
+export type AuditOperation = "INSERT" | "UPDATE" | "DELETE";
+
+export type AuditLogEntry = {
+  id: number;
+  ts: string | null;
+  tabla_afectada: string;
+  operacion: AuditOperation;
+  registro_id: string | null;
+  datos_anteriores: Record<string, unknown> | null;
+  datos_nuevos: Record<string, unknown> | null;
+  usuario_bd: string;
+  hash_sha256: string;
+};
+
+export type AuditLogResponse = {
+  total: number;
+  limit: number;
+  registros: AuditLogEntry[];
+};
+
 export type PredictionTrend = "aumento" | "descenso" | "estable";
 export type RiskLevel = "bajo" | "medio" | "alto" | "critico";
 

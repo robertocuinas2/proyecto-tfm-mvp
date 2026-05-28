@@ -1,7 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Droplets, Filter, Target, TrendingDown, TrendingUp } from "lucide-react";
+import { AlertTriangle, Droplets, ExternalLink, Filter, Target, TrendingDown, TrendingUp } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DonutStat, SparkArea } from "@/components/charts/MiniCharts";
 import { Pagination } from "@/components/common/Pagination";
@@ -173,13 +174,30 @@ function AnimalQualityCard({ animal, lactation }: { animal: Animal; lactation?: 
   const hasWarning = score > 0 && score < 85;
 
   return (
-    <div className="space-y-4 rounded-[10px] border border-app-border bg-white p-4">
+    <div className="space-y-3 rounded-[10px] border border-app-border bg-white p-4 shadow-card">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <span className="font-mono text-sm font-bold text-brand">{animal.crotal_oficial}</span>
-          {animal.nombre && <span className="ml-2 text-sm text-app-dim">{animal.nombre}</span>}
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/animals/${animal.id}`}
+              className="font-mono text-sm font-bold text-brand hover:underline"
+            >
+              {animal.crotal_oficial}
+            </Link>
+            {animal.nombre && <span className="text-sm text-app-dim">{animal.nombre}</span>}
+            <Link
+              href={`/animals/${animal.id}`}
+              className="ml-auto text-app-dim hover:text-brand"
+              title="Ver ficha del animal"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+            </Link>
+          </div>
           <p className="mt-1 text-xs text-app-dim">
-            {animal.raza} - {lactation ? `${lactation.dias_transcurridos ?? 0} dias en leche` : "sin lactacion activa"}
+            {animal.raza && <span>{animal.raza} · </span>}
+            {lactation
+              ? `Lactación ${lactation.numero_lactacion ?? "?"} · ${lactation.dias_transcurridos ?? 0} días en leche`
+              : "Sin lactación activa"}
           </p>
         </div>
         <div className="shrink-0 text-center">
@@ -194,7 +212,7 @@ function AnimalQualityCard({ animal, lactation }: { animal: Animal; lactation?: 
       {hasWarning && (
         <div className="flex items-center gap-2 rounded-[10px] bg-state-atencion/15 px-3 py-2 text-xs font-semibold text-state-atencion">
           <AlertTriangle className="h-3.5 w-3.5" />
-          Revisar parametros de lactacion
+          Revisar parámetros de lactación
         </div>
       )}
     </div>
@@ -206,6 +224,12 @@ export default function QualityPage() {
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const pageSize = DEFAULT_PAGE_SIZE;
+
+  // Leche a la Carta filters (client-side)
+  const [filterGrasaMin, setFilterGrasaMin] = useState("");
+  const [filterProteinaMin, setFilterProteinaMin] = useState("");
+  const [filterRcsMax, setFilterRcsMax] = useState("");
+  const [showLecheACarta, setShowLecheACarta] = useState(false);
 
   const animalsQuery = useQuery({
     queryKey: ["animals-produccion-quality", page],
@@ -300,8 +324,11 @@ export default function QualityPage() {
         {!animalsQuery.isLoading && !lactationsQuery.isLoading && list.length > 0 && (
           <div className="grid gap-4 xl:grid-cols-[1.4fr_280px]">
             <div className="rounded-[10px] border border-app-border bg-white p-5">
+              {/* TODO: Para una tendencia temporal real se necesita un endpoint de lecturas
+                  diarias por animal (ej: GET /animals/{id}/readings o GET /lactations/{id}/readings).
+                  Por ahora se muestra la distribución de producción por lactaciones activas. */}
               <div className="mb-4 text-xs font-extrabold uppercase tracking-[0.18em] text-app-dim">
-                Evolucion de produccion por lactacion
+                Distribución de producción por lactaciones activas
               </div>
               <div className="h-28">
                 {trend.length >= 2 ? (
@@ -318,6 +345,125 @@ export default function QualityPage() {
             </div>
           </div>
         )}
+
+        {/* ── Leche a la Carta ── */}
+        <div className="rounded-[14px] border border-app-border bg-white p-5 shadow-card">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Droplets className="h-4 w-4 text-brand" />
+              <h2 className="font-heading text-base font-bold text-app-text">Leche a la Carta</h2>
+              <span className="rounded-full bg-brand/8 px-2 py-0.5 text-[11px] font-semibold text-brand">
+                Filtrado interno
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowLecheACarta((v) => !v)}
+              className="text-xs font-semibold text-brand hover:underline"
+            >
+              {showLecheACarta ? "Ocultar" : "Expandir"}
+            </button>
+          </div>
+
+          {showLecheACarta && (
+            <div className="mt-4 space-y-4">
+              <p className="text-xs text-app-dim">
+                Filtra los animales en producción según parámetros de composición de la leche.
+                Solo filtrado local sobre las lactaciones activas cargadas.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <label className="block">
+                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-app-dim">
+                    Grasa mín. (%)
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.1"
+                    value={filterGrasaMin}
+                    onChange={(e) => setFilterGrasaMin(e.target.value)}
+                    placeholder="3.8"
+                    className="h-10 w-32 rounded-[10px] border border-app-border bg-app-bg px-3 text-sm text-app-text outline-none focus:border-brand"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-app-dim">
+                    Proteína mín. (%)
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.1"
+                    value={filterProteinaMin}
+                    onChange={(e) => setFilterProteinaMin(e.target.value)}
+                    placeholder="3.1"
+                    className="h-10 w-32 rounded-[10px] border border-app-border bg-app-bg px-3 text-sm text-app-text outline-none focus:border-brand"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-app-dim">
+                    RCS máx. (k cel/mL)
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="10"
+                    value={filterRcsMax}
+                    onChange={(e) => setFilterRcsMax(e.target.value)}
+                    placeholder="250"
+                    className="h-10 w-36 rounded-[10px] border border-app-border bg-app-bg px-3 text-sm text-app-text outline-none focus:border-brand"
+                  />
+                </label>
+                {(filterGrasaMin || filterProteinaMin || filterRcsMax) && (
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      onClick={() => { setFilterGrasaMin(""); setFilterProteinaMin(""); setFilterRcsMax(""); }}
+                      className="h-10 rounded-[10px] border border-app-border px-3 text-sm text-app-dim hover:text-app-text"
+                    >
+                      Limpiar
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {(filterGrasaMin || filterProteinaMin || filterRcsMax) && (() => {
+                const grasaMin = filterGrasaMin ? Number(filterGrasaMin) : 0;
+                const proteinaMin = filterProteinaMin ? Number(filterProteinaMin) : 0;
+                const rcsMax = filterRcsMax ? Number(filterRcsMax) * 1000 : Infinity;
+                const matching = activeLactations.filter((lac) => {
+                  if (filterGrasaMin && (lac.grasa_promedio ?? 0) < grasaMin) return false;
+                  if (filterProteinaMin && (lac.proteina_promedio ?? 0) < proteinaMin) return false;
+                  if (filterRcsMax && (lac.rcs_promedio ?? Infinity) > rcsMax) return false;
+                  return true;
+                });
+                return (
+                  <div>
+                    <p className="mb-2 text-xs font-semibold text-app-dim">
+                      {matching.length} lactaciones cumplen los criterios
+                    </p>
+                    <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                      {matching.slice(0, 12).map((lac) => (
+                        <div key={lac.id} className="rounded-[10px] border border-brand/20 bg-brand/5 px-4 py-3">
+                          <Link href={`/animals/${lac.animal_id}`} className="font-mono text-sm font-bold text-brand hover:underline">
+                            {lac.animal_id.slice(0, 8)}…
+                          </Link>
+                          <div className="mt-1 flex flex-wrap gap-2 text-xs text-app-dim">
+                            {lac.grasa_promedio != null && <span>Grasa: {lac.grasa_promedio.toFixed(2)}%</span>}
+                            {lac.proteina_promedio != null && <span>Proteína: {lac.proteina_promedio.toFixed(2)}%</span>}
+                            {lac.rcs_promedio != null && <span>RCS: {(lac.rcs_promedio / 1000).toFixed(0)}k</span>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+        </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex gap-2">

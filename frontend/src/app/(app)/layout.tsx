@@ -16,6 +16,7 @@ import {
   Milk,
   Package,
   Settings2,
+  ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -62,6 +63,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/zones", label: "Zonas", Icon: MapPin },
       { href: "/management", label: "Gestión", Icon: Settings2 },
+      { href: "/audit-log", label: "Audit Log", Icon: ShieldCheck },
     ],
   },
 ];

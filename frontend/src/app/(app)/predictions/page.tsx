@@ -3,12 +3,14 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import {
   BrainCircuit,
+  ExternalLink,
   Minus,
   RefreshCw,
   ShieldAlert,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { DonutStat, SparkArea } from "@/components/charts/MiniCharts";
 import { Pagination } from "@/components/common/Pagination";
@@ -96,8 +98,18 @@ function PredictionCard({
     <div className={`rounded-[10px] border bg-white p-4 ${hasAlert ? "border-state-critica/35" : "border-app-border"}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <span className="font-mono text-sm font-bold text-brand">{animal.crotal_oficial}</span>
-          {animal.nombre && <span className="ml-2 text-sm text-app-dim">{animal.nombre}</span>}
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/animals/${animal.id}`}
+              className="font-mono text-sm font-bold text-brand hover:underline"
+            >
+              {animal.crotal_oficial}
+            </Link>
+            {animal.nombre && <span className="text-sm text-app-dim">{animal.nombre}</span>}
+            <Link href={`/animals/${animal.id}`} className="text-app-dim hover:text-brand" title="Ver ficha">
+              <ExternalLink className="h-3.5 w-3.5" />
+            </Link>
+          </div>
           <div className="mt-1 flex flex-wrap gap-2 text-xs text-app-dim">
             {animal.raza && <span>{animal.raza}</span>}
             <span className="capitalize">{animal.estado}</span>

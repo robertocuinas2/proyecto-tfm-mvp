@@ -6,6 +6,7 @@ import type {
   AnimalPrediction,
   AssistantRequest,
   AssistantResponse,
+  AuditLogResponse,
   AuthResponse,
   CreateIncidentPayload,
   CreateOrderPayload,
@@ -342,5 +343,11 @@ export const api = {
 
   weatherForecast() {
     return request<unknown>("/weather/forecast");
+  },
+
+  // ── Audit Log ─────────────────────────────────────────────────────────────
+
+  auditLog(params?: QueryParams) {
+    return request<AuditLogResponse>("/audit-log", {}, params);
   },
 };

@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Beef, Search, VenusAndMars } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { Pagination } from "@/components/common/Pagination";
 import { PageHeader } from "@/components/ui/page-header";
@@ -42,7 +43,10 @@ function AnimalCard({ animal }: { animal: Animal }) {
   );
 
   return (
-    <div className="rounded-[10px] border border-app-border bg-white px-4 py-4 shadow-card transition hover:border-brand/20 hover:bg-app-bg">
+    <Link
+      href={`/animals/${animal.id}`}
+      className="block rounded-[10px] border border-app-border bg-white px-4 py-4 shadow-card transition hover:border-brand/30 hover:shadow-panel"
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -69,7 +73,7 @@ function AnimalCard({ animal }: { animal: Animal }) {
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
