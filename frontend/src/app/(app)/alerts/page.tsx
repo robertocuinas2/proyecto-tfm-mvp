@@ -9,11 +9,12 @@ import {
   Siren,
   XCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pagination } from "@/components/common/Pagination";
+import { PageHeader } from "@/components/ui/page-header";
 import { api } from "@/lib/api";
 import { DEFAULT_PAGE_SIZE, getSkip } from "@/lib/pagination";
-import type { Alert, AlertSeverity, AlertState } from "@/lib/types";
+import type { Alert, AlertSeverity, AlertState, Animal } from "@/lib/types";
 
 type FilterSeverity = AlertSeverity | "todas";
 
@@ -58,10 +59,10 @@ function StatCard({
   Icon: typeof AlertTriangle;
 }) {
   return (
-    <div className="rounded-lg border border-tv-border bg-tv-surface p-4">
+    <div className="rounded-[10px] border border-app-border bg-white p-4 shadow-card">
       <div className="flex items-center gap-2">
         <Icon className={`h-4 w-4 ${tone}`} />
-        <span className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-tv-dim">
+        <span className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-app-dim">
           {label}
         </span>
       </div>
@@ -70,19 +71,36 @@ function StatCard({
   );
 }
 
+type AnimalLookup = Map<string, Pick<Animal, "crotal_oficial" | "nombre">>;
+
+function AnimalRef({ animalId, lookup }: { animalId: string; lookup: AnimalLookup }) {
+  const animal = lookup.get(animalId);
+  if (!animal) {
+    return <span className="font-mono text-app-text" title={animalId}>Animal ({animalId.slice(0, 8)}…)</span>;
+  }
+  return (
+    <span>
+      <span className="font-mono font-bold text-brand">{animal.crotal_oficial}</span>
+      {animal.nombre && <span className="ml-1 text-app-dim">{animal.nombre}</span>}
+    </span>
+  );
+}
+
 function AlertCard({
   alert,
   onAction,
   loading,
+  animalLookup,
 }: {
   alert: Alert;
   onAction: (id: string, estado: AlertState) => void;
   loading: boolean;
+  animalLookup: AnimalLookup;
 }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className={`rounded-lg border border-l-4 border-tv-border bg-tv-surface ${severityBar[alert.severidad]}`}>
+    <div className={`rounded-[10px] border border-l-4 border-app-border bg-white shadow-card ${severityBar[alert.severidad]}`}>
       <button
         type="button"
         className="w-full px-4 py-4 text-left"
@@ -92,11 +110,11 @@ function AlertCard({
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <SeverityBadge severity={alert.severidad} />
-              <span className="text-xs font-semibold capitalize text-tv-dim">
+              <span className="text-xs font-semibold capitalize text-app-dim">
                 {alert.tipo_alerta}
               </span>
               {alert.fecha_creacion && (
-                <span className="text-xs text-tv-dim">
+                <span className="text-xs text-app-dim">
                   {new Date(alert.fecha_creacion).toLocaleString("es-ES", {
                     day: "2-digit",
                     month: "short",
@@ -106,33 +124,33 @@ function AlertCard({
                 </span>
               )}
             </div>
-            <p className="mt-2 text-sm font-semibold leading-snug text-white">
+            <p className="mt-2 text-sm font-semibold leading-snug text-app-text">
               {alert.descripcion}
             </p>
           </div>
-          <Eye className="mt-1 h-4 w-4 shrink-0 text-tv-dim" />
+          <Eye className="mt-1 h-4 w-4 shrink-0 text-app-dim" />
         </div>
       </button>
 
       {expanded && (
-        <div className="space-y-3 border-t border-tv-border px-4 py-4">
+        <div className="space-y-3 border-t border-app-border px-4 py-4">
           {alert.recomendacion && (
-            <div className="rounded-lg bg-tv-surface2 px-4 py-3">
-              <div className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-tv-dim">
+            <div className="rounded-[10px] bg-app-bg px-4 py-3">
+              <div className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-app-dim">
                 Recomendacion
               </div>
-              <p className="mt-1 text-sm text-white">{alert.recomendacion}</p>
+              <p className="mt-1 text-sm text-app-text">{alert.recomendacion}</p>
             </div>
           )}
 
-          <div className="flex flex-wrap gap-3 text-xs text-tv-dim">
+          <div className="flex flex-wrap gap-3 text-xs text-app-dim">
             <span>
-              Animal: <span className="font-mono text-white">{alert.animal_id}</span>
+              Animal: <AnimalRef animalId={alert.animal_id} lookup={animalLookup} />
             </span>
             {alert.confianza_prediccion != null && (
               <span>
                 Confianza:{" "}
-                <span className="font-bold text-white">
+                <span className="font-bold text-app-text">
                   {Math.round(alert.confianza_prediccion * 100)}%
                 </span>
               </span>
@@ -145,7 +163,7 @@ function AlertCard({
                 type="button"
                 disabled={loading}
                 onClick={() => onAction(alert.id, "revisada")}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-state-info/15 px-3 py-2 text-xs font-bold text-state-info transition hover:bg-state-info/25 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-[10px] bg-state-info/15 px-3 py-2 text-xs font-bold text-state-info transition hover:bg-state-info/25 disabled:opacity-50"
               >
                 <Eye className="h-3.5 w-3.5" />
                 Revisada
@@ -154,7 +172,7 @@ function AlertCard({
                 type="button"
                 disabled={loading}
                 onClick={() => onAction(alert.id, "resuelta")}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-state-ok/15 px-3 py-2 text-xs font-bold text-state-ok transition hover:bg-state-ok/25 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-[10px] bg-state-ok/15 px-3 py-2 text-xs font-bold text-state-ok transition hover:bg-state-ok/25 disabled:opacity-50"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 Resolver
@@ -163,14 +181,14 @@ function AlertCard({
                 type="button"
                 disabled={loading}
                 onClick={() => onAction(alert.id, "falsa_alarma")}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-state-neutral/10 px-3 py-2 text-xs font-bold text-state-neutral transition hover:bg-state-neutral/20 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-[10px] bg-state-neutral/10 px-3 py-2 text-xs font-bold text-state-neutral transition hover:bg-state-neutral/20 disabled:opacity-50"
               >
                 <XCircle className="h-3.5 w-3.5" />
                 Falsa alarma
               </button>
             </div>
           ) : (
-            <div className="rounded-lg bg-state-ok/10 px-3 py-2 text-xs font-bold capitalize text-state-ok">
+            <div className="rounded-[10px] bg-state-ok/10 px-3 py-2 text-xs font-bold capitalize text-state-ok">
               Estado: {alert.estado.replace("_", " ")}
             </div>
           )}
@@ -185,6 +203,23 @@ export default function AlertsPage() {
   const [filter, setFilter] = useState<FilterSeverity>("todas");
   const [page, setPage] = useState(1);
   const pageSize = DEFAULT_PAGE_SIZE;
+
+  // Carga animales en segundo plano para resolver animal_id → crotal/nombre en las alertas.
+  // staleTime largo para no saturar el backend; se comparte con otras páginas que usen la misma queryKey.
+  const animalsLookupQuery = useQuery({
+    queryKey: ["animals-lookup"],
+    queryFn: () => api.animals({ limit: 500 }),
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+  });
+
+  const animalLookup = useMemo<AnimalLookup>(() => {
+    const map: AnimalLookup = new Map();
+    for (const a of animalsLookupQuery.data ?? []) {
+      map.set(a.id, { crotal_oficial: a.crotal_oficial, nombre: a.nombre ?? null });
+    }
+    return map;
+  }, [animalsLookupQuery.data]);
 
   const alertsQuery = useQuery({
     queryKey: ["alerts", filter, page],
@@ -233,28 +268,19 @@ export default function AlertsPage() {
 
   return (
     <div className="min-h-full">
-      <div className="border-b border-tv-border px-6 py-5 lg:px-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-tv-dim">
-              <Siren className="h-4 w-4 text-state-critica" />
-              Monitor sanitario y operativo
-            </div>
-            <h1 className="mt-1 font-heading text-2xl font-bold text-white">Alertas</h1>
-          </div>
-          {alertsQuery.data && (
-            <span className="rounded-full border border-state-critica/30 bg-state-critica/10 px-3 py-1.5 text-sm font-bold text-state-critica">
-              {counts.todas} alertas registradas
-            </span>
-          )}
-        </div>
-      </div>
+      <PageHeader eyebrow="Monitor sanitario y operativo" title="Alertas" EyebrowIcon={Siren}>
+        {alertsQuery.data && (
+          <span className="rounded-full border border-state-critica/30 bg-state-critica/10 px-3 py-1.5 text-sm font-bold text-state-critica">
+            {counts.todas} alertas registradas
+          </span>
+        )}
+      </PageHeader>
 
       <div className="space-y-5 px-6 py-6 lg:px-8">
         <div className="grid gap-3 md:grid-cols-3">
           <StatCard Icon={AlertTriangle} label="Criticas" value={counts.critica} tone="text-state-critica" />
           <StatCard Icon={ShieldCheck} label="Altas" value={counts.alta} tone="text-state-atencion" />
-          <StatCard Icon={CheckCircle2} label="Total" value={counts.todas} tone="text-tv-accent" />
+          <StatCard Icon={CheckCircle2} label="Total" value={counts.todas} tone="text-brand" />
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -266,14 +292,14 @@ export default function AlertsPage() {
                 setFilter(key);
                 setPage(1);
               }}
-              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              className={`inline-flex items-center gap-2 rounded-[10px] px-4 py-2 text-sm font-semibold transition ${
                 filter === key
-                  ? "bg-tv-surface2 text-tv-accent"
-                  : "bg-tv-surface text-tv-dim hover:bg-tv-surface2 hover:text-white"
+                  ? "bg-brand/10 text-brand"
+                  : "border border-app-border bg-white text-app-dim hover:bg-app-bg"
               }`}
             >
               {label}
-              <span className="rounded-full bg-tv-bg/60 px-1.5 text-[11px] font-bold">
+              <span className="rounded-full bg-app-bg/60 px-1.5 text-[11px] font-bold">
                 {counts[key]}
               </span>
             </button>
@@ -283,22 +309,22 @@ export default function AlertsPage() {
         {alertsQuery.isLoading && (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="h-24 animate-pulse rounded-lg bg-tv-surface" />
+              <div key={index} className="h-24 animate-pulse rounded-[10px] bg-app-surface2" />
             ))}
           </div>
         )}
 
         {alertsQuery.isError && (
-          <div className="rounded-lg border border-state-critica/30 bg-state-critica/10 px-4 py-3 text-sm font-semibold text-state-critica">
+          <div className="rounded-[10px] border border-state-critica/30 bg-state-critica/10 px-4 py-3 text-sm font-semibold text-state-critica">
             Error al cargar alertas.
           </div>
         )}
 
         {!alertsQuery.isLoading && allAlerts.length === 0 && (
-          <div className="rounded-lg border border-tv-border bg-tv-surface py-16 text-center">
-            <CheckCircle2 className="mx-auto h-12 w-12 text-tv-accent" strokeWidth={1.5} />
-            <p className="mt-3 font-heading text-lg font-bold text-white">Sin alertas pendientes</p>
-            <p className="mt-1 text-sm text-tv-dim">La explotacion esta bajo control.</p>
+          <div className="rounded-[10px] border border-app-border bg-white py-16 text-center shadow-card">
+            <CheckCircle2 className="mx-auto h-12 w-12 text-brand" strokeWidth={1.5} />
+            <p className="mt-3 font-heading text-lg font-bold text-app-text">Sin alertas pendientes</p>
+            <p className="mt-1 text-sm text-app-dim">La explotacion esta bajo control.</p>
           </div>
         )}
 
@@ -309,6 +335,7 @@ export default function AlertsPage() {
               alert={alert}
               onAction={(id, estado) => updateMutation.mutate({ id, estado })}
               loading={updateMutation.isPending}
+              animalLookup={animalLookup}
             />
           ))}
         </div>

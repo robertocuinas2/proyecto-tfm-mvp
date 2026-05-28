@@ -4,76 +4,80 @@
   --font-heading: "Space Grotesk", "Segoe UI", Arial, sans-serif;
   --font-body: "DM Sans", "Segoe UI", Arial, sans-serif;
 
-  --color-brand: #17663d;
-  --color-brand-mid: #22c55e;
-  --color-brand-light: #eaf6ef;
+  --color-brand: #1b5e3b;
+  --color-brand-mid: #34d471;
+  --color-brand-light: #e8f5ee;
   --color-brand-dark: #071109;
 
-  --color-app-bg: #eef3f0;
+  /* ── Light theme tokens (management / admin screens) ── */
+  --color-app-bg:      #f2f5f3;
   --color-app-surface: #ffffff;
-  --color-app-border: #d9e6de;
-  --color-app-text: #101b14;
-  --color-app-dim: #65786d;
+  --color-app-surface2: #e8f0eb;
+  --color-app-border:  #dde8e1;
+  --color-app-text:    #0d1a10;
+  --color-app-dim:     #5c7268;
+  --color-app-accent:  #1b5e3b;
 
-  --color-tv-bg: #030a05;
-  --color-tv-surface: #102117;
+  /* ── Dark theme tokens (TV / operational screens) ── */
+  --color-tv-bg:       #030a05;
+  --color-tv-surface:  #0d1a10;
   --color-tv-surface2: #13291c;
-  --color-tv-border: #23402e;
-  --color-tv-text: #f1f8f3;
-  --color-tv-dim: #7fa18d;
-  --color-tv-accent: #35e479;
+  --color-tv-border:   #23402e;
+  --color-tv-text:     #f1f8f3;
+  --color-tv-dim:      #7fa18d;
+  --color-tv-accent:   #35e479;
 
-  --color-state-critica: #dc2626;
+  /* ── Semantic state colors ── */
+  --color-state-critica:  #dc2626;
   --color-state-atencion: #d97706;
-  --color-state-ok: #16a34a;
-  --color-state-info: #2563eb;
-  --color-state-neutral: #64748b;
+  --color-state-ok:       #16a34a;
+  --color-state-info:     #2563eb;
+  --color-state-neutral:  #64748b;
 
-  --shadow-brand: 0 18px 60px rgba(23, 102, 61, 0.34);
-  --shadow-panel: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-deck: 0 30px 80px rgba(0, 0, 0, 0.34);
+  /* ── Shadows ── */
+  --shadow-brand:    0 18px 60px rgba(27, 94, 59, 0.28);
+  --shadow-panel:    0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-card:     0 1px 4px rgba(0, 0, 0, 0.08);
+  --shadow-deck:     0 30px 80px rgba(0, 0, 0, 0.34);
   --shadow-critical: 0 4px 14px #dc262644;
 }
 
 :root {
-  --brand: #17663d;
-  --brand-mid: #22c55e;
-  --brand-light: #eaf6ef;
+  --brand: #1b5e3b;
+  --brand-mid: #34d471;
+  --brand-light: #e8f5ee;
   --brand-dark: #071109;
-  --app-bg: #eef3f0;
+  --app-bg: #f2f5f3;
   --app-surface: #ffffff;
-  --app-border: #d9e6de;
-  --app-text: #101b14;
-  --app-text-dim: #65786d;
+  --app-surface2: #e8f0eb;
+  --app-border: #dde8e1;
+  --app-text: #0d1a10;
+  --app-text-dim: #5c7268;
   --tv-bg: #030a05;
-  --tv-panel: #102117;
+  --tv-panel: #0d1a10;
   --tv-panel-soft: #13291c;
   --tv-line: #23402e;
   --tv-muted: #7fa18d;
   --tv-accent: #35e479;
 }
 
-* {
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
-html,
-body {
+html, body {
   min-height: 100%;
 }
 
 body {
   margin: 0;
-  background: var(--tv-bg);
+  background: var(--app-bg);
   color: var(--app-text);
   font-family: var(--font-body), sans-serif;
   text-rendering: geometricPrecision;
 }
 
-button,
-input,
-textarea,
-select {
+button, input, textarea, select {
   font: inherit;
 }
 
@@ -81,17 +85,13 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
-button,
-a,
-input,
-textarea,
-select {
+button, a, input, textarea, select {
   outline-color: transparent;
 }
 
 :focus-visible {
-  outline: 3px solid var(--tv-accent);
-  outline-offset: 3px;
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
 }
 
 [aria-live] {
@@ -103,6 +103,13 @@ select {
   color: white;
 }
 
+/* ── TV / dark-theme override scope ── */
+.tv-theme {
+  background: var(--tv-bg);
+  color: var(--tv-text, #f1f8f3);
+}
+
+/* ── Logo gradient ── */
 .t4m-logo {
   background:
     linear-gradient(
@@ -113,4 +120,20 @@ select {
       transparent 66%
     ),
     linear-gradient(135deg, #35d978 0%, #147844 100%);
+}
+
+/* ── Subtle scrollbar for app panels ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 3px;
+}
+.tv-theme ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
 }

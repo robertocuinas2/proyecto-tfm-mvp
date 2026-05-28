@@ -5,6 +5,7 @@ import { AlertTriangle, Droplets, Filter, Target, TrendingDown, TrendingUp } fro
 import { useMemo, useState } from "react";
 import { DonutStat, SparkArea } from "@/components/charts/MiniCharts";
 import { Pagination } from "@/components/common/Pagination";
+import { PageHeader } from "@/components/ui/page-header";
 import { api } from "@/lib/api";
 import { DEFAULT_PAGE_SIZE, getSkip } from "@/lib/pagination";
 import type { Animal, Lactation } from "@/lib/types";
@@ -117,19 +118,19 @@ function CompositionCard({
   const status = metricStatus(metric.key, value);
 
   return (
-    <div className="rounded-lg border border-tv-border bg-tv-surface p-4">
+    <div className="rounded-[10px] border border-app-border bg-white p-4">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-tv-dim">{metric.label}</p>
-          <p className="mt-0.5 text-xs text-tv-dim">Objetivo: {metric.ideal}</p>
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-app-dim">{metric.label}</p>
+          <p className="mt-0.5 text-xs text-app-dim">Objetivo: {metric.ideal}</p>
         </div>
         <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${statusClass(status)}`}>
           {status === "ok" ? "En rango" : status === "critical" ? "Critico" : "Vigilar"}
         </span>
       </div>
       <div className="mt-3">
-        <span className="font-heading text-3xl font-bold text-white">{formatNumber(value, metric.digits)}</span>
-        <span className="ml-1 text-sm text-tv-dim">{metric.unit}</span>
+        <span className="font-heading text-3xl font-bold text-app-text">{formatNumber(value, metric.digits)}</span>
+        <span className="ml-1 text-sm text-app-dim">{metric.unit}</span>
       </div>
     </div>
   );
@@ -147,13 +148,13 @@ function QualityMetricCard({
   const improving = metric.key === "produccion" ? status === "ok" : status !== "critical";
 
   return (
-    <div className={`rounded-lg border px-4 py-3.5 ${statusClass(status)}`}>
+    <div className={`rounded-[10px] border px-4 py-3.5 ${statusClass(status)}`}>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-tv-dim">{metric.label}</p>
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-app-dim">{metric.label}</p>
           <div className="mt-2 flex items-baseline gap-1">
             <span className="font-heading text-2xl font-bold">{formatNumber(value, metric.digits)}</span>
-            <span className="text-xs text-tv-dim">{metric.unit}</span>
+            <span className="text-xs text-app-dim">{metric.unit}</span>
           </div>
         </div>
         {improving ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
@@ -172,12 +173,12 @@ function AnimalQualityCard({ animal, lactation }: { animal: Animal; lactation?: 
   const hasWarning = score > 0 && score < 85;
 
   return (
-    <div className="space-y-4 rounded-lg border border-tv-border bg-tv-surface p-4">
+    <div className="space-y-4 rounded-[10px] border border-app-border bg-white p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <span className="font-mono text-sm font-bold text-tv-accent">{animal.crotal_oficial}</span>
-          {animal.nombre && <span className="ml-2 text-sm text-tv-dim">{animal.nombre}</span>}
-          <p className="mt-1 text-xs text-tv-dim">
+          <span className="font-mono text-sm font-bold text-brand">{animal.crotal_oficial}</span>
+          {animal.nombre && <span className="ml-2 text-sm text-app-dim">{animal.nombre}</span>}
+          <p className="mt-1 text-xs text-app-dim">
             {animal.raza} - {lactation ? `${lactation.dias_transcurridos ?? 0} dias en leche` : "sin lactacion activa"}
           </p>
         </div>
@@ -187,11 +188,11 @@ function AnimalQualityCard({ animal, lactation }: { animal: Animal; lactation?: 
           }`}>
             {score || "-"}
           </div>
-          <p className="mt-1 text-[10px] font-bold text-tv-dim">Score</p>
+          <p className="mt-1 text-[10px] font-bold text-app-dim">Score</p>
         </div>
       </div>
       {hasWarning && (
-        <div className="flex items-center gap-2 rounded-lg bg-state-atencion/15 px-3 py-2 text-xs font-semibold text-state-atencion">
+        <div className="flex items-center gap-2 rounded-[10px] bg-state-atencion/15 px-3 py-2 text-xs font-semibold text-state-atencion">
           <AlertTriangle className="h-3.5 w-3.5" />
           Revisar parametros de lactacion
         </div>
@@ -263,26 +264,17 @@ export default function QualityPage() {
 
   return (
     <div className="min-h-full">
-      <div className="border-b border-tv-border px-6 py-5 lg:px-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-tv-dim">
-              <Droplets className="h-4 w-4 text-tv-accent" />
-              Leche a la carta
-            </div>
-            <h1 className="mt-1 font-heading text-2xl font-bold text-white">Calidad de leche</h1>
-          </div>
-          <span className="rounded-full border border-tv-border bg-tv-surface px-3 py-1.5 text-sm font-bold text-white">
-            {summaryQuery.data?.animales_en_control ?? activeLactations.length} animales en control
-          </span>
-        </div>
-      </div>
+      <PageHeader eyebrow="Leche a la carta" title="Calidad de leche" EyebrowIcon={Droplets}>
+        <span className="rounded-full border border-app-border bg-white px-3 py-1.5 text-sm font-bold text-app-text">
+          {summaryQuery.data?.animales_en_control ?? activeLactations.length} animales en control
+        </span>
+      </PageHeader>
 
       <div className="space-y-6 px-6 py-6 lg:px-8">
         {!animalsQuery.isLoading && !lactationsQuery.isLoading && (
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
             {[
-              { label: "Calidad media", value: avgQuality, sub: "puntuacion", color: "text-tv-accent", Icon: Target },
+              { label: "Calidad media", value: avgQuality, sub: "puntuacion", color: "text-brand", Icon: Target },
               { label: "RCS vigilancia", value: warningLactations.length, sub: "lactaciones", color: "text-state-atencion", Icon: AlertTriangle },
               { label: "RCS critico", value: criticalLactations.length, sub: "lactaciones", color: "text-state-critica", Icon: AlertTriangle },
               {
@@ -293,13 +285,13 @@ export default function QualityPage() {
                 Icon: Droplets,
               },
             ].map(({ label, value, sub, color, Icon }) => (
-              <div key={label} className="rounded-lg border border-tv-border bg-tv-surface p-4">
+              <div key={label} className="rounded-[10px] border border-app-border bg-white p-4">
                 <div className="flex items-center gap-2">
                   <Icon className={`h-4 w-4 ${color}`} />
-                  <span className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-tv-dim">{label}</span>
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-app-dim">{label}</span>
                 </div>
                 <div className={`mt-2 font-heading text-4xl font-bold ${color}`}>{value}</div>
-                <div className="mt-1 text-xs font-semibold text-tv-dim">{sub}</div>
+                <div className="mt-1 text-xs font-semibold text-app-dim">{sub}</div>
               </div>
             ))}
           </div>
@@ -307,21 +299,21 @@ export default function QualityPage() {
 
         {!animalsQuery.isLoading && !lactationsQuery.isLoading && list.length > 0 && (
           <div className="grid gap-4 xl:grid-cols-[1.4fr_280px]">
-            <div className="rounded-lg border border-tv-border bg-tv-surface p-5">
-              <div className="mb-4 text-xs font-extrabold uppercase tracking-[0.18em] text-tv-dim">
+            <div className="rounded-[10px] border border-app-border bg-white p-5">
+              <div className="mb-4 text-xs font-extrabold uppercase tracking-[0.18em] text-app-dim">
                 Evolucion de produccion por lactacion
               </div>
               <div className="h-28">
                 {trend.length >= 2 ? (
                   <SparkArea color="#35E479" data={trend} />
                 ) : (
-                  <div className="grid h-full place-items-center rounded-lg border border-dashed border-tv-border text-sm font-semibold text-tv-dim">
+                  <div className="grid h-full place-items-center rounded-[10px] border border-dashed border-app-border text-sm font-semibold text-app-dim">
                     Sin datos suficientes
                   </div>
                 )}
               </div>
             </div>
-            <div className="rounded-lg border border-tv-border bg-tv-surface p-5">
+            <div className="rounded-[10px] border border-app-border bg-white p-5">
               <DonutStat value={avgQuality} label="calidad" />
             </div>
           </div>
@@ -337,10 +329,10 @@ export default function QualityPage() {
                 key={key}
                 type="button"
                 onClick={() => setShowComposition(key === "composition")}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                className={`rounded-[10px] px-4 py-2 text-sm font-semibold transition ${
                   (key === "composition" && showComposition) || (key === "quality" && !showComposition)
-                    ? "bg-tv-surface2 text-tv-accent"
-                    : "bg-tv-surface text-tv-dim hover:bg-tv-surface2"
+                    ? "bg-app-bg text-brand"
+                    : "bg-white text-app-dim hover:bg-app-bg"
                 }`}
               >
                 {label}
@@ -355,10 +347,10 @@ export default function QualityPage() {
                   key={key}
                   type="button"
                   onClick={() => setSelectedMetric(selectedMetric === key ? null : key)}
-                  className={`rounded-lg px-3 py-2 text-xs font-bold transition ${
+                  className={`rounded-[10px] px-3 py-2 text-xs font-bold transition ${
                     selectedMetric === key
-                      ? "bg-tv-accent/20 text-tv-accent"
-                      : "bg-tv-surface text-tv-dim hover:bg-tv-surface2"
+                      ? "bg-brand/12 text-brand"
+                      : "bg-white text-app-dim hover:bg-app-bg"
                   }`}
                 >
                   <Filter className="mr-1 inline h-3 w-3" />
@@ -372,7 +364,7 @@ export default function QualityPage() {
         {animalsQuery.isLoading || lactationsQuery.isLoading ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="h-64 animate-pulse rounded-lg bg-tv-surface" />
+              <div key={index} className="h-64 animate-pulse rounded-[10px] bg-white" />
             ))}
           </div>
         ) : (
@@ -404,10 +396,10 @@ export default function QualityPage() {
         )}
 
         {!animalsQuery.isLoading && !lactationsQuery.isLoading && list.length === 0 && (
-          <div className="rounded-lg border border-tv-border bg-tv-surface py-16 text-center">
-            <Droplets className="mx-auto h-12 w-12 text-tv-dim" strokeWidth={1.5} />
-            <p className="mt-3 font-heading text-lg font-bold text-white">Sin datos de calidad disponibles</p>
-            <p className="mt-1 text-sm text-tv-dim">
+          <div className="rounded-[10px] border border-app-border bg-white py-16 text-center">
+            <Droplets className="mx-auto h-12 w-12 text-app-dim" strokeWidth={1.5} />
+            <p className="mt-3 font-heading text-lg font-bold text-app-text">Sin datos de calidad disponibles</p>
+            <p className="mt-1 text-sm text-app-dim">
               Hay {allProductionAnimals.data?.length ?? 0} animales en produccion registrados.
             </p>
           </div>

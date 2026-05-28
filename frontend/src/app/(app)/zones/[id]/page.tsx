@@ -15,7 +15,8 @@ import {
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import type { CreateIncidentPayload, IncidentPriority, Task } from "@/lib/types";
+import { TV_REFETCH, TV_STALE } from "@/lib/tv-constants";
+import type { CreateIncidentPayload, Employee, IncidentPriority, Task } from "@/lib/types";
 
 const severityBar: Record<string, string> = {
   critica: "border-l-state-critica",
@@ -74,13 +75,23 @@ function TVMode({ zoneId, zoneName }: { zoneId: string; zoneName: string }) {
   const tasksQuery = useQuery({
     queryKey: ["tasks-zone", zoneId],
     queryFn: () => api.tasks({ zona_id: zoneId, limit: 100 }),
-    refetchInterval: 30_000,
+    refetchInterval: TV_REFETCH.NORMAL,
+    staleTime: TV_STALE.NORMAL,
   });
 
   const alertsQuery = useQuery({
     queryKey: ["alerts-pending"],
     queryFn: () => api.alerts({ limit: 50 }),
-    refetchInterval: 30_000,
+    refetchInterval: TV_REFETCH.FAST,
+    staleTime: TV_STALE.FAST,
+  });
+
+  // Incidents filtered client-side by zona_id (endpoint has no filter param for zona_id)
+  const incidentsQuery = useQuery({
+    queryKey: ["tv-incidents"],
+    queryFn: () => api.incidents({ limit: 100 }),
+    refetchInterval: TV_REFETCH.NORMAL,
+    staleTime: TV_STALE.NORMAL,
   });
 
   const tasks = tasksQuery.data ?? [];
@@ -90,14 +101,20 @@ function TVMode({ zoneId, zoneName }: { zoneId: string; zoneName: string }) {
   const done = tasks.filter((task) => task.estado === "ejecutada");
   const alerts = (alertsQuery.data?.alertas ?? []).filter((alert) => alert.estado === "pendiente");
   const critical = alerts.filter((alert) => alert.severidad === "critica");
+  // Filter incidents for this zone client-side
+  const zoneIncidents = (incidentsQuery.data ?? []).filter(
+    (i: { zona_id?: string | null; estado: string }) =>
+      i.zona_id === zoneId && (i.estado === "abierta" || i.estado === "en_gestion"),
+  );
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 rounded-lg border border-tv-border bg-tv-surface p-4 md:grid-cols-4">
+      <div className="grid gap-3 rounded-lg border border-tv-border bg-tv-surface p-4 sm:grid-cols-2 md:grid-cols-5">
         {[
           { label: "Zona", value: zoneName, color: "text-white" },
-          { label: "Alertas criticas", value: critical.length, color: "text-state-critica" },
-          { label: "Tareas retrasadas", value: delayed.length, color: "text-state-atencion" },
+          { label: "Alertas criticas", value: critical.length, color: critical.length > 0 ? "text-state-critica" : "text-state-ok" },
+          { label: "Incidencias", value: zoneIncidents.length, color: zoneIncidents.length > 0 ? "text-state-atencion" : "text-state-ok" },
+          { label: "Tareas retrasadas", value: delayed.length, color: delayed.length > 0 ? "text-state-atencion" : "text-state-ok" },
           { label: "Hora actual", value: <LiveClock />, color: "text-tv-accent" },
         ].map(({ label, value, color }) => (
           <div key={label} className="text-center">
@@ -108,6 +125,30 @@ function TVMode({ zoneId, zoneName }: { zoneId: string; zoneName: string }) {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
+        {/* Incidents for this zone */}
+        {zoneIncidents.length > 0 && (
+          <section className="space-y-3 xl:col-span-3">
+            <HeaderLabel Icon={AlertTriangle} label="Incidencias de zona" count={zoneIncidents.length} tone="text-state-atencion" />
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {zoneIncidents.map((inc: { id: string; tipo: string; descripcion: string; prioridad: string; estado: string }) => (
+                <div key={inc.id} className="rounded-lg border border-tv-border bg-tv-surface px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase ${
+                      inc.prioridad === "critica" ? "bg-state-critica/15 text-state-critica"
+                      : inc.prioridad === "alta" ? "bg-state-atencion/15 text-state-atencion"
+                      : "bg-state-info/15 text-state-info"
+                    }`}>
+                      {inc.prioridad}
+                    </span>
+                    <span className="text-xs capitalize text-tv-dim">{inc.tipo.replace(/_/g, " ")}</span>
+                  </div>
+                  <p className="mt-1 text-sm font-semibold text-white">{inc.descripcion}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         <section className="space-y-3">
           <HeaderLabel Icon={AlertTriangle} label="Alertas activas" count={alerts.length} tone="text-state-critica" />
           {alerts.length === 0 ? (
@@ -341,8 +382,36 @@ function TabletMode({ zoneId }: { zoneId: string }) {
   const tasksQuery = useQuery({
     queryKey: ["tasks-zone", zoneId],
     queryFn: () => api.tasks({ zona_id: zoneId, limit: 100 }),
-    refetchInterval: 30_000,
+    refetchInterval: TV_REFETCH.NORMAL,
+    staleTime: TV_STALE.NORMAL,
   });
+
+  // Incidents for this zone (client-side filter)
+  const incidentsTabletQuery = useQuery({
+    queryKey: ["tv-incidents"],
+    queryFn: () => api.incidents({ limit: 100 }),
+    staleTime: TV_STALE.NORMAL,
+    refetchInterval: TV_REFETCH.NORMAL,
+  });
+  const tabletZoneIncidents = (incidentsTabletQuery.data ?? []).filter(
+    (i: { zona_id?: string | null; estado: string }) =>
+      i.zona_id === zoneId && (i.estado === "abierta" || i.estado === "en_gestion"),
+  );
+
+  // Employees for current shift assignments in this zone
+  const assignmentsTabletQ = useQuery({
+    queryKey: ["tv-shift-assignments"],
+    queryFn: () => api.shiftAssignments({ limit: 50 }),
+    staleTime: TV_STALE.SLOW,
+  });
+  const employeesTabletQ = useQuery({
+    queryKey: ["employees-lookup"],
+    queryFn: () => api.employees(),
+    staleTime: TV_STALE.CATALOG,
+  });
+  const employeeById = new Map<string, Employee>(
+    (employeesTabletQ.data ?? []).map((e) => [e.id, e] as [string, Employee]),
+  );
 
   const completeMutation = useMutation({
     mutationFn: ({ id, body }: { id: string; body?: Partial<Task> }) => api.completeTask(id, body),
@@ -382,9 +451,9 @@ function TabletMode({ zoneId }: { zoneId: string }) {
                 key={label}
                 type="button"
                 onClick={action}
-                className="flex min-h-[78px] flex-col items-center justify-center gap-2 rounded-lg border border-tv-border bg-tv-surface px-3 py-4 text-center transition hover:border-tv-accent/40 hover:bg-tv-surface2"
+                className="flex min-h-[96px] flex-col items-center justify-center gap-2.5 rounded-xl border border-tv-border bg-tv-surface px-3 py-5 text-center transition hover:border-tv-accent/40 hover:bg-tv-surface2 active:scale-95"
               >
-                <Icon className={`h-6 w-6 ${color}`} />
+                <Icon className={`h-8 w-8 ${color}`} />
                 <span className="text-xs font-semibold text-white">{label}</span>
               </button>
             ))}
@@ -509,6 +578,63 @@ function TabletMode({ zoneId }: { zoneId: string }) {
             )}
           </section>
         </div>
+
+        {/* Incidents for this zone */}
+        {tabletZoneIncidents.length > 0 && (
+          <div className="rounded-xl border border-tv-border bg-tv-surface p-4">
+            <p className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.14em] text-state-atencion">
+              Incidencias en esta zona · {tabletZoneIncidents.length}
+            </p>
+            <div className="space-y-2">
+              {tabletZoneIncidents.map((inc: { id: string; tipo: string; descripcion: string; prioridad: string }) => (
+                <div key={inc.id} className="rounded-lg border border-tv-border bg-tv-surface2 px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                      inc.prioridad === "critica" ? "bg-state-critica/15 text-state-critica"
+                      : "bg-state-atencion/15 text-state-atencion"
+                    }`}>
+                      {inc.prioridad}
+                    </span>
+                    <span className="text-xs capitalize text-tv-dim">{inc.tipo.replace(/_/g, " ")}</span>
+                  </div>
+                  <p className="mt-1 text-sm font-semibold text-white">{inc.descripcion}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Current shift assignments for this zone */}
+        {(assignmentsTabletQ.data?.asignaciones ?? []).filter((a) => a.zona_id === zoneId).length > 0 && (
+          <div className="rounded-xl border border-tv-border bg-tv-surface p-4">
+            <p className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.14em] text-tv-dim">
+              Personal asignado a esta zona
+            </p>
+            <div className="space-y-2">
+              {(assignmentsTabletQ.data?.asignaciones ?? [])
+                .filter((a) => a.zona_id === zoneId)
+                .map((a) => {
+                  const emp = employeeById.get(a.empleado_id);
+                  const name = emp
+                    ? [emp.nombre, emp.apellidos].filter(Boolean).join(" ")
+                    : a.empleado_id.slice(0, 8) + "…";
+                  return (
+                    <div key={a.id} className="flex items-center gap-3 rounded-lg bg-tv-surface2 px-4 py-2.5">
+                      <span className="text-sm font-semibold text-white">{name}</span>
+                      {emp?.role && (
+                        <span className="rounded-full bg-tv-surface px-2 py-0.5 text-xs capitalize text-tv-dim">
+                          {emp.role}
+                        </span>
+                      )}
+                      {a.rol && (
+                        <span className="ml-auto rounded font-mono text-[10px] text-tv-dim">{a.rol}</span>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
@@ -527,7 +653,7 @@ export default function ZoneDetailPage({ params }: { params: Promise<{ id: strin
   const zone = zonesQuery.data?.find((item) => item.id === id);
 
   return (
-    <div className="min-h-full">
+    <div className="min-h-full bg-tv-bg text-white">
       <div className="border-b border-tv-border px-6 py-4 lg:px-8">
         <div className="flex flex-wrap items-center gap-4">
           <Link href="/zones" className="flex items-center gap-1 text-sm text-tv-dim hover:text-white">
@@ -540,23 +666,32 @@ export default function ZoneDetailPage({ params }: { params: Promise<{ id: strin
             <span className="font-mono text-xs text-tv-dim">{zone?.codigo ?? "ZONA"}</span>
           </div>
 
-          <div className="ml-auto flex overflow-hidden rounded-lg border border-tv-border bg-tv-surface">
-            {[
-              { key: "tv", label: "TV", Icon: Monitor },
-              { key: "tablet", label: "Tablet", Icon: Tablet },
-            ].map(({ key, label, Icon }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setViewMode(key as "tv" | "tablet")}
-                className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold transition ${
-                  viewMode === key ? "bg-tv-surface2 text-tv-accent" : "text-tv-dim hover:text-white"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </button>
-            ))}
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <Link
+              href="/tv"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-tv-border bg-tv-surface2 px-3 py-2 text-xs font-semibold text-tv-accent transition hover:bg-tv-surface"
+            >
+              <Monitor className="h-3.5 w-3.5" />
+              TV Global
+            </Link>
+            <div className="flex overflow-hidden rounded-lg border border-tv-border bg-tv-surface">
+              {[
+                { key: "tv", label: "TV", Icon: Monitor },
+                { key: "tablet", label: "Tablet", Icon: Tablet },
+              ].map(({ key, label, Icon }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setViewMode(key as "tv" | "tablet")}
+                  className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold transition ${
+                    viewMode === key ? "bg-tv-surface2 text-tv-accent" : "text-tv-dim hover:text-white"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

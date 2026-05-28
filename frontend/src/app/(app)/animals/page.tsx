@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Beef, Search, VenusAndMars } from "lucide-react";
 import { useState } from "react";
 import { Pagination } from "@/components/common/Pagination";
+import { PageHeader } from "@/components/ui/page-header";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { api } from "@/lib/api";
 import { DEFAULT_PAGE_SIZE, getSkip } from "@/lib/pagination";
@@ -41,25 +42,25 @@ function AnimalCard({ animal }: { animal: Animal }) {
   );
 
   return (
-    <div className="rounded-lg border border-tv-border bg-tv-surface px-4 py-4 transition hover:border-tv-accent/35 hover:bg-tv-surface2">
+    <div className="rounded-[10px] border border-app-border bg-white px-4 py-4 shadow-card transition hover:border-brand/20 hover:bg-app-bg">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-sm font-bold text-tv-accent">{animal.crotal_oficial}</span>
+            <span className="font-mono text-sm font-bold text-brand">{animal.crotal_oficial}</span>
             <EstadoBadge estado={animal.estado} />
           </div>
-          <h2 className="mt-2 font-heading text-base font-bold text-white">
+          <h2 className="mt-2 font-heading text-base font-bold text-app-text">
             {animal.nombre ?? "Sin nombre"}
           </h2>
-          <div className="mt-1 flex flex-wrap gap-3 text-xs text-tv-dim">
+          <div className="mt-1 flex flex-wrap gap-3 text-xs text-app-dim">
             {animal.raza && <span>{animal.raza}</span>}
             <span>{ageYears} anio{ageYears !== 1 ? "s" : ""}</span>
             {animal.estado_reproductivo && <span className="capitalize">{animal.estado_reproductivo}</span>}
           </div>
         </div>
-        <div className="shrink-0 text-right text-xs text-tv-dim">
+        <div className="shrink-0 text-right text-xs text-app-dim">
           <div>Entrada</div>
-          <div className="font-bold text-white">
+          <div className="font-bold text-app-text">
             {new Date(animal.fecha_entrada).toLocaleDateString("es-ES", {
               day: "2-digit",
               month: "short",
@@ -131,30 +132,21 @@ export default function AnimalsPage() {
 
   return (
     <div className="min-h-full">
-      <div className="border-b border-tv-border px-6 py-5 lg:px-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-tv-dim">
-              <VenusAndMars className="h-4 w-4 text-tv-accent" />
-              Censo productivo
-            </div>
-            <h1 className="mt-1 font-heading text-2xl font-bold text-white">Animales</h1>
-          </div>
-          <span className="rounded-full border border-tv-border bg-tv-surface px-3 py-1.5 text-sm font-bold text-white">
-            {counts.todos || pageItems.length} animales
-          </span>
-        </div>
-      </div>
+      <PageHeader eyebrow="Censo productivo" title="Animales" EyebrowIcon={VenusAndMars}>
+        <span className="rounded-full border border-app-border bg-white px-3 py-1.5 text-sm font-bold text-app-text">
+          {counts.todos || pageItems.length} animales
+        </span>
+      </PageHeader>
 
       <div className="space-y-5 px-6 py-6 lg:px-8">
         {!allAnimalsQuery.isLoading && (
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
             {estadoTabs.map(({ key, label }) => (
-              <div key={key} className="rounded-lg border border-tv-border bg-tv-surface p-4">
-                <div className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-tv-dim">
+              <div key={key} className="rounded-[10px] border border-app-border bg-white p-4 shadow-card">
+                <div className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-app-dim">
                   {label}
                 </div>
-                <div className="mt-2 font-heading text-3xl font-bold text-white">{counts[key]}</div>
+                <div className="mt-2 font-heading text-3xl font-bold text-app-text">{counts[key]}</div>
               </div>
             ))}
           </div>
@@ -162,7 +154,7 @@ export default function AnimalsPage() {
 
         <div className="flex flex-wrap gap-3">
           <div className="relative min-w-[240px] flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-tv-dim" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-app-dim" />
             <input
               type="text"
               placeholder="Buscar por crotal o nombre"
@@ -171,7 +163,7 @@ export default function AnimalsPage() {
                 setSearch(event.target.value);
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-tv-border bg-tv-surface pl-9 pr-4 text-sm text-white outline-none placeholder:text-tv-dim focus:border-tv-accent"
+              className="h-10 w-full rounded-[10px] border border-app-border bg-white pl-9 pr-4 text-sm text-app-text outline-none placeholder:text-app-dim focus:border-brand"
             />
           </div>
 
@@ -184,14 +176,14 @@ export default function AnimalsPage() {
                   setEstadoFilter(key);
                   setPage(1);
                 }}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                className={`inline-flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-sm font-semibold transition ${
                   estadoFilter === key
-                    ? "bg-tv-surface2 text-tv-accent"
-                    : "bg-tv-surface text-tv-dim hover:bg-tv-surface2"
+                    ? "bg-brand/10 text-brand"
+                    : "border border-app-border bg-white text-app-dim hover:bg-app-bg"
                 }`}
               >
                 {label}
-                <span className="rounded-full bg-tv-bg/60 px-1.5 text-[11px] font-bold">
+                <span className="rounded-full bg-app-bg/60 px-1.5 text-[11px] font-bold">
                   {counts[key]}
                 </span>
               </button>
@@ -202,22 +194,22 @@ export default function AnimalsPage() {
         {animalsQuery.isLoading && (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="h-28 animate-pulse rounded-lg bg-tv-surface" />
+              <div key={index} className="h-28 animate-pulse rounded-[10px] bg-app-surface2" />
             ))}
           </div>
         )}
 
         {animalsQuery.isError && (
-          <div className="rounded-lg border border-state-critica/30 bg-state-critica/10 px-4 py-3 text-sm font-semibold text-state-critica">
+          <div className="rounded-[10px] border border-state-critica/30 bg-state-critica/10 px-4 py-3 text-sm font-semibold text-state-critica">
             Error al cargar animales.
           </div>
         )}
 
         {!animalsQuery.isLoading && !allAnimalsQuery.isLoading && filtered.length === 0 && (
-          <div className="rounded-lg border border-tv-border bg-tv-surface py-16 text-center">
-            <Beef className="mx-auto h-12 w-12 text-tv-dim" strokeWidth={1.5} />
-            <p className="mt-3 font-heading text-lg font-bold text-white">Sin resultados</p>
-            <p className="mt-1 text-sm text-tv-dim">
+          <div className="rounded-[10px] border border-app-border bg-white py-16 text-center shadow-card">
+            <Beef className="mx-auto h-12 w-12 text-app-dim" strokeWidth={1.5} />
+            <p className="mt-3 font-heading text-lg font-bold text-app-text">Sin resultados</p>
+            <p className="mt-1 text-sm text-app-dim">
               {search ? `No hay animales que coincidan con "${search}"` : "No hay animales en este estado."}
             </p>
           </div>

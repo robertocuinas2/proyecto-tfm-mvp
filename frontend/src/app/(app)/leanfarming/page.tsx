@@ -169,7 +169,7 @@ function ZoneCard({
 
       {expanded && (
         <div className="space-y-2 border-t border-tv-border px-4 pb-4 pt-3">
-          {priorityTasks.slice(0, 6).map((task) => (
+          {priorityTasks.map((task) => (
             <TaskRow
               key={task.id}
               task={task}
@@ -182,14 +182,12 @@ function ZoneCard({
               Sin tareas pendientes en esta zona.
             </div>
           )}
-          {total > 6 && (
-            <Link
-              href={`/zones/${summary.zone.id}`}
-              className="block pt-1 text-center text-xs font-semibold text-tv-accent hover:underline"
-            >
-              Ver zona completa
-            </Link>
-          )}
+          <Link
+            href={`/zones/${summary.zone.id}`}
+            className="block pt-1 text-center text-xs font-semibold text-tv-accent hover:underline"
+          >
+            Abrir vista de zona completa →
+          </Link>
         </div>
       )}
     </div>
@@ -300,7 +298,7 @@ export default function LeanFarmingPage() {
   };
 
   return (
-    <div className="min-h-full">
+    <div className="min-h-full bg-tv-bg text-white">
       <div className="border-b border-tv-border px-6 py-5 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>

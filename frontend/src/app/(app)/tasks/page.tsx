@@ -1,9 +1,10 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertOctagon, CheckCircle2, ClipboardList, Clock, TimerReset } from "lucide-react";
+import { AlertOctagon, CheckCircle2, ClipboardList, Clock, MapPin, TimerReset } from "lucide-react";
 import { useState } from "react";
 import { Pagination } from "@/components/common/Pagination";
+import { PageHeader } from "@/components/ui/page-header";
 import { api } from "@/lib/api";
 import { DEFAULT_PAGE_SIZE, getSkip } from "@/lib/pagination";
 import type { Task, TaskStatus } from "@/lib/types";
@@ -48,7 +49,7 @@ function TaskCard({
   const canComplete = task.estado === "programada" || task.estado === "retrasada";
 
   return (
-    <div className="rounded-lg border border-tv-border bg-tv-surface px-4 py-4 transition hover:border-tv-accent/35 hover:bg-tv-surface2">
+    <div className="rounded-[10px] border border-app-border bg-white px-4 py-4 shadow-card transition hover:border-brand/20 hover:bg-app-bg">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -58,10 +59,10 @@ function TaskCard({
                 Urgente
               </span>
             )}
-            {categoria && <span className="text-xs font-semibold capitalize text-tv-dim">{categoria}</span>}
+            {categoria && <span className="text-xs font-semibold capitalize text-app-dim">{categoria}</span>}
           </div>
-          <h2 className="mt-2 font-heading text-base font-bold text-white">{nombre}</h2>
-          <div className="mt-1 flex flex-wrap gap-3 text-xs text-tv-dim">
+          <h2 className="mt-2 font-heading text-base font-bold text-app-text">{nombre}</h2>
+          <div className="mt-1 flex flex-wrap gap-3 text-xs text-app-dim">
             <span>
               {fecha.toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}{" "}
               {fecha.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
@@ -69,7 +70,7 @@ function TaskCard({
             {zona && <span className="capitalize">Zona: {zona}</span>}
             {task.ejecutado_por && <span>Por: {task.ejecutado_por}</span>}
           </div>
-          {task.observaciones && <p className="mt-2 text-xs text-tv-dim">{task.observaciones}</p>}
+          {task.observaciones && <p className="mt-2 text-xs text-app-dim">{task.observaciones}</p>}
         </div>
 
         {canComplete ? (
@@ -77,7 +78,7 @@ function TaskCard({
             type="button"
             disabled={loading}
             onClick={() => onComplete(task.id)}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-tv-accent/15 text-tv-accent transition hover:bg-tv-accent/25 disabled:opacity-50"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-brand/10 text-brand transition hover:bg-brand/15 disabled:opacity-50"
             title="Completar tarea"
           >
             <CheckCircle2 className="h-4 w-4" />
@@ -94,15 +95,23 @@ export default function TasksPage() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<FilterTab>("programada");
   const [page, setPage] = useState(1);
+  const [zoneFilter, setZoneFilter] = useState<string>("");
   const pageSize = DEFAULT_PAGE_SIZE;
 
+  const zonesQuery = useQuery({
+    queryKey: ["zones"],
+    queryFn: api.zones,
+    staleTime: 5 * 60_000,
+  });
+
   const tasksQuery = useQuery({
-    queryKey: ["tasks", tab, page],
+    queryKey: ["tasks", tab, page, zoneFilter],
     queryFn: () =>
       api.tasks({
         estado: tab,
         skip: getSkip(page, pageSize),
         limit: pageSize + 1,
+        ...(zoneFilter ? { zona_id: zoneFilter } : {}),
       }),
     refetchInterval: 30_000,
   });
@@ -121,65 +130,74 @@ export default function TasksPage() {
 
   return (
     <div className="min-h-full">
-      <div className="border-b border-tv-border px-6 py-5 lg:px-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-tv-dim">
-              <ClipboardList className="h-4 w-4 text-tv-accent" />
-              Plan diario
-            </div>
-            <h1 className="mt-1 font-heading text-2xl font-bold text-white">Tareas</h1>
-          </div>
-          <span className="rounded-full border border-tv-border bg-tv-surface px-3 py-1.5 text-sm font-bold text-white">
-            {list.length} en pagina
-          </span>
-        </div>
-      </div>
+      <PageHeader eyebrow="Plan diario" title="Tareas" EyebrowIcon={ClipboardList}>
+        <span className="rounded-full border border-app-border bg-white px-3 py-1.5 text-sm font-bold text-app-text">
+          {list.length} en pagina
+        </span>
+      </PageHeader>
 
       <div className="space-y-5 px-6 py-6 lg:px-8">
-        <div className="grid grid-cols-3 gap-3">
-          {(Object.entries(tabConfig) as [FilterTab, (typeof tabConfig)[FilterTab]][]).map(
-            ([key, { label, color, Icon }]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => {
-                  setTab(key);
-                  setPage(1);
-                }}
-                className={`rounded-lg border px-4 py-3 text-left transition ${
-                  tab === key
-                    ? "border-tv-accent/40 bg-tv-surface2"
-                    : "border-tv-border bg-tv-surface hover:bg-tv-surface2"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Icon className={`h-4 w-4 ${tab === key ? color : "text-tv-dim"}`} />
-                  <span className="text-sm font-bold text-white">{label}</span>
-                </div>
-              </button>
-            ),
-          )}
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="grid min-w-0 flex-1 grid-cols-3 gap-3">
+            {(Object.entries(tabConfig) as [FilterTab, (typeof tabConfig)[FilterTab]][]).map(
+              ([key, { label, color, Icon }]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => {
+                    setTab(key);
+                    setPage(1);
+                  }}
+                  className={`rounded-[10px] border px-4 py-3 text-left transition ${
+                    tab === key
+                      ? "border-brand/25 bg-brand/10"
+                      : "border-app-border bg-white hover:bg-app-bg"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon className={`h-4 w-4 ${tab === key ? color : "text-app-dim"}`} />
+                    <span className={`text-sm font-bold ${tab === key ? "text-brand" : "text-app-dim"}`}>{label}</span>
+                  </div>
+                </button>
+              ),
+            )}
+          </div>
+
+          {/* Filtro por zona */}
+          <div className="flex items-center gap-2 rounded-[10px] border border-app-border bg-white px-3 py-2.5">
+            <MapPin className="h-4 w-4 shrink-0 text-app-dim" />
+            <select
+              value={zoneFilter}
+              onChange={(e) => { setZoneFilter(e.target.value); setPage(1); }}
+              className="bg-transparent text-sm font-semibold text-app-text outline-none"
+              aria-label="Filtrar por zona"
+            >
+              <option value="">Todas las zonas</option>
+              {(zonesQuery.data ?? []).map((z) => (
+                <option key={z.id} value={z.id}>{z.nombre}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {tasksQuery.isLoading && (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="h-24 animate-pulse rounded-lg bg-tv-surface" />
+              <div key={index} className="h-24 animate-pulse rounded-[10px] bg-app-surface2" />
             ))}
           </div>
         )}
 
         {tasksQuery.isError && (
-          <div className="rounded-lg border border-state-critica/30 bg-state-critica/10 px-4 py-3 text-sm font-semibold text-state-critica">
+          <div className="rounded-[10px] border border-state-critica/30 bg-state-critica/10 px-4 py-3 text-sm font-semibold text-state-critica">
             Error al cargar tareas.
           </div>
         )}
 
         {!tasksQuery.isLoading && list.length === 0 && (
-          <div className="rounded-lg border border-tv-border bg-tv-surface py-16 text-center">
-            <TimerReset className="mx-auto h-12 w-12 text-tv-dim" strokeWidth={1.5} />
-            <p className="mt-3 font-heading text-lg font-bold text-white">
+          <div className="rounded-[10px] border border-app-border bg-white py-16 text-center shadow-card">
+            <TimerReset className="mx-auto h-12 w-12 text-app-dim" strokeWidth={1.5} />
+            <p className="mt-3 font-heading text-lg font-bold text-app-text">
               No hay tareas {tabConfig[tab].label.toLowerCase()}
             </p>
           </div>

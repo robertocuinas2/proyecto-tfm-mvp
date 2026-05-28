@@ -8,6 +8,9 @@ import type {
   AssistantResponse,
   AuthResponse,
   CreateIncidentPayload,
+  CreateOrderPayload,
+  CreateShiftAssignmentPayload,
+  CreateShiftPayload,
   DashboardSummary,
   Employee,
   HealthResponse,
@@ -15,7 +18,16 @@ import type {
   Lactation,
   LoginPayload,
   Machinery,
+  Order,
+  OrderStatus,
+  OrdersResponse,
   QualitySummary,
+  Shift,
+  ShiftAssignment,
+  ShiftAssignmentsResponse,
+  ShiftHandover,
+  ShiftHandoversResponse,
+  ShiftsResponse,
   Task,
   Treatment,
   WeatherData,
@@ -268,5 +280,67 @@ export const api = {
 
   updateMachinery(machineryId: string, body: Partial<Machinery>) {
     return request<Machinery>(`/machinery/${machineryId}`, { method: "PUT", body: JSON.stringify(body) });
+  },
+
+  // ── Orders (Pedidos) ──────────────────────────────────────────────────────
+
+  orders(params?: QueryParams) {
+    return request<OrdersResponse>("/pedidos", {}, params);
+  },
+
+  order(orderId: string) {
+    return request<Order>(`/pedidos/${orderId}`);
+  },
+
+  createOrder(body: CreateOrderPayload) {
+    return request<Order>("/pedidos", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  updateOrder(orderId: string, body: Partial<Order>) {
+    return request<Order>(`/pedidos/${orderId}`, { method: "PUT", body: JSON.stringify(body) });
+  },
+
+  updateOrderStatus(orderId: string, estado: OrderStatus) {
+    return request<Order>(`/pedidos/${orderId}/estado`, {
+      method: "PATCH",
+      body: JSON.stringify({ estado }),
+    });
+  },
+
+  // ── Shifts (Turnos) ───────────────────────────────────────────────────────
+
+  shifts(params?: QueryParams) {
+    return request<ShiftsResponse>("/turnos", {}, params);
+  },
+
+  createShift(body: CreateShiftPayload) {
+    return request<Shift>("/turnos", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  shiftAssignments(params?: QueryParams) {
+    return request<ShiftAssignmentsResponse>("/asignaciones-turno", {}, params);
+  },
+
+  createShiftAssignment(body: CreateShiftAssignmentPayload) {
+    return request<ShiftAssignment>("/asignaciones-turno", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+
+  // ── Handovers (Resúmenes de relevo) ───────────────────────────────────────
+
+  shiftHandovers(params?: QueryParams) {
+    return request<ShiftHandoversResponse>("/resumenes-relevo", {}, params);
+  },
+
+  createShiftHandover(body: { turno_saliente_id: string; turno_entrante_id: string; notas_saliente?: string }) {
+    return request<ShiftHandover>("/resumenes-relevo", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  // ── Weather (extended) ────────────────────────────────────────────────────
+
+  weatherForecast() {
+    return request<unknown>("/weather/forecast");
   },
 };

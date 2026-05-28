@@ -15,10 +15,14 @@ import {
   Wrench,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Pagination } from "@/components/common/Pagination";
+import { PageHeader } from "@/components/ui/page-header";
 import { api } from "@/lib/api";
 import { hasPermission, roleLabel, type Permission } from "@/lib/permissions";
-import type { Animal, Employee, Lactation, Machinery, Treatment, UserRole, Zone } from "@/lib/types";
+import type { Animal, Employee, EmployeeRol, Lactation, Machinery, Treatment, UserRole, Zone } from "@/lib/types";
 import { useAppStore } from "@/store/app-store";
+
+const MGMT_LIST_PAGE_SIZE = 20;
 
 type SectionId = "animals" | "zones" | "lactations" | "treatments" | "employees" | "machinery";
 
@@ -75,8 +79,7 @@ type TreatmentForm = {
 type EmployeeForm = {
   nombre: string;
   apellidos: string;
-  role: UserRole;
-  zona_principal_id: string;
+  role: EmployeeRol;
   activo: boolean;
 };
 
@@ -146,8 +149,7 @@ const blankTreatment = (): TreatmentForm => ({
 const blankEmployee = (): EmployeeForm => ({
   nombre: "",
   apellidos: "",
-  role: "operario",
-  zona_principal_id: "",
+  role: "auxiliar",
   activo: true,
 });
 
@@ -191,7 +193,7 @@ function TextField({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-[0.14em] text-tv-dim">
+      <span className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-[0.14em] text-app-dim">
         {label}
       </span>
       <input
@@ -200,7 +202,7 @@ function TextField({
         required={required}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-lg border border-tv-border bg-tv-surface2 px-3 text-sm font-semibold text-white outline-none transition placeholder:text-tv-dim focus:border-tv-accent disabled:opacity-50"
+        className="h-11 w-full rounded-[10px] border border-app-border bg-white px-3 text-sm font-semibold text-app-text outline-none transition placeholder:text-app-dim focus:border-brand disabled:opacity-50"
       />
     </label>
   );
@@ -221,14 +223,14 @@ function SelectField<T extends string>({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-[0.14em] text-tv-dim">
+      <span className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-[0.14em] text-app-dim">
         {label}
       </span>
       <select
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value as T)}
-        className="h-11 w-full rounded-lg border border-tv-border bg-tv-surface2 px-3 text-sm font-semibold text-white outline-none transition focus:border-tv-accent disabled:opacity-50"
+        className="h-11 w-full rounded-[10px] border border-app-border bg-white px-3 text-sm font-semibold text-app-text outline-none transition focus:border-brand disabled:opacity-50"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -256,14 +258,14 @@ function ToggleField({
       type="button"
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`flex h-11 items-center justify-between rounded-lg border px-3 text-sm font-bold transition disabled:opacity-50 ${
+      className={`flex h-11 items-center justify-between rounded-[10px] border px-3 text-sm font-bold transition disabled:opacity-50 ${
         checked
-          ? "border-tv-accent/40 bg-tv-accent/12 text-tv-accent"
-          : "border-tv-border bg-tv-surface2 text-tv-dim"
+          ? "border-brand/25 bg-brand/10 text-brand"
+          : "border-app-border bg-white text-app-dim"
       }`}
     >
       <span>{label}</span>
-      <span className={`h-3 w-3 rounded-full ${checked ? "bg-tv-accent" : "bg-tv-dim"}`} />
+      <span className={`h-3 w-3 rounded-full ${checked ? "bg-brand" : "bg-app-dim"}`} />
     </button>
   );
 }
@@ -271,7 +273,7 @@ function ToggleField({
 function PermissionNotice({ role, permission }: { role: UserRole | undefined; permission: Permission }) {
   if (hasPermission(role, permission)) return null;
   return (
-    <div className="flex items-start gap-2 rounded-lg border border-state-atencion/30 bg-state-atencion/10 px-3 py-3 text-sm font-semibold text-state-atencion">
+    <div className="flex items-start gap-2 rounded-[10px] border border-state-atencion/30 bg-state-atencion/10 px-3 py-3 text-sm font-semibold text-state-atencion">
       <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
       <span>Tu rol actual ({roleLabel(role)}) puede consultar estos datos, pero no modificarlos.</span>
     </div>
@@ -288,10 +290,10 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-tv-border bg-tv-surface p-5">
+    <section className="rounded-[10px] border border-app-border bg-white shadow-card p-5">
       <div className="mb-5">
-        <h2 className="font-heading text-lg font-bold text-white">{title}</h2>
-        <p className="mt-1 text-sm text-tv-dim">{subtitle}</p>
+        <h2 className="font-heading text-lg font-bold text-app-text">{title}</h2>
+        <p className="mt-1 text-sm text-app-dim">{subtitle}</p>
       </div>
       {children}
     </section>
@@ -303,7 +305,7 @@ function SaveButton({ isPending, editing }: { isPending: boolean; editing: boole
     <button
       type="submit"
       disabled={isPending}
-      className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand px-5 text-sm font-bold text-white shadow-brand transition hover:bg-[#135532] disabled:opacity-50"
+      className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-brand px-5 text-sm font-bold text-white shadow-brand transition hover:bg-[#135532] disabled:opacity-50"
     >
       <Save className="h-4 w-4" />
       {isPending ? "Guardando..." : editing ? "Guardar cambios" : "Crear registro"}
@@ -317,7 +319,7 @@ function EditButton({ onClick, disabled }: { onClick: () => void; disabled?: boo
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-tv-surface2 text-tv-dim transition hover:text-tv-accent disabled:opacity-40"
+      className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-app-bg text-app-dim transition hover:text-brand disabled:opacity-40"
       title="Editar"
     >
       <Edit3 className="h-3.5 w-3.5" />
@@ -329,6 +331,13 @@ export default function ManagementPage() {
   const queryClient = useQueryClient();
   const role = useAppStore((state) => state.user?.role);
   const [section, setSection] = useState<SectionId>("animals");
+  const [listPage, setListPage] = useState(1);
+
+  // Resetear paginación al cambiar de sección
+  const handleSectionChange = (id: SectionId) => {
+    setSection(id);
+    setListPage(1);
+  };
 
   const [animalForm, setAnimalForm] = useState<AnimalForm>(() => blankAnimal());
   const [editingAnimal, setEditingAnimal] = useState<Animal | null>(null);
@@ -483,7 +492,6 @@ export default function ManagementPage() {
         nombre: employeeForm.nombre,
         apellidos: emptyToUndefined(employeeForm.apellidos),
         role: employeeForm.role,
-        zona_principal_id: emptyToUndefined(employeeForm.zona_principal_id),
         activo: employeeForm.activo,
       };
       return editingEmployee
@@ -523,20 +531,11 @@ export default function ManagementPage() {
 
   return (
     <div className="min-h-full">
-      <div className="border-b border-tv-border px-6 py-5 lg:px-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-tv-dim">
-              <Wrench className="h-4 w-4 text-tv-accent" />
-              Operacion de datos
-            </div>
-            <h1 className="mt-1 font-heading text-2xl font-bold text-white">Gestion</h1>
-          </div>
-          <span className="rounded-full border border-tv-border bg-tv-surface px-3 py-1.5 text-sm font-bold text-white">
-            Rol: {roleLabel(role)}
-          </span>
-        </div>
-      </div>
+      <PageHeader eyebrow="Operación de datos" title="Gestión" EyebrowIcon={Wrench}>
+        <span className="rounded-full border border-app-border bg-white px-3 py-1.5 text-sm font-bold text-app-text">
+          Rol: {roleLabel(role)}
+        </span>
+      </PageHeader>
 
       <div className="space-y-6 px-6 py-6 lg:px-8">
         <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
@@ -547,15 +546,15 @@ export default function ManagementPage() {
               <button
                 key={id}
                 type="button"
-                onClick={() => setSection(id)}
-                className={`rounded-lg border px-3 py-3 text-left transition ${
+                onClick={() => handleSectionChange(id)}
+                className={`rounded-[10px] border px-3 py-3 text-left transition ${
                   selected
-                    ? "border-tv-accent/45 bg-tv-surface2 text-white"
-                    : "border-tv-border bg-tv-surface text-tv-dim hover:bg-tv-surface2 hover:text-white"
+                    ? "border-brand/30 bg-brand/8 text-brand"
+                    : "border-app-border bg-white text-app-dim hover:bg-app-bg hover:text-app-text"
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <Icon className={`h-4 w-4 ${allowed ? "text-tv-accent" : "text-state-atencion"}`} />
+                  <Icon className={`h-4 w-4 ${allowed ? "text-brand" : "text-state-atencion"}`} />
                   {!allowed && <ShieldAlert className="h-3.5 w-3.5 text-state-atencion" />}
                 </div>
                 <div className="mt-2 text-sm font-bold">{label}</div>
@@ -597,7 +596,7 @@ export default function ManagementPage() {
               <div className="flex flex-wrap gap-3 lg:col-span-4">
                 {canEditActive && <SaveButton isPending={animalMutation.isPending} editing={Boolean(editingAnimal)} />}
                 {editingAnimal && (
-                  <button type="button" onClick={() => { setEditingAnimal(null); setAnimalForm(blankAnimal()); }} className="h-11 rounded-lg border border-tv-border px-4 text-sm font-bold text-tv-dim hover:text-white">
+                  <button type="button" onClick={() => { setEditingAnimal(null); setAnimalForm(blankAnimal()); }} className="h-11 rounded-[10px] border border-app-border px-4 text-sm font-bold text-app-dim hover:text-app-text">
                     Cancelar edicion
                   </button>
                 )}
@@ -605,11 +604,11 @@ export default function ManagementPage() {
             </form>
             {animalMutation.isError && <p className="mt-3 text-sm font-semibold text-state-critica">{animalMutation.error.message}</p>}
             <div className="mt-6 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {animals.slice(0, 12).map((animal) => (
-                <div key={animal.id} className="flex items-center justify-between gap-3 rounded-lg bg-tv-surface2 px-3 py-3">
+              {animals.slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).map((animal) => (
+                <div key={animal.id} className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-white">{animal.crotal_oficial} - {animal.nombre ?? "Sin nombre"}</p>
-                    <p className="text-xs capitalize text-tv-dim">{animal.estado}</p>
+                    <p className="truncate text-sm font-bold text-app-text">{animal.crotal_oficial} - {animal.nombre ?? "Sin nombre"}</p>
+                    <p className="text-xs capitalize text-app-dim">{animal.estado}</p>
                   </div>
                   <EditButton disabled={!canEditActive} onClick={() => {
                     setEditingAnimal(animal);
@@ -628,6 +627,13 @@ export default function ManagementPage() {
                 </div>
               ))}
             </div>
+            {animals.length > MGMT_LIST_PAGE_SIZE && (
+              <div className="mt-4">
+                <Pagination page={listPage} pageSize={MGMT_LIST_PAGE_SIZE}
+                  currentCount={animals.slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).length}
+                  totalItems={animals.length} isLoading={animalsQuery.isFetching} onPageChange={setListPage} />
+              </div>
+            )}
           </Panel>
         )}
 
@@ -643,16 +649,16 @@ export default function ManagementPage() {
               <ToggleField label="Activa" checked={zoneForm.activa} disabled={!canEditActive} onChange={(value) => setZoneForm({ ...zoneForm, activa: value })} />
               <div className="flex flex-wrap gap-3">
                 {canEditActive && <SaveButton isPending={zoneMutation.isPending} editing={Boolean(editingZone)} />}
-                {editingZone && <button type="button" onClick={() => { setEditingZone(null); setZoneForm(blankZone()); }} className="h-11 rounded-lg border border-tv-border px-4 text-sm font-bold text-tv-dim hover:text-white">Cancelar</button>}
+                {editingZone && <button type="button" onClick={() => { setEditingZone(null); setZoneForm(blankZone()); }} className="h-11 rounded-[10px] border border-app-border px-4 text-sm font-bold text-app-dim hover:text-app-text">Cancelar</button>}
               </div>
             </form>
             {zoneMutation.isError && <p className="mt-3 text-sm font-semibold text-state-critica">{zoneMutation.error.message}</p>}
             <div className="mt-6 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
               {zones.map((zone) => (
-                <div key={zone.id} className="flex items-center justify-between gap-3 rounded-lg bg-tv-surface2 px-3 py-3">
+                <div key={zone.id} className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-white">{zone.codigo} - {zone.nombre}</p>
-                    <p className="text-xs text-tv-dim">{zone.tipo ?? "operativa"}</p>
+                    <p className="truncate text-sm font-bold text-app-text">{zone.codigo} - {zone.nombre}</p>
+                    <p className="text-xs text-app-dim">{zone.tipo ?? "operativa"}</p>
                   </div>
                   <EditButton disabled={!canEditActive} onClick={() => {
                     setEditingZone(zone);
@@ -687,16 +693,16 @@ export default function ManagementPage() {
               <TextField label="RCS" value={lactationForm.rcs_promedio} type="number" disabled={!canEditActive} onChange={(value) => setLactationForm({ ...lactationForm, rcs_promedio: value })} />
               <div className="flex flex-wrap gap-3 lg:col-span-5">
                 {canEditActive && <SaveButton isPending={lactationMutation.isPending} editing={Boolean(editingLactation)} />}
-                {editingLactation && <button type="button" onClick={() => { setEditingLactation(null); setLactationForm(blankLactation()); }} className="h-11 rounded-lg border border-tv-border px-4 text-sm font-bold text-tv-dim hover:text-white">Cancelar</button>}
+                {editingLactation && <button type="button" onClick={() => { setEditingLactation(null); setLactationForm(blankLactation()); }} className="h-11 rounded-[10px] border border-app-border px-4 text-sm font-bold text-app-dim hover:text-app-text">Cancelar</button>}
               </div>
             </form>
             {lactationMutation.isError && <p className="mt-3 text-sm font-semibold text-state-critica">{lactationMutation.error.message}</p>}
             <div className="mt-6 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {(lactationsQuery.data ?? []).slice(0, 12).map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 rounded-lg bg-tv-surface2 px-3 py-3">
+              {(lactationsQuery.data ?? []).slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).map((item) => (
+                <div key={item.id} className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-white">{item.animal_id} - {item.produccion_promedio ?? 0} L</p>
-                    <p className="text-xs text-tv-dim">Grasa {item.grasa_promedio ?? "-"} / RCS {item.rcs_promedio ?? "-"}</p>
+                    <p className="truncate text-sm font-bold text-app-text">{item.animal_id} - {item.produccion_promedio ?? 0} L</p>
+                    <p className="text-xs text-app-dim">Grasa {item.grasa_promedio ?? "-"} / RCS {item.rcs_promedio ?? "-"}</p>
                   </div>
                   <EditButton disabled={!canEditActive} onClick={() => {
                     setEditingLactation(item);
@@ -716,6 +722,13 @@ export default function ManagementPage() {
                 </div>
               ))}
             </div>
+            {(lactationsQuery.data?.length ?? 0) > MGMT_LIST_PAGE_SIZE && (
+              <div className="mt-4">
+                <Pagination page={listPage} pageSize={MGMT_LIST_PAGE_SIZE}
+                  currentCount={(lactationsQuery.data ?? []).slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).length}
+                  totalItems={lactationsQuery.data?.length} isLoading={lactationsQuery.isFetching} onPageChange={setListPage} />
+              </div>
+            )}
           </Panel>
         )}
 
@@ -736,16 +749,16 @@ export default function ManagementPage() {
               <ToggleField label="Activo" checked={treatmentForm.activo} disabled={!canEditActive} onChange={(value) => setTreatmentForm({ ...treatmentForm, activo: value })} />
               <div className="flex flex-wrap gap-3 lg:col-span-4">
                 {canEditActive && <SaveButton isPending={treatmentMutation.isPending} editing={Boolean(editingTreatment)} />}
-                {editingTreatment && <button type="button" onClick={() => { setEditingTreatment(null); setTreatmentForm(blankTreatment()); }} className="h-11 rounded-lg border border-tv-border px-4 text-sm font-bold text-tv-dim hover:text-white">Cancelar</button>}
+                {editingTreatment && <button type="button" onClick={() => { setEditingTreatment(null); setTreatmentForm(blankTreatment()); }} className="h-11 rounded-[10px] border border-app-border px-4 text-sm font-bold text-app-dim hover:text-app-text">Cancelar</button>}
               </div>
             </form>
             {treatmentMutation.isError && <p className="mt-3 text-sm font-semibold text-state-critica">{treatmentMutation.error.message}</p>}
             <div className="mt-6 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {(treatmentsQuery.data ?? []).slice(0, 12).map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 rounded-lg bg-tv-surface2 px-3 py-3">
+              {(treatmentsQuery.data ?? []).slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).map((item) => (
+                <div key={item.id} className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-white">{item.medicamento ?? "Tratamiento"} - {item.animal_id}</p>
-                    <p className="text-xs text-tv-dim">{item.activo ? "Activo" : "Cerrado"}</p>
+                    <p className="truncate text-sm font-bold text-app-text">{item.medicamento ?? "Tratamiento"} - {item.animal_id}</p>
+                    <p className="text-xs text-app-dim">{item.activo ? "Activo" : "Cerrado"}</p>
                   </div>
                   <EditButton disabled={!canEditActive} onClick={() => {
                     setEditingTreatment(item);
@@ -767,48 +780,60 @@ export default function ManagementPage() {
                 </div>
               ))}
             </div>
+            {(treatmentsQuery.data?.length ?? 0) > MGMT_LIST_PAGE_SIZE && (
+              <div className="mt-4">
+                <Pagination page={listPage} pageSize={MGMT_LIST_PAGE_SIZE}
+                  currentCount={(treatmentsQuery.data ?? []).slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).length}
+                  totalItems={treatmentsQuery.data?.length} isLoading={treatmentsQuery.isFetching} onPageChange={setListPage} />
+              </div>
+            )}
           </Panel>
         )}
 
         {section === "employees" && (
           <Panel title="Empleados" subtitle="Alta y edicion de empleados. Requiere admin.">
-            <form className="grid gap-3 lg:grid-cols-5" onSubmit={(event) => { event.preventDefault(); if (canEditActive) employeeMutation.mutate(); }}>
+            <form className="grid gap-3 lg:grid-cols-4" onSubmit={(event) => { event.preventDefault(); if (canEditActive) employeeMutation.mutate(); }}>
               <TextField label="Nombre" value={employeeForm.nombre} required disabled={!canEditActive} onChange={(value) => setEmployeeForm({ ...employeeForm, nombre: value })} />
               <TextField label="Apellidos" value={employeeForm.apellidos} disabled={!canEditActive} onChange={(value) => setEmployeeForm({ ...employeeForm, apellidos: value })} />
               <SelectField label="Rol" value={employeeForm.role} disabled={!canEditActive} onChange={(value) => setEmployeeForm({ ...employeeForm, role: value })} options={[
-                { value: "admin", label: "Admin" },
+                { value: "encargado", label: "Encargado" },
+                { value: "auxiliar", label: "Auxiliar" },
                 { value: "veterinario", label: "Veterinario" },
-                { value: "operario", label: "Operario" },
-                { value: "alimentacion", label: "Alimentacion" },
+                { value: "mecanico", label: "Mecanico" },
               ]} />
-              <SelectField label="Zona" value={employeeForm.zona_principal_id} disabled={!canEditActive} onChange={(value) => setEmployeeForm({ ...employeeForm, zona_principal_id: value })} options={zoneOptions} />
               <ToggleField label="Activo" checked={employeeForm.activo} disabled={!canEditActive} onChange={(value) => setEmployeeForm({ ...employeeForm, activo: value })} />
-              <div className="flex flex-wrap gap-3 lg:col-span-5">
+              <div className="flex flex-wrap gap-3 lg:col-span-4">
                 {canEditActive && <SaveButton isPending={employeeMutation.isPending} editing={Boolean(editingEmployee)} />}
-                {editingEmployee && <button type="button" onClick={() => { setEditingEmployee(null); setEmployeeForm(blankEmployee()); }} className="h-11 rounded-lg border border-tv-border px-4 text-sm font-bold text-tv-dim hover:text-white">Cancelar</button>}
+                {editingEmployee && <button type="button" onClick={() => { setEditingEmployee(null); setEmployeeForm(blankEmployee()); }} className="h-11 rounded-[10px] border border-app-border px-4 text-sm font-bold text-app-dim hover:text-app-text">Cancelar</button>}
               </div>
             </form>
             {employeeMutation.isError && <p className="mt-3 text-sm font-semibold text-state-critica">{employeeMutation.error.message}</p>}
             <div className="mt-6 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {(employeesQuery.data ?? []).map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 rounded-lg bg-tv-surface2 px-3 py-3">
+              {(employeesQuery.data ?? []).slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).map((item) => (
+                <div key={item.id} className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-white">{item.nombre} {item.apellidos ?? ""}</p>
-                    <p className="text-xs capitalize text-tv-dim">{item.role ?? "sin rol"}</p>
+                    <p className="truncate text-sm font-bold text-app-text">{item.nombre} {item.apellidos ?? ""}</p>
+                    <p className="text-xs capitalize text-app-dim">{item.role ?? "sin rol"}</p>
                   </div>
                   <EditButton disabled={!canEditActive} onClick={() => {
                     setEditingEmployee(item);
                     setEmployeeForm({
                       nombre: item.nombre,
                       apellidos: item.apellidos ?? "",
-                      role: (item.role as UserRole | null) ?? "operario",
-                      zona_principal_id: item.zona_principal_id ?? "",
+                      role: (item.role as EmployeeRol | null) ?? "auxiliar",
                       activo: item.activo ?? true,
                     });
                   }} />
                 </div>
               ))}
             </div>
+            {(employeesQuery.data?.length ?? 0) > MGMT_LIST_PAGE_SIZE && (
+              <div className="mt-4">
+                <Pagination page={listPage} pageSize={MGMT_LIST_PAGE_SIZE}
+                  currentCount={(employeesQuery.data ?? []).slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).length}
+                  totalItems={employeesQuery.data?.length} isLoading={employeesQuery.isFetching} onPageChange={setListPage} />
+              </div>
+            )}
           </Panel>
         )}
 
@@ -830,16 +855,16 @@ export default function ManagementPage() {
               </div>
               <div className="flex flex-wrap gap-3 lg:col-span-4">
                 {canEditActive && <SaveButton isPending={machineryMutation.isPending} editing={Boolean(editingMachinery)} />}
-                {editingMachinery && <button type="button" onClick={() => { setEditingMachinery(null); setMachineryForm(blankMachinery()); }} className="h-11 rounded-lg border border-tv-border px-4 text-sm font-bold text-tv-dim hover:text-white">Cancelar</button>}
+                {editingMachinery && <button type="button" onClick={() => { setEditingMachinery(null); setMachineryForm(blankMachinery()); }} className="h-11 rounded-[10px] border border-app-border px-4 text-sm font-bold text-app-dim hover:text-app-text">Cancelar</button>}
               </div>
             </form>
             {machineryMutation.isError && <p className="mt-3 text-sm font-semibold text-state-critica">{machineryMutation.error.message}</p>}
             <div className="mt-6 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {(machineryQuery.data ?? []).map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 rounded-lg bg-tv-surface2 px-3 py-3">
+              {(machineryQuery.data ?? []).slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).map((item) => (
+                <div key={item.id} className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-white">{item.nombre}</p>
-                    <p className="text-xs capitalize text-tv-dim">{item.tipo} - {item.estado}</p>
+                    <p className="truncate text-sm font-bold text-app-text">{item.nombre}</p>
+                    <p className="text-xs capitalize text-app-dim">{item.tipo} - {item.estado}</p>
                   </div>
                   <EditButton disabled={!canEditActive} onClick={() => {
                     setEditingMachinery(item);
@@ -855,16 +880,23 @@ export default function ManagementPage() {
                 </div>
               ))}
             </div>
+            {(machineryQuery.data?.length ?? 0) > MGMT_LIST_PAGE_SIZE && (
+              <div className="mt-4">
+                <Pagination page={listPage} pageSize={MGMT_LIST_PAGE_SIZE}
+                  currentCount={(machineryQuery.data ?? []).slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).length}
+                  totalItems={machineryQuery.data?.length} isLoading={machineryQuery.isFetching} onPageChange={setListPage} />
+              </div>
+            )}
           </Panel>
         )}
 
         {(animalsQuery.isError || zonesQuery.isError || lactationsQuery.isError || treatmentsQuery.isError || employeesQuery.isError || machineryQuery.isError) && (
-          <div className="rounded-lg border border-state-critica/30 bg-state-critica/10 px-4 py-3 text-sm font-semibold text-state-critica">
+          <div className="rounded-[10px] border border-state-critica/30 bg-state-critica/10 px-4 py-3 text-sm font-semibold text-state-critica">
             Alguna lista no se ha podido cargar. Revisa la sesion o permisos del backend.
           </div>
         )}
 
-        <div className="flex items-center gap-2 rounded-lg border border-tv-border bg-tv-surface px-4 py-3 text-xs font-semibold text-tv-dim">
+        <div className="flex items-center gap-2 rounded-[10px] border border-app-border bg-white px-4 py-3 text-xs font-semibold text-app-dim">
           <CalendarDays className="h-4 w-4" />
           Los cambios se guardan en la API y se refrescan en las pantallas operativas.
         </div>

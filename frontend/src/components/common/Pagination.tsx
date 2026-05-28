@@ -34,20 +34,20 @@ export function Pagination({
 
   return (
     <nav
-      className="flex flex-col gap-3 rounded-[14px] border border-tv-border bg-tv-surface px-4 py-3 text-sm text-tv-dim sm:flex-row sm:items-center sm:justify-between"
-      aria-label="Paginacion"
+      className="flex flex-col gap-3 rounded-[14px] border border-app-border bg-white px-4 py-3 text-sm text-app-dim shadow-card sm:flex-row sm:items-center sm:justify-between"
+      aria-label="Paginación"
     >
       <div aria-live="polite">
         {currentCount === 0 ? (
-          <span>Sin resultados en esta pagina</span>
+          <span>Sin resultados en esta página</span>
         ) : (
           <span>
-            Mostrando <strong className="text-white">{firstItem}</strong>-
-            <strong className="text-white">{lastItem}</strong>
+            Mostrando <strong className="text-app-text">{firstItem}</strong>–
+            <strong className="text-app-text">{lastItem}</strong>
             {typeof totalItems === "number" ? (
               <>
                 {" "}
-                de <strong className="text-white">{knownTotal}</strong>
+                de <strong className="text-app-text">{knownTotal}</strong>
               </>
             ) : null}
           </span>
@@ -59,19 +59,19 @@ export function Pagination({
           type="button"
           onClick={() => onPageChange(page - 1)}
           disabled={!canPrev}
-          className="inline-flex min-h-10 items-center gap-2 rounded-[10px] border border-tv-border bg-tv-surface2 px-3 font-bold text-white transition hover:border-tv-accent/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tv-accent disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex min-h-9 items-center gap-2 rounded-[10px] border border-app-border bg-app-bg px-3 text-sm font-semibold text-app-text transition hover:border-brand/40 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronLeft className="h-4 w-4" />
           Anterior
         </button>
-        <span className="min-w-12 rounded-[10px] bg-tv-bg px-3 py-2 text-center font-heading font-bold text-white">
+        <span className="min-w-10 rounded-[10px] bg-app-bg px-3 py-2 text-center font-heading text-sm font-bold text-app-text">
           {page}
         </span>
         <button
           type="button"
           onClick={() => onPageChange(page + 1)}
           disabled={!canNext}
-          className="inline-flex min-h-10 items-center gap-2 rounded-[10px] border border-tv-border bg-tv-surface2 px-3 font-bold text-white transition hover:border-tv-accent/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tv-accent disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex min-h-9 items-center gap-2 rounded-[10px] border border-app-border bg-app-bg px-3 text-sm font-semibold text-app-text transition hover:border-brand/40 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-40"
         >
           Siguiente
           <ChevronRight className="h-4 w-4" />

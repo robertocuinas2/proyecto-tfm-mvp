@@ -151,7 +151,10 @@ export type Treatment = {
 };
 
 export type IncidentPriority = "baja" | "media" | "alta" | "critica";
-export type IncidentStatus = "abierta" | "en_proceso" | "resuelta" | "cerrada";
+export type IncidentStatus = "abierta" | "en_gestion" | "resuelta" | "cerrada";
+
+// Roles reales del modelo Empleado en base de datos (distinto de UserRole del sistema)
+export type EmployeeRol = "encargado" | "auxiliar" | "veterinario" | "mecanico";
 
 export type Incident = {
   id: string;
@@ -171,8 +174,111 @@ export type CreateIncidentPayload = {
   tipo: string;
   zona_id?: string | null;
   animal_id?: string | null;
+  maquinaria_id?: string | null;
   descripcion: string;
   prioridad: IncidentPriority;
+};
+
+// ── Orders (Pedidos) ────────────────────────────────────────────────────────
+
+export type OrderStatus = "solicitado" | "aprobado" | "en_transito" | "recibido" | "cancelado";
+
+export type Order = {
+  id: string;
+  insumo: string;
+  descripcion?: string | null;
+  cantidad: number;
+  unidad?: string | null;
+  estado: OrderStatus;
+  solicitante_id?: string | null;
+  ts_solicitud?: string | null;
+  ts_aprobacion?: string | null;
+  ts_recepcion?: string | null;
+  proveedor?: string | null;
+  coste_estimado?: number | null;
+  coste_real?: number | null;
+  notas?: string | null;
+};
+
+export type OrdersResponse = {
+  total: number;
+  pedidos: Order[];
+};
+
+export type CreateOrderPayload = {
+  insumo: string;
+  cantidad: number;
+  descripcion?: string | null;
+  unidad?: string | null;
+  proveedor?: string | null;
+  coste_estimado?: number | null;
+  notas?: string | null;
+};
+
+// ── Shifts (Turnos) ─────────────────────────────────────────────────────────
+
+export type ShiftType = "manana" | "tarde";
+
+export type Shift = {
+  id: string;
+  fecha?: string | null;
+  tipo_turno: ShiftType;
+  hora_inicio?: string | null;
+  hora_fin?: string | null;
+  notas?: string | null;
+};
+
+export type ShiftsResponse = {
+  total: number;
+  turnos: Shift[];
+};
+
+export type ShiftAssignment = {
+  id: string;
+  turno_id: string;
+  empleado_id: string;
+  zona_id?: string | null;
+  rol?: string | null;
+};
+
+export type ShiftAssignmentsResponse = {
+  total: number;
+  asignaciones: ShiftAssignment[];
+};
+
+export type CreateShiftPayload = {
+  fecha: string;
+  tipo_turno: ShiftType;
+  hora_inicio: string;
+  hora_fin: string;
+  notas?: string | null;
+};
+
+export type CreateShiftAssignmentPayload = {
+  turno_id: string;
+  empleado_id: string;
+  zona_id?: string | null;
+  rol?: string | null;
+};
+
+// ── Handovers (Resúmenes de relevo) ─────────────────────────────────────────
+
+export type ShiftHandover = {
+  id: string;
+  turno_saliente_id: string;
+  turno_entrante_id: string;
+  ts_generacion?: string | null;
+  incidencias_abiertas: unknown[];
+  tareas_pendientes: unknown[];
+  alertas_pendientes: unknown[];
+  notas_saliente?: string | null;
+  confirmado_por?: string | null;
+  ts_confirmacion?: string | null;
+};
+
+export type ShiftHandoversResponse = {
+  total: number;
+  resumenes: ShiftHandover[];
 };
 
 export type PredictionTrend = "aumento" | "descenso" | "estable";

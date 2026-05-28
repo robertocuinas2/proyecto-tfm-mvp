@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import {
   BrainCircuit,
   Minus,
@@ -9,9 +9,10 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { DonutStat, SparkArea } from "@/components/charts/MiniCharts";
 import { Pagination } from "@/components/common/Pagination";
+import { PageHeader } from "@/components/ui/page-header";
 import { api } from "@/lib/api";
 import { DEFAULT_PAGE_SIZE, getSkip } from "@/lib/pagination";
 import type { Animal, AnimalPrediction, PredictionTrend, RiskLevel } from "@/lib/types";
@@ -25,7 +26,7 @@ const trendIcon: Record<PredictionTrend, typeof TrendingUp> = {
 const trendColor: Record<PredictionTrend, string> = {
   aumento: "text-state-ok",
   descenso: "text-state-critica",
-  estable: "text-tv-dim",
+  estable: "text-app-dim",
 };
 
 const riskStyle: Record<RiskLevel, string> = {
@@ -57,24 +58,33 @@ function MetricBox({
   tone?: string;
 }) {
   return (
-    <div className="rounded-lg bg-tv-surface2 p-3 text-center">
-      <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-tv-dim">{label}</div>
+    <div className="rounded-[10px] bg-app-bg p-3 text-center">
+      <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-app-dim">{label}</div>
       <div className={`mt-1 font-heading text-lg font-bold capitalize ${tone}`}>{value}</div>
     </div>
   );
 }
 
+// Componente autocontenido: gestiona su propia query cacheada por animal
 function PredictionCard({
   animal,
-  prediction,
-  onGenerate,
-  generating,
+  enabled,
+  onEnable,
 }: {
   animal: Animal;
-  prediction?: AnimalPrediction;
-  onGenerate: (id: string) => void;
-  generating: boolean;
+  enabled: boolean;
+  onEnable: (id: string) => void;
 }) {
+  const predQuery = useQuery({
+    queryKey: ["prediction", animal.id],
+    queryFn: () => api.predictions(animal.id, { dias_adelante: 7 }),
+    enabled,
+    staleTime: 5 * 60_000,   // 5 min: no refetch si los datos son frescos
+    gcTime: 30 * 60_000,     // 30 min: mantener en cachÃ© aunque el componente se desmonte
+    retry: 1,
+  });
+
+  const prediction = predQuery.data;
   const prod = prediction?.produccion;
   const comp = prediction?.composicion;
   const risk = prediction?.riesgo_sanitario;
@@ -83,12 +93,12 @@ function PredictionCard({
   const TrendIcon = prod ? trendIcon[prod.tendencia] : Minus;
 
   return (
-    <div className={`rounded-lg border bg-tv-surface p-4 ${hasAlert ? "border-state-critica/35" : "border-tv-border"}`}>
+    <div className={`rounded-[10px] border bg-white p-4 ${hasAlert ? "border-state-critica/35" : "border-app-border"}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <span className="font-mono text-sm font-bold text-tv-accent">{animal.crotal_oficial}</span>
-          {animal.nombre && <span className="ml-2 text-sm text-tv-dim">{animal.nombre}</span>}
-          <div className="mt-1 flex flex-wrap gap-2 text-xs text-tv-dim">
+          <span className="font-mono text-sm font-bold text-brand">{animal.crotal_oficial}</span>
+          {animal.nombre && <span className="ml-2 text-sm text-app-dim">{animal.nombre}</span>}
+          <div className="mt-1 flex flex-wrap gap-2 text-xs text-app-dim">
             {animal.raza && <span>{animal.raza}</span>}
             <span className="capitalize">{animal.estado}</span>
           </div>
@@ -98,13 +108,31 @@ function PredictionCard({
             {riskLevel}
           </span>
         )}
+        {/* Indicador de datos mock */}
+        {prediction?._mock && (
+          <span className="shrink-0 rounded-full bg-state-atencion/10 px-2 py-0.5 text-[10px] font-bold text-state-atencion">
+            demo
+          </span>
+        )}
       </div>
+
+      {predQuery.isError && (
+        <div className="mt-3 rounded-[10px] bg-state-critica/10 px-3 py-2 text-xs font-semibold text-state-critica">
+          Error al cargar prediccion
+        </div>
+      )}
+
+      {predQuery.isFetching && !prediction && (
+        <div className="mt-4 flex justify-center py-6">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+        </div>
+      )}
 
       {prediction && prod ? (
         <div className="mt-4 space-y-3">
-          <div className="rounded-lg bg-tv-surface2 p-3">
+          <div className="rounded-[10px] bg-app-bg p-3">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-tv-dim">
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-app-dim">
                 Produccion prevista
               </span>
               {prediction.confianza_integrada != null && (
@@ -116,9 +144,14 @@ function PredictionCard({
                 <div className={`font-heading text-3xl font-bold ${trendColor[prod.tendencia]}`}>
                   {prod.produccion_promedio_predicha.toFixed(1)} L/d
                 </div>
-                <div className="mt-1 flex items-center gap-1 text-xs text-tv-dim">
+                <div className="mt-1 flex items-center gap-1 text-xs text-app-dim">
                   <TrendIcon className={`h-4 w-4 ${trendColor[prod.tendencia]}`} />
                   <span className="capitalize">{prod.tendencia}</span>
+                  {prod.produccion_minima_predicha != null && prod.produccion_maxima_predicha != null && (
+                    <span className="ml-1 text-app-dim">
+                      ({prod.produccion_minima_predicha.toFixed(1)}â€“{prod.produccion_maxima_predicha.toFixed(1)} L)
+                    </span>
+                  )}
                 </div>
               </div>
               {prod.series_diaria && prod.series_diaria.length > 1 && (
@@ -155,19 +188,18 @@ function PredictionCard({
               ))}
             </div>
           )}
-
         </div>
-      ) : (
+      ) : !predQuery.isFetching && !predQuery.isError && (
         <div className="py-8 text-center">
-          <BrainCircuit className="mx-auto h-8 w-8 text-tv-dim" strokeWidth={1.5} />
-          <p className="mt-2 text-xs text-tv-dim">Sin prediccion cargada</p>
+          <BrainCircuit className="mx-auto h-8 w-8 text-app-dim" strokeWidth={1.5} />
+          <p className="mt-2 text-xs text-app-dim">Sin prediccion cargada</p>
           <button
             type="button"
-            onClick={() => onGenerate(animal.id)}
-            disabled={generating}
-            className="mt-3 rounded-lg bg-tv-surface2 px-4 py-2 text-xs font-bold text-tv-accent transition hover:bg-tv-bg disabled:opacity-50"
+            onClick={() => onEnable(animal.id)}
+            disabled={predQuery.isFetching}
+            className="mt-3 rounded-[10px] bg-app-bg px-4 py-2 text-xs font-bold text-brand transition hover:bg-app-bg disabled:opacity-50"
           >
-            {generating ? "Calculando..." : "Obtener prediccion"}
+            Obtener prediccion
           </button>
         </div>
       )}
@@ -176,8 +208,8 @@ function PredictionCard({
 }
 
 export default function PredictionsPage() {
-  const [predictions, setPredictions] = useState<Record<string, AnimalPrediction>>({});
-  const [generating, setGenerating] = useState<Record<string, boolean>>({});
+  // Set de IDs cuya prediccion debe cargarse (persistido en el componente)
+  const [enabledIds, setEnabledIds] = useState<Set<string>>(() => new Set());
   const [page, setPage] = useState(1);
   const pageSize = DEFAULT_PAGE_SIZE;
 
@@ -196,44 +228,72 @@ export default function PredictionsPage() {
   const hasNext = fetchedAnimals.length > pageSize;
   const pageAnimals = fetchedAnimals.slice(0, pageSize);
 
-  async function fetchPrediction(animalId: string) {
-    setGenerating((state) => ({ ...state, [animalId]: true }));
-    try {
-      const prediction = await api.predictions(animalId, { dias_adelante: 7 });
-      setPredictions((state) => ({ ...state, [animalId]: prediction }));
-    } finally {
-      setGenerating((state) => ({ ...state, [animalId]: false }));
-    }
+  const enableAnimal = useCallback((id: string) => {
+    setEnabledIds((prev) => new Set([...prev, id]));
+  }, []);
+
+  function loadPage() {
+    const ids = pageAnimals.slice(0, 10).map((a) => a.id);
+    setEnabledIds((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) next.add(id);
+      return next;
+    });
   }
 
-  async function loadPage() {
-    await Promise.allSettled(pageAnimals.slice(0, 10).map((animal) => fetchPrediction(animal.id)));
-  }
+  // useQueries para estadÃ­sticas reactivas â€” comparte cachÃ© con cada PredictionCard
+  // (React Query deduplica: no genera peticiones extra cuando el card ya hizo la suya)
+  const enabledIdsList = useMemo(() => Array.from(enabledIds), [enabledIds]);
 
-  const loaded = Object.keys(predictions).length;
-  const withAlert = Object.values(predictions).filter(
-    (prediction) =>
-      prediction.riesgo_sanitario?.riesgo_promedio === "alto" ||
-      prediction.riesgo_sanitario?.riesgo_promedio === "critico" ||
-      prediction.produccion?.tendencia === "descenso",
-  ).length;
+  const predictionResults = useQueries({
+    queries: enabledIdsList.map((id) => ({
+      queryKey: ["prediction", id],
+      queryFn: () => api.predictions(id, { dias_adelante: 7 }),
+      staleTime: 5 * 60_000,
+      gcTime: 30 * 60_000,
+      retry: 1,
+    })),
+  });
+
+  const stats = useMemo(() => {
+    const loaded = predictionResults.filter((q) => q.isSuccess).length;
+    const withAlert = predictionResults.filter(
+      (q) =>
+        q.data?.riesgo_sanitario?.riesgo_promedio === "alto" ||
+        q.data?.riesgo_sanitario?.riesgo_promedio === "critico" ||
+        q.data?.produccion?.tendencia === "descenso",
+    ).length;
+    return { loaded, withAlert };
+  }, [predictionResults]);
+
+  const sparkData = useMemo(
+    () =>
+      predictionResults
+        .filter((q) => q.isSuccess && q.data?.produccion)
+        .slice(0, 8)
+        .map((q, i) => ({
+          label: String(i + 1),
+          value: q.data!.produccion!.produccion_promedio_predicha,
+        })),
+    [predictionResults],
+  );
 
   return (
     <div className="min-h-full">
-      <div className="border-b border-tv-border px-6 py-5 lg:px-8">
+      <div className="border-b border-app-border px-6 py-5 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-tv-dim">
-              <BrainCircuit className="h-4 w-4 text-tv-accent" />
+            <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-app-dim">
+              <BrainCircuit className="h-4 w-4 text-brand" />
               Prediccion DSS
             </div>
-            <h1 className="mt-1 font-heading text-2xl font-bold text-white">Predicciones</h1>
+            <h1 className="mt-1 font-heading text-2xl font-bold text-app-text">Predicciones</h1>
           </div>
           <button
             type="button"
             onClick={loadPage}
             disabled={animalsQuery.isLoading || pageAnimals.length === 0}
-            className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-bold text-white shadow-brand transition hover:bg-[#135532] disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-2 text-sm font-bold text-white shadow-brand transition hover:bg-[#135532] disabled:opacity-50"
           >
             <RefreshCw className="h-4 w-4" />
             Cargar pagina
@@ -244,14 +304,14 @@ export default function PredictionsPage() {
       <div className="space-y-6 px-6 py-6 lg:px-8">
         <div className="grid gap-3 md:grid-cols-3">
           {[
-            { label: "Cargadas", value: loaded, color: "text-white", Icon: BrainCircuit },
-            { label: "Con alerta", value: withAlert, color: "text-state-atencion", Icon: ShieldAlert },
-            { label: "Animales", value: pageAnimals.length, color: "text-tv-accent", Icon: RefreshCw },
+            { label: "Cargadas", value: stats.loaded, color: "text-white", Icon: BrainCircuit },
+            { label: "Con alerta", value: stats.withAlert, color: "text-state-atencion", Icon: ShieldAlert },
+            { label: "Animales", value: pageAnimals.length, color: "text-brand", Icon: RefreshCw },
           ].map(({ label, value, color, Icon }) => (
-            <div key={label} className="rounded-lg border border-tv-border bg-tv-surface p-4">
+            <div key={label} className="rounded-[10px] border border-app-border bg-white p-4">
               <div className="flex items-center gap-2">
                 <Icon className={`h-4 w-4 ${color}`} />
-                <span className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-tv-dim">
+                <span className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-app-dim">
                   {label}
                 </span>
               </div>
@@ -260,29 +320,22 @@ export default function PredictionsPage() {
           ))}
         </div>
 
-        <div className="rounded-lg border border-state-info/30 bg-state-info/5 px-4 py-3 text-xs font-semibold text-state-info">
+        <div className="rounded-[10px] border border-state-info/30 bg-state-info/5 px-4 py-3 text-xs font-semibold text-state-info">
           Horizonte orientativo de 7 dias. Las recomendaciones no sustituyen criterio veterinario.
         </div>
 
-        {loaded > 0 && (
+        {stats.loaded > 0 && (
           <div className="grid gap-4 xl:grid-cols-[1.4fr_280px]">
-            <div className="rounded-lg border border-tv-border bg-tv-surface p-5">
-              <div className="mb-4 text-xs font-extrabold uppercase tracking-[0.18em] text-tv-dim">
+            <div className="rounded-[10px] border border-app-border bg-white p-5">
+              <div className="mb-4 text-xs font-extrabold uppercase tracking-[0.18em] text-app-dim">
                 Produccion prevista por animal
               </div>
               <div className="h-28">
-                <SparkArea
-                  data={Object.values(predictions)
-                    .slice(0, 8)
-                    .map((prediction, index) => ({
-                      label: String(index + 1),
-                      value: prediction.produccion?.produccion_promedio_predicha ?? 0,
-                    }))}
-                />
+                <SparkArea data={sparkData} />
               </div>
             </div>
-            <div className="rounded-lg border border-tv-border bg-tv-surface p-5">
-              <DonutStat value={loaded ? Math.round(((loaded - withAlert) / loaded) * 100) : 0} label="sin alerta" />
+            <div className="rounded-[10px] border border-app-border bg-white p-5">
+              <DonutStat value={stats.loaded ? Math.round(((stats.loaded - stats.withAlert) / stats.loaded) * 100) : 0} label="sin alerta" />
             </div>
           </div>
         )}
@@ -290,7 +343,7 @@ export default function PredictionsPage() {
         {animalsQuery.isLoading ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="h-64 animate-pulse rounded-lg bg-tv-surface" />
+              <div key={index} className="h-64 animate-pulse rounded-[10px] bg-white" />
             ))}
           </div>
         ) : (
@@ -299,9 +352,8 @@ export default function PredictionsPage() {
               <PredictionCard
                 key={animal.id}
                 animal={animal}
-                prediction={predictions[animal.id]}
-                onGenerate={fetchPrediction}
-                generating={!!generating[animal.id]}
+                enabled={enabledIds.has(animal.id)}
+                onEnable={enableAnimal}
               />
             ))}
           </div>
