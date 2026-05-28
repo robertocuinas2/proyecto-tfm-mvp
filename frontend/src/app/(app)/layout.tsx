@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Activity,
   AlertOctagon,
   AlertTriangle,
   ArrowLeftRight,
@@ -17,6 +18,8 @@ import {
   Package,
   Settings2,
   ShieldCheck,
+  SlidersHorizontal,
+  UserRound,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -61,8 +64,11 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "Sistema",
     items: [
+      { href: "/profile", label: "Perfil", Icon: UserRound },
+      { href: "/settings", label: "Configuración", Icon: SlidersHorizontal },
       { href: "/zones", label: "Zonas", Icon: MapPin },
       { href: "/management", label: "Gestión", Icon: Settings2 },
+      { href: "/integration", label: "Integración", Icon: Activity },
       { href: "/audit-log", label: "Audit Log", Icon: ShieldCheck },
     ],
   },
