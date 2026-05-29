@@ -361,7 +361,7 @@ export default function ManagementPage() {
   const [section, setSection] = useState<SectionId>("animals");
   const [listPage, setListPage] = useState(1);
 
-  // Resetear paginaciÃ³n al cambiar de secciÃ³n
+  // Resetear paginación al cambiar de sección
   const handleSectionChange = (id: SectionId) => {
     setSection(id);
     setListPage(1);
@@ -581,7 +581,7 @@ export default function ManagementPage() {
 
   return (
     <div className="min-h-full">
-      <PageHeader eyebrow="OperaciÃ³n de datos" title="GestiÃ³n" EyebrowIcon={Wrench}>
+      <PageHeader eyebrow="Operación de datos" title="Gestión" EyebrowIcon={Wrench}>
         <div className="flex items-center gap-2">
           <span className="rounded-full border border-app-border bg-white px-3 py-1.5 text-sm font-bold text-app-text">
             Rol: {roleLabel(role)}

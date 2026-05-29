@@ -23,7 +23,7 @@ import type {
   IncidentStatus,
 } from "@/lib/types";
 
-// â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Constants â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 const INCIDENT_TYPES = [
   "averia_maquinaria",
@@ -57,10 +57,10 @@ const PRIORITY_STYLES: Record<IncidentPriority, string> = {
 
 const PAGE_SIZE = 15;
 
-// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Helpers â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function formatDate(iso?: string | null) {
-  if (!iso) return "â€”";
+  if (!iso) return "\u2014";
   return new Date(iso).toLocaleString("es-ES", {
     day: "2-digit",
     month: "short",
@@ -69,7 +69,7 @@ function formatDate(iso?: string | null) {
   });
 }
 
-// â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Sub-components â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function StatusBadge({ estado }: { estado: IncidentStatus }) {
   return (
@@ -104,7 +104,7 @@ function KpiCard({
   );
 }
 
-// â”€â”€ Create incident modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Create incident modal â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function CreateIncidentModal({
   zones,
@@ -238,7 +238,7 @@ function CreateIncidentModal({
   );
 }
 
-// â”€â”€ Incident card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Incident card â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function IncidentCard({
   incident,
@@ -304,7 +304,7 @@ function IncidentCard({
               <span>
                 Zona:{" "}
                 <span className="font-semibold text-app-text">
-                  {zoneLookup.get(incident.zona_id) ?? incident.zona_id.slice(0, 8) + "â€¦"}
+                  {zoneLookup.get(incident.zona_id) ?? incident.zona_id.slice(0, 8) + "\u2026"}
                 </span>
               </span>
             )}
@@ -312,14 +312,14 @@ function IncidentCard({
               <span>
                 Animal:{" "}
                 <span className="font-mono font-bold text-brand">
-                  {animalLookup.get(incident.animal_id) ?? incident.animal_id.slice(0, 8) + "â€¦"}
+                  {animalLookup.get(incident.animal_id) ?? incident.animal_id.slice(0, 8) + "\u2026"}
                 </span>
               </span>
             )}
             {incident.reportado_por && (
               <span>
                 Reportado por:{" "}
-                <span className="font-semibold text-app-text">{incident.reportado_por.slice(0, 8)}â€¦</span>
+                <span className="font-semibold text-app-text">{incident.reportado_por.slice(0, 8)}\u2026</span>
               </span>
             )}
             {incident.fecha_resolucion && (
@@ -361,7 +361,7 @@ function IncidentCard({
   );
 }
 
-// â”€â”€ Main page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Main page â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 type FilterEstado = IncidentStatus | "todas";
 type FilterPrioridad = IncidentPriority | "todas";
@@ -595,7 +595,7 @@ export default function IncidentsPage() {
         {filtered.length > PAGE_SIZE && (
           <nav className="flex items-center justify-between rounded-[10px] border border-app-border bg-white px-4 py-3 text-sm text-app-dim">
             <span>
-              Mostrando <strong className="text-app-text">{(page - 1) * PAGE_SIZE + 1}</strong>â€“
+              Mostrando <strong className="text-app-text">{(page - 1) * PAGE_SIZE + 1}</strong>-
               <strong className="text-app-text">{Math.min(page * PAGE_SIZE, filtered.length)}</strong> de{" "}
               <strong className="text-app-text">{filtered.length}</strong>
             </span>

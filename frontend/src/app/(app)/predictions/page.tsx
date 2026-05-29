@@ -161,7 +161,7 @@ function PredictionCard({
                   <span className="capitalize">{prod.tendencia}</span>
                   {prod.produccion_minima_predicha != null && prod.produccion_maxima_predicha != null && (
                     <span className="ml-1 text-app-dim">
-                      ({prod.produccion_minima_predicha.toFixed(1)}â€“{prod.produccion_maxima_predicha.toFixed(1)} L)
+                      ({prod.produccion_minima_predicha.toFixed(1)}-{prod.produccion_maxima_predicha.toFixed(1)} L)
                     </span>
                   )}
                 </div>
@@ -253,7 +253,7 @@ export default function PredictionsPage() {
     });
   }
 
-  // useQueries para estadÃ­sticas reactivas â€” comparte cachÃ© con cada PredictionCard
+  // useQueries para estadÃ­sticas reactivas â€" comparte cachÃ© con cada PredictionCard
   // (React Query deduplica: no genera peticiones extra cuando el card ya hizo la suya)
   const enabledIdsList = useMemo(() => Array.from(enabledIds), [enabledIds]);
 
