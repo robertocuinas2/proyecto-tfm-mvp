@@ -2,17 +2,23 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
+  AlertOctagon,
   AlertTriangle,
+  ArrowLeftRight,
+  BarChart3,
   Beef,
   CheckCircle2,
   ClipboardList,
   Clock,
   CloudSun,
+  ListTodo,
   MapPin,
   Milk,
   Monitor,
+  Package,
   Pill,
   RefreshCw,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { DonutStat, SparkArea } from "@/components/charts/MiniCharts";
@@ -298,28 +304,51 @@ export default function DashboardPage() {
             )}
           </PanelCard>
 
-          {/* Quick access */}
+          {/* Quick actions */}
           <PanelCard>
             <div className="mb-4 flex items-center gap-2">
-              <ClipboardList className="h-4 w-4 text-brand" />
-              <h2 className="font-heading text-base font-bold text-app-text">Accesos rápidos</h2>
+              <Zap className="h-4 w-4 text-brand" />
+              <h2 className="font-heading text-base font-bold text-app-text">Acciones rápidas</h2>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               {[
-                { href: "/zones", label: "Ver zonas", Icon: MapPin },
-                { href: "/tasks", label: "Gestionar tareas", Icon: ClipboardList },
-                { href: "/alerts", label: "Revisar alertas", Icon: AlertTriangle },
-                { href: "/leanfarming", label: "LeanFarming", Icon: CheckCircle2 },
-              ].map(({ href, label, Icon }) => (
+                { href: "/incidents?new=1", label: "Nueva incidencia", Icon: AlertOctagon, tone: "text-state-critica" },
+                { href: "/orders?new=1", label: "Nuevo pedido", Icon: Package, tone: "text-brand" },
+                { href: "/tasks", label: "Gestionar tareas", Icon: ClipboardList, tone: "text-state-info" },
+                { href: "/handover/tablet", label: "Cambio de turno", Icon: ArrowLeftRight, tone: "text-state-atencion" },
+                { href: "/tv", label: "TV Global", Icon: Monitor, tone: "text-brand" },
+                { href: "/report", label: "Informe semanal", Icon: BarChart3, tone: "text-state-ok" },
+              ].map(({ href, label, Icon, tone }) => (
                 <Link
                   key={href}
                   href={href}
-                  className="flex items-center justify-between rounded-[10px] border border-app-border bg-app-bg px-4 py-3 text-sm font-semibold text-app-text transition hover:border-brand/30 hover:bg-white"
+                  className="flex items-center gap-2.5 rounded-[10px] border border-app-border bg-app-bg px-4 py-3 text-sm font-semibold text-app-text transition hover:border-brand/30 hover:bg-white"
                 >
+                  <Icon className={`h-4 w-4 ${tone}`} />
                   {label}
-                  <Icon className="h-4 w-4 text-brand" />
                 </Link>
               ))}
+            </div>
+
+            <div className="mt-3 border-t border-app-border pt-3">
+              <p className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-app-dim">Navegación</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { href: "/zones", label: "Zonas", Icon: MapPin },
+                  { href: "/alerts", label: "Alertas", Icon: AlertTriangle },
+                  { href: "/leanfarming", label: "LeanFarming", Icon: ListTodo },
+                  { href: "/animals", label: "Animales", Icon: Beef },
+                ].map(({ href, label, Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="inline-flex items-center gap-1.5 rounded-[10px] border border-app-border bg-white px-3 py-1.5 text-xs font-semibold text-app-dim transition hover:border-brand/30 hover:text-brand"
+                  >
+                    <Icon className="h-3.5 w-3.5 text-brand" />
+                    {label}
+                  </Link>
+                ))}
+              </div>
             </div>
           </PanelCard>
         </div>

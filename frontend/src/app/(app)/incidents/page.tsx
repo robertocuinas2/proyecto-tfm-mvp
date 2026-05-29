@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
 import { api } from "@/lib/api";
 import type {
@@ -363,11 +364,13 @@ type FilterEstado = IncidentStatus | "todas";
 type FilterPrioridad = IncidentPriority | "todas";
 
 export default function IncidentsPage() {
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const [estadoFilter, setEstadoFilter] = useState<FilterEstado>("todas");
   const [prioridadFilter, setPrioridadFilter] = useState<FilterPrioridad>("todas");
   const [page, setPage] = useState(1);
-  const [showCreate, setShowCreate] = useState(false);
+  // Auto-open creation modal when ?new=1 is in the URL
+  const [showCreate, setShowCreate] = useState(() => searchParams.get("new") === "1");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   // Load all incidents for client-side filtering (endpoint has no server-side filter support)

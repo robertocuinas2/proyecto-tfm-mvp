@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Pagination } from "@/components/common/Pagination";
 import { PageHeader } from "@/components/ui/page-header";
 import { api } from "@/lib/api";
@@ -406,10 +407,12 @@ function OrderCard({
 type FilterStatus = OrderStatus | "todas";
 
 export default function OrdersPage() {
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("todas");
   const [page, setPage] = useState(1);
-  const [showCreate, setShowCreate] = useState(false);
+  // Auto-open creation modal when ?new=1 is in the URL
+  const [showCreate, setShowCreate] = useState(() => searchParams.get("new") === "1");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const pageSize = DEFAULT_PAGE_SIZE;
 

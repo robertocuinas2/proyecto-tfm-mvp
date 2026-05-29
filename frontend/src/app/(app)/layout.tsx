@@ -5,6 +5,7 @@ import {
   AlertOctagon,
   AlertTriangle,
   ArrowLeftRight,
+  BarChart3,
   Beef,
   BrainCircuit,
   CalendarClock,
@@ -34,6 +35,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     label: "",
     items: [
       { href: "/dashboard", label: "Control", Icon: LayoutDashboard },
+      { href: "/report", label: "Informe", Icon: BarChart3 },
     ],
   },
   {

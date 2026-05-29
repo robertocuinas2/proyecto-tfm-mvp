@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -283,19 +283,45 @@ function PermissionNotice({ role, permission }: { role: UserRole | undefined; pe
 function Panel({
   title,
   subtitle,
+  count,
+  editingItem,
+  onClearEdit,
   children,
 }: {
   title: string;
   subtitle: string;
+  count?: number | null;
+  editingItem?: boolean;
+  onClearEdit?: () => void;
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[10px] border border-app-border bg-white shadow-card p-5">
-      <div className="mb-5">
-        <h2 className="font-heading text-lg font-bold text-app-text">{title}</h2>
-        <p className="mt-1 text-sm text-app-dim">{subtitle}</p>
+    <section className="rounded-[10px] border border-app-border bg-white shadow-card">
+      <div className="border-b border-app-border px-5 py-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="font-heading text-base font-bold text-app-text">{title}</h2>
+              {count != null && (
+                <span className="rounded-full bg-app-surface2 px-2 py-0.5 text-[11px] font-bold text-app-dim">
+                  {count} registros
+                </span>
+              )}
+            </div>
+            <p className="mt-0.5 text-xs text-app-dim">{subtitle}</p>
+          </div>
+          {editingItem && onClearEdit && (
+            <button
+              type="button"
+              onClick={onClearEdit}
+              className="text-xs font-semibold text-app-dim hover:text-app-text"
+            >
+              + Nuevo
+            </button>
+          )}
+        </div>
       </div>
-      {children}
+      <div className="p-5">{children}</div>
     </section>
   );
 }
@@ -333,7 +359,7 @@ export default function ManagementPage() {
   const [section, setSection] = useState<SectionId>("animals");
   const [listPage, setListPage] = useState(1);
 
-  // Resetear paginación al cambiar de sección
+  // Resetear paginaciÃ³n al cambiar de secciÃ³n
   const handleSectionChange = (id: SectionId) => {
     setSection(id);
     setListPage(1);
@@ -529,12 +555,24 @@ export default function ManagementPage() {
   const active = sections.find((item) => item.id === section) ?? sections[0];
   const canEditActive = hasPermission(role, active.permission);
 
+  // Record counts for section tabs
+  const sectionCounts: Record<SectionId, number | null> = {
+    animals: animalsQuery.data?.length ?? null,
+    zones: zonesQuery.data?.length ?? null,
+    lactations: lactationsQuery.data?.length ?? null,
+    treatments: treatmentsQuery.data?.length ?? null,
+    employees: employeesQuery.data?.length ?? null,
+    machinery: machineryQuery.data?.length ?? null,
+  };
+
   return (
     <div className="min-h-full">
-      <PageHeader eyebrow="Operación de datos" title="Gestión" EyebrowIcon={Wrench}>
-        <span className="rounded-full border border-app-border bg-white px-3 py-1.5 text-sm font-bold text-app-text">
-          Rol: {roleLabel(role)}
-        </span>
+      <PageHeader eyebrow="OperaciÃ³n de datos" title="GestiÃ³n" EyebrowIcon={Wrench}>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full border border-app-border bg-white px-3 py-1.5 text-sm font-bold text-app-text">
+            Rol: {roleLabel(role)}
+          </span>
+        </div>
       </PageHeader>
 
       <div className="space-y-6 px-6 py-6 lg:px-8">
@@ -542,6 +580,7 @@ export default function ManagementPage() {
           {sections.map(({ id, label, Icon, permission }) => {
             const selected = section === id;
             const allowed = hasPermission(role, permission);
+            const count = sectionCounts[id];
             return (
               <button
                 key={id}
@@ -549,15 +588,17 @@ export default function ManagementPage() {
                 onClick={() => handleSectionChange(id)}
                 className={`rounded-[10px] border px-3 py-3 text-left transition ${
                   selected
-                    ? "border-brand/30 bg-brand/8 text-brand"
+                    ? "border-brand/30 bg-brand/8"
                     : "border-app-border bg-white text-app-dim hover:bg-app-bg hover:text-app-text"
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <Icon className={`h-4 w-4 ${allowed ? "text-brand" : "text-state-atencion"}`} />
-                  {!allowed && <ShieldAlert className="h-3.5 w-3.5 text-state-atencion" />}
+                  <Icon className={`h-4 w-4 ${selected ? "text-brand" : allowed ? "text-app-dim" : "text-state-atencion"}`} />
+                  {!allowed ? <ShieldAlert className="h-3.5 w-3.5 text-state-atencion" /> : count != null ? (
+                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${selected ? "bg-brand/15 text-brand" : "bg-app-surface2 text-app-dim"}`}>{count}</span>
+                  ) : null}
                 </div>
-                <div className="mt-2 text-sm font-bold">{label}</div>
+                <div className={`mt-2 text-sm font-bold ${selected ? "text-brand" : ""}`}>{label}</div>
               </button>
             );
           })}
@@ -566,7 +607,7 @@ export default function ManagementPage() {
         <PermissionNotice role={role} permission={active.permission} />
 
         {section === "animals" && (
-          <Panel title="Animales" subtitle="Alta y edicion del censo activo. Requiere admin o veterinario.">
+          <Panel title="Animales" subtitle="Alta y edicion del censo activo. Requiere admin o veterinario." count={animalsQuery.data?.length} editingItem={!!editingAnimal} onClearEdit={() => { setEditingAnimal(null); setAnimalForm(blankAnimal()); }}>
             <form
               className="grid gap-3 lg:grid-cols-4"
               onSubmit={(event) => {
@@ -638,7 +679,7 @@ export default function ManagementPage() {
         )}
 
         {section === "zones" && (
-          <Panel title="Zonas" subtitle="Alta y edicion de zonas operativas. Requiere admin.">
+          <Panel title="Zonas" subtitle="Alta y edicion de zonas operativas. Requiere admin." count={zonesQuery.data?.length} editingItem={!!editingZone} onClearEdit={() => { setEditingZone(null); setZoneForm(blankZone()); }}>
             <form className="grid gap-3 lg:grid-cols-4" onSubmit={(event) => { event.preventDefault(); if (canEditActive) zoneMutation.mutate(); }}>
               <TextField label="Nombre" value={zoneForm.nombre} required disabled={!canEditActive} onChange={(value) => setZoneForm({ ...zoneForm, nombre: value })} />
               <TextField label="Codigo" value={zoneForm.codigo} required disabled={!canEditActive} onChange={(value) => setZoneForm({ ...zoneForm, codigo: value.toUpperCase() })} />
@@ -679,7 +720,7 @@ export default function ManagementPage() {
         )}
 
         {section === "lactations" && (
-          <Panel title="Lactaciones" subtitle="Registros productivos y composicion de leche. Requiere admin, veterinario o alimentacion.">
+          <Panel title="Lactaciones" subtitle="Registros productivos y composicion de leche." count={lactationsQuery.data?.length} editingItem={!!editingLactation} onClearEdit={() => { setEditingLactation(null); setLactationForm(blankLactation()); }}>
             <form className="grid gap-3 lg:grid-cols-5" onSubmit={(event) => { event.preventDefault(); if (canEditActive) lactationMutation.mutate(); }}>
               <SelectField label="Animal" value={lactationForm.animal_id} disabled={!canEditActive} onChange={(value) => setLactationForm({ ...lactationForm, animal_id: value })} options={[{ value: "", label: "Seleccionar animal" }, ...animalOptions]} />
               <TextField label="Numero" value={lactationForm.numero_lactacion} type="number" disabled={!canEditActive} onChange={(value) => setLactationForm({ ...lactationForm, numero_lactacion: value })} />
@@ -733,7 +774,7 @@ export default function ManagementPage() {
         )}
 
         {section === "treatments" && (
-          <Panel title="Tratamientos" subtitle="Alta y edicion sanitaria. Requiere admin o veterinario.">
+          <Panel title="Tratamientos" subtitle="Alta y edicion sanitaria. Requiere admin o veterinario." count={treatmentsQuery.data?.length} editingItem={!!editingTreatment} onClearEdit={() => { setEditingTreatment(null); setTreatmentForm(blankTreatment()); }}>
             <form className="grid gap-3 lg:grid-cols-4" onSubmit={(event) => { event.preventDefault(); if (canEditActive) treatmentMutation.mutate(); }}>
               <SelectField label="Animal" value={treatmentForm.animal_id} disabled={!canEditActive} onChange={(value) => setTreatmentForm({ ...treatmentForm, animal_id: value })} options={[{ value: "", label: "Seleccionar animal" }, ...animalOptions]} />
               <TextField label="Medicamento" value={treatmentForm.medicamento} required disabled={!canEditActive} onChange={(value) => setTreatmentForm({ ...treatmentForm, medicamento: value })} />
@@ -791,7 +832,7 @@ export default function ManagementPage() {
         )}
 
         {section === "employees" && (
-          <Panel title="Empleados" subtitle="Alta y edicion de empleados. Requiere admin.">
+          <Panel title="Empleados" subtitle="Alta y edicion de empleados. Requiere admin." count={employeesQuery.data?.length} editingItem={!!editingEmployee} onClearEdit={() => { setEditingEmployee(null); setEmployeeForm(blankEmployee()); }}>
             <form className="grid gap-3 lg:grid-cols-4" onSubmit={(event) => { event.preventDefault(); if (canEditActive) employeeMutation.mutate(); }}>
               <TextField label="Nombre" value={employeeForm.nombre} required disabled={!canEditActive} onChange={(value) => setEmployeeForm({ ...employeeForm, nombre: value })} />
               <TextField label="Apellidos" value={employeeForm.apellidos} disabled={!canEditActive} onChange={(value) => setEmployeeForm({ ...employeeForm, apellidos: value })} />
@@ -838,7 +879,7 @@ export default function ManagementPage() {
         )}
 
         {section === "machinery" && (
-          <Panel title="Maquinaria" subtitle="Alta y edicion de equipos por zona. Requiere admin, operario o alimentacion.">
+          <Panel title="Maquinaria" subtitle="Alta y edicion de equipos por zona. Requiere admin, operario o alimentacion." count={machineryQuery.data?.length} editingItem={!!editingMachinery} onClearEdit={() => { setEditingMachinery(null); setMachineryForm(blankMachinery()); }}>
             <form className="grid gap-3 lg:grid-cols-4" onSubmit={(event) => { event.preventDefault(); if (canEditActive) machineryMutation.mutate(); }}>
               <TextField label="Nombre" value={machineryForm.nombre} required disabled={!canEditActive} onChange={(value) => setMachineryForm({ ...machineryForm, nombre: value })} />
               <TextField label="Tipo" value={machineryForm.tipo} disabled={!canEditActive} onChange={(value) => setMachineryForm({ ...machineryForm, tipo: value })} />
