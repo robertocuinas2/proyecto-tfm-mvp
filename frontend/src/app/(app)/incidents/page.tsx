@@ -377,10 +377,16 @@ export default function IncidentsPage() {
   const [showCreate, setShowCreate] = useState(() => searchParams.get("new") === "1");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  // Load all incidents for client-side filtering (endpoint has no server-side filter support)
+  // Incidents query: now uses server-side filters for estado and prioridad when applied.
+  // Client-side filtering still used for estadoFilter/prioridadFilter on the loaded data
+  // to keep UX responsive without a query per tab change.
   const incidentsQuery = useQuery({
-    queryKey: ["incidents"],
-    queryFn: () => api.incidents({ limit: 200 }),
+    queryKey: ["incidents", estadoFilter, prioridadFilter],
+    queryFn: () => api.incidents({
+      limit: 200,
+      // Pass estado filter server-side when a specific state is selected
+      ...(estadoFilter !== "todas" ? { estado: estadoFilter } : {}),
+    }),
     staleTime: 30_000,
     refetchInterval: 60_000,
   });

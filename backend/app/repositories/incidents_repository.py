@@ -7,8 +7,50 @@ from sqlalchemy.orm import Session
 from app.models.tools4milk import Incidencia
 
 
-def get_all(db: Session, skip: int = 0, limit: int = 50) -> list[Incidencia]:
+def get_all(
+    db: Session,
+    skip: int = 0,
+    limit: int = 50,
+    zona_id: str | None = None,
+    animal_id: str | None = None,
+    maquinaria_id: str | None = None,
+    estado: str | None = None,
+    tipo: str | None = None,
+    fecha_desde: datetime | None = None,
+    fecha_hasta: datetime | None = None,
+) -> list[Incidencia]:
     query = select(Incidencia).order_by(Incidencia.ts_apertura.desc())
+
+    if zona_id is not None:
+        try:
+            query = query.where(Incidencia.zona_id == uuid.UUID(zona_id))
+        except (ValueError, AttributeError):
+            return []
+
+    if animal_id is not None:
+        try:
+            query = query.where(Incidencia.animal_id == uuid.UUID(animal_id))
+        except (ValueError, AttributeError):
+            return []
+
+    if maquinaria_id is not None:
+        try:
+            query = query.where(Incidencia.maquinaria_id == uuid.UUID(maquinaria_id))
+        except (ValueError, AttributeError):
+            return []
+
+    if estado is not None:
+        query = query.where(Incidencia.estado == estado)
+
+    if tipo is not None:
+        query = query.where(Incidencia.tipo == tipo)
+
+    if fecha_desde is not None:
+        query = query.where(Incidencia.ts_apertura >= fecha_desde)
+
+    if fecha_hasta is not None:
+        query = query.where(Incidencia.ts_apertura <= fecha_hasta)
+
     return list(db.scalars(query.offset(skip).limit(limit)).all())
 
 

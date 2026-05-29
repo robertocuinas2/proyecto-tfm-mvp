@@ -205,6 +205,20 @@ export type OrdersResponse = {
   pedidos: Order[];
 };
 
+// ── Task catalog ─────────────────────────────────────────────────────────────
+
+export type TaskCatalogItem = {
+  id: string;
+  codigo: string;
+  nombre: string;
+  descripcion?: string | null;
+  cualificacion_requerida?: string | null;
+  duracion_estimada_min?: number | null;
+  activa: boolean;
+};
+
+// ── Orders ───────────────────────────────────────────────────────────────────
+
 export type CreateOrderPayload = {
   insumo: string;
   cantidad: number;

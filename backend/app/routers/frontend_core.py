@@ -229,6 +229,34 @@ def update_zone(zone_id: str, payload: dict[str, Any], db: DbSession, _user: Adm
     return zones_service.serialize(item)
 
 
+@router.get("/tareas-catalogo", operation_id="list_task_catalog")
+def task_catalog(
+    db: DbSession,
+    activa: bool | None = None,
+) -> list[dict[str, Any]]:
+    """Return the task catalog (TareaCatalogo). Defaults to active items only."""
+    query = select(TareaCatalogo).order_by(TareaCatalogo.nombre)
+    if activa is None:
+        query = query.where(TareaCatalogo.activa.is_(True))
+    elif activa is False:
+        pass  # no filter — return all
+    else:
+        query = query.where(TareaCatalogo.activa.is_(True))
+    items = db.scalars(query).all()
+    return [
+        {
+            "id": str(item.id),
+            "codigo": item.codigo,
+            "nombre": item.nombre,
+            "descripcion": item.descripcion,
+            "cualificacion_requerida": item.cualificacion_requerida,
+            "duracion_estimada_min": item.duracion_estimada_min,
+            "activa": item.activa,
+        }
+        for item in items
+    ]
+
+
 @router.get(
     "/tasks",
     operation_id="list_tasks",
@@ -464,8 +492,26 @@ def health_risk_prediction(animal_id: str, db: DbSession) -> dict[str, Any]:
 
 
 @router.get("/incidents")
-def incidents(db: DbSession, skip: int = 0, limit: int = 50) -> list[dict[str, Any]]:
-    items = incidents_repository.get_all(db, skip=skip, limit=limit)
+def incidents(
+    db: DbSession,
+    skip: int = 0,
+    limit: int = 50,
+    zona_id: str | None = None,
+    animal_id: str | None = None,
+    maquinaria_id: str | None = None,
+    estado: str | None = None,
+    tipo: str | None = None,
+    fecha_desde: str | None = None,
+    fecha_hasta: str | None = None,
+) -> list[dict[str, Any]]:
+    from datetime import datetime as _dt
+    fd = _dt.fromisoformat(fecha_desde.replace("Z", "+00:00")) if fecha_desde else None
+    fh = _dt.fromisoformat(fecha_hasta.replace("Z", "+00:00")) if fecha_hasta else None
+    items = incidents_repository.get_all(
+        db, skip=skip, limit=limit,
+        zona_id=zona_id, animal_id=animal_id, maquinaria_id=maquinaria_id,
+        estado=estado, tipo=tipo, fecha_desde=fd, fecha_hasta=fh,
+    )
     return [incidents_service.serialize(i) for i in items]
 
 

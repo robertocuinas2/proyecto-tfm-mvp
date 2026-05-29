@@ -30,6 +30,7 @@ import type {
   ShiftHandoversResponse,
   ShiftsResponse,
   Task,
+  TaskCatalogItem,
   Treatment,
   WeatherData,
   WeatherForecast,
@@ -350,5 +351,17 @@ export const api = {
 
   auditLog(params?: QueryParams) {
     return request<AuditLogResponse>("/audit-log", {}, params);
+  },
+
+  // ── Task catalog ──────────────────────────────────────────────────────────
+
+  taskCatalog(params?: QueryParams) {
+    return request<TaskCatalogItem[]>("/tareas-catalogo", {}, params);
+  },
+
+  // ── Weather readings (labelled version of sensor data) ────────────────────
+
+  weatherReadings(params?: QueryParams) {
+    return request<{ ubicacion: string; total: number; order: string; lecturas: unknown[] }>("/weather/readings", {}, params);
   },
 };

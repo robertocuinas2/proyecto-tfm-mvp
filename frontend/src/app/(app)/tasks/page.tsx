@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Pagination } from "@/components/common/Pagination";
 import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/components/ui/toast";
@@ -107,24 +107,30 @@ function TaskCard({
 
 function CreateTaskModal({
   zones,
-  catalogOptions,
   onClose,
   onSuccess,
 }: {
   zones: { id: string; nombre: string }[];
-  catalogOptions: { id: string; nombre: string; categoria?: string }[];
   onClose: () => void;
   onSuccess: () => void;
 }) {
   const queryClient = useQueryClient();
   const toast = useToast();
 
+  // Load real task catalog from the new endpoint
+  const catalogQuery = useQuery({
+    queryKey: ["task-catalog"],
+    queryFn: () => api.taskCatalog(),
+    staleTime: 10 * 60_000,
+  });
+  const catalogItems = catalogQuery.data ?? [];
+
   const now = new Date();
   const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
     .toISOString()
     .slice(0, 16);
 
-  const [catalogId, setCatalogId] = useState(catalogOptions[0]?.id ?? "");
+  const [catalogId, setCatalogId] = useState("");
   const [zonaId, setZonaId] = useState("");
   const [fechaPlanificada, setFechaPlanificada] = useState(localNow);
   const [notas, setNotas] = useState("");
@@ -160,31 +166,29 @@ function CreateTaskModal({
         </div>
 
         <div className="space-y-4 px-6 py-5">
-          {/* Catalog selector */}
+          {/* Catalog selector — uses real GET /tareas-catalogo endpoint */}
           <div>
             <label className="mb-1.5 block text-xs font-extrabold uppercase tracking-[0.14em] text-app-dim">
               Tipo de tarea
-              {catalogOptions.length === 0 && (
-                <span className="ml-2 text-state-atencion">(sin catálogo disponible)</span>
-              )}
             </label>
-            {catalogOptions.length > 0 ? (
+            {catalogQuery.isLoading ? (
+              <div className="h-11 animate-pulse rounded-[10px] bg-app-surface2" />
+            ) : catalogItems.length > 0 ? (
               <select
                 value={catalogId}
                 onChange={(e) => setCatalogId(e.target.value)}
                 className="h-11 w-full rounded-[10px] border border-app-border bg-white px-3 text-sm text-app-text outline-none focus:border-brand"
               >
-                <option value="">Auto-seleccionar (primer catálogo disponible)</option>
-                {catalogOptions.map((c) => (
+                <option value="">Auto-seleccionar (primer disponible)</option>
+                {catalogItems.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.nombre}{c.categoria ? ` · ${c.categoria}` : ""}
+                    {c.nombre}{c.duracion_estimada_min ? ` (${c.duracion_estimada_min} min)` : ""}
                   </option>
                 ))}
               </select>
             ) : (
               <div className="rounded-[10px] border border-state-atencion/30 bg-state-atencion/5 px-3 py-3 text-sm text-state-atencion">
-                Sin elementos en el catálogo. El backend creará la tarea con el primer tipo disponible.
-                {/* TODO: Añadir endpoint GET /tareas-catalogo cuando esté disponible en backend */}
+                Sin tipos de tarea en el catálogo. Se usará el primero disponible en el sistema.
               </div>
             )}
           </div>
@@ -290,28 +294,6 @@ export default function TasksPage() {
     refetchInterval: 30_000,
   });
 
-  // Load sample tasks to extract catalog options (workaround — no catalog endpoint)
-  const allTasksQuery = useQuery({
-    queryKey: ["tasks-catalog-lookup"],
-    queryFn: () => api.tasks({ limit: 200 }),
-    staleTime: 5 * 60_000,
-    enabled: showCreate,
-  });
-
-  const catalogOptions = useMemo(() => {
-    const seen = new Map<string, { id: string; nombre: string; categoria?: string }>();
-    for (const t of allTasksQuery.data ?? []) {
-      if (t.tarea_catalogo && !seen.has(t.tarea_catalogo_id)) {
-        seen.set(t.tarea_catalogo_id, {
-          id: t.tarea_catalogo_id,
-          nombre: t.tarea_catalogo.nombre,
-          categoria: t.tarea_catalogo.categoria,
-        });
-      }
-    }
-    return Array.from(seen.values());
-  }, [allTasksQuery.data]);
-
   const completeMutation = useMutation({
     mutationFn: (id: string) => api.completeTask(id),
     onSuccess: () => {
@@ -333,7 +315,6 @@ export default function TasksPage() {
       {showCreate && (
         <CreateTaskModal
           zones={zonesQuery.data ?? []}
-          catalogOptions={catalogOptions}
           onClose={() => setShowCreate(false)}
           onSuccess={() => setShowCreate(false)}
         />

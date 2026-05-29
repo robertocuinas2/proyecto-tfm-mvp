@@ -41,6 +41,9 @@ def weather_current(db: Annotated[Session, Depends(get_db)]) -> dict[str, Any]:
 
 @router.get("/forecast")
 def weather_forecast(db: Annotated[Session, Depends(get_db)]) -> dict[str, Any]:
+    """Returns up to 7 recent sensor readings ordered by timestamp.
+    NOTE: This is historical sensor data, not a real weather forecast.
+    Use /readings for a clearly-labelled version of the same data."""
     rows = db.execute(
         select(LecturaMeteo).order_by(LecturaMeteo.ts).limit(7)
     ).scalars().all()
@@ -57,6 +60,39 @@ def weather_forecast(db: Annotated[Session, Depends(get_db)]) -> dict[str, Any]:
                 "viento": float(row.viento_km_h) if row.viento_km_h is not None else None,
                 "descripcion": None,
                 "fuente": "AEMET",
+            }
+            for row in rows
+        ],
+    }
+
+
+@router.get("/readings")
+def weather_readings(
+    db: Annotated[Session, Depends(get_db)],
+    limit: Annotated[int, Query(ge=1, le=90)] = 14,
+    order: Annotated[str, Query(regex="^(asc|desc)$")] = "desc",
+) -> dict[str, Any]:
+    """Returns recent sensor readings ordered by timestamp.
+    More accurate label than /forecast — these are real sensor readings, not predictions.
+    order=desc (default) returns most recent first; order=asc returns oldest first.
+    """
+    ordering = desc(LecturaMeteo.ts) if order == "desc" else LecturaMeteo.ts
+    rows = db.execute(
+        select(LecturaMeteo).order_by(ordering).limit(limit)
+    ).scalars().all()
+    return {
+        "ubicacion": "Villalba, Lugo",
+        "total": len(rows),
+        "order": order,
+        "lecturas": [
+            {
+                "fecha": row.ts.isoformat() if row.ts else None,
+                "temperatura_c": float(row.temperatura_c) if row.temperatura_c is not None else None,
+                "humedad_relativa": float(row.humedad_relativa) if row.humedad_relativa is not None else None,
+                "precipitacion_mm": float(row.precipitacion_mm) if row.precipitacion_mm is not None else None,
+                "viento_km_h": float(row.viento_km_h) if row.viento_km_h is not None else None,
+                "direccion_viento": row.direccion_viento,
+                "estacion_id": row.estacion_id,
             }
             for row in rows
         ],
