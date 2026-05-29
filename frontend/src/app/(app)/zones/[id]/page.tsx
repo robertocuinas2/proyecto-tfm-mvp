@@ -36,10 +36,10 @@ const severityBadge: Record<string, string> = {
 
 const taskStateCard: Record<string, string> = {
   retrasada: "border-l-state-critica bg-state-critica/5",
-  programada: "border-l-state-info bg-tv-surface2/60",
+  programada: "border-l-state-info bg-app-bg",
   ejecutada: "border-l-state-ok bg-state-ok/5",
   pausada: "border-l-state-atencion bg-state-atencion/5",
-  cancelada: "border-l-tv-dim bg-tv-surface2/30",
+  cancelada: "border-l-app-border bg-app-bg",
 };
 
 const taskLabel: Record<string, string> = {
@@ -55,7 +55,7 @@ const taskTone: Record<string, string> = {
   programada: "text-state-info",
   ejecutada: "text-state-ok",
   pausada: "text-state-atencion",
-  cancelada: "text-tv-dim",
+  cancelada: "text-app-dim",
 };
 
 function LiveClock() {
@@ -144,7 +144,7 @@ function TVMode({ zoneId, zoneName }: { zoneId: string; zoneName: string }) {
                     </span>
                     <span className="text-xs capitalize text-tv-dim">{inc.tipo.replace(/_/g, " ")}</span>
                   </div>
-                  <p className="mt-1 text-sm font-semibold text-white">{inc.descripcion}</p>
+                  <p className="mt-1 text-sm font-semibold text-app-text">{inc.descripcion}</p>
                 </div>
               ))}
             </div>
@@ -344,7 +344,7 @@ function CreateIncidentModal({ zoneId, onClose }: { zoneId: string; onClose: () 
               value={descripcion}
               onChange={(event) => setDescripcion(event.target.value)}
               placeholder="Describe la incidencia con detalle"
-              className="w-full resize-none rounded-lg border border-tv-border bg-tv-surface2 px-3 py-2.5 text-sm text-white outline-none placeholder:text-tv-dim focus:border-tv-accent"
+              className="w-full resize-none rounded-[10px] border border-app-border bg-white px-3 py-2.5 text-sm text-app-text outline-none placeholder:text-app-dim focus:border-brand"
             />
           </div>
 
@@ -439,12 +439,12 @@ function TabletMode({ zoneId }: { zoneId: string }) {
 
       <div className="space-y-4">
         <div>
-          <p className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-tv-dim">
+          <p className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-app-dim">
             Acciones rapidas
           </p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { label: "Completar tarea", Icon: CheckCircle2, color: "text-tv-accent", action: undefined },
+              { label: "Completar tarea", Icon: CheckCircle2, color: "text-brand", action: undefined },
               { label: "Nueva incidencia", Icon: Plus, color: "text-state-critica", action: () => setShowIncident(true) },
               { label: "Ver alertas", Icon: AlertTriangle, color: "text-state-atencion", action: undefined },
               { label: "Tareas urgentes", Icon: Clock, color: "text-state-info", action: undefined },
@@ -453,17 +453,17 @@ function TabletMode({ zoneId }: { zoneId: string }) {
                 key={label}
                 type="button"
                 onClick={action}
-                className="flex min-h-[96px] flex-col items-center justify-center gap-2.5 rounded-xl border border-tv-border bg-tv-surface px-3 py-5 text-center transition hover:border-tv-accent/40 hover:bg-tv-surface2 active:scale-95"
+                className="flex min-h-[96px] flex-col items-center justify-center gap-2.5 rounded-[14px] border border-app-border bg-white px-3 py-5 text-center shadow-card transition hover:border-brand/25 hover:bg-app-bg active:scale-95"
               >
                 <Icon className={`h-8 w-8 ${color}`} />
-                <span className="text-xs font-semibold text-white">{label}</span>
+                <span className="text-xs font-semibold text-app-text">{label}</span>
               </button>
             ))}
           </div>
         </div>
 
         {successId && (
-          <div className="flex items-center gap-2 rounded-lg bg-state-ok/15 px-4 py-3 text-sm font-bold text-state-ok">
+          <div className="flex items-center gap-2 rounded-[10px] bg-state-ok/10 px-4 py-3 text-sm font-bold text-state-ok">
             <CheckCircle2 className="h-4 w-4" />
             Tarea completada y registrada
           </div>
@@ -471,12 +471,12 @@ function TabletMode({ zoneId }: { zoneId: string }) {
 
         <div className="grid gap-4 lg:grid-cols-2">
           <section>
-            <p className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-tv-dim">
+            <p className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-app-dim">
               Trabajo pendiente · {pending.length} tareas
             </p>
             {tasksQuery.isLoading ? (
               Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="mb-2 h-20 animate-pulse rounded-lg bg-tv-surface" />
+                <div key={index} className="mb-2 h-20 animate-pulse rounded-[10px] bg-app-surface2" />
               ))
             ) : pending.length === 0 ? (
               <EmptyPanel text="Sin tareas pendientes" />
@@ -490,17 +490,17 @@ function TabletMode({ zoneId }: { zoneId: string }) {
                       type="button"
                       onClick={() => setSelectedTask(active ? null : task)}
                       className={`w-full rounded-lg border border-l-4 px-4 py-3 text-left transition ${taskStateCard[task.estado]} ${
-                        active ? "border-tv-accent ring-2 ring-tv-accent/30" : "hover:border-tv-accent/40"
+                        active ? "border-brand/40 ring-2 ring-brand/20" : "hover:border-brand/25"
                       }`}
                     >
                       <span className={`text-[10px] font-extrabold uppercase tracking-[0.14em] ${taskTone[task.estado]}`}>
                         {taskLabel[task.estado]}
                         {task.es_urgente && " · URGENTE"}
                       </span>
-                      <p className="mt-0.5 font-heading text-sm font-bold text-white">
+                      <p className="mt-0.5 font-heading text-sm font-bold text-app-text">
                         {task.tarea_catalogo?.nombre ?? "Tarea"}
                       </p>
-                      <p className="mt-0.5 text-xs text-tv-dim">
+                      <p className="mt-0.5 text-xs text-app-dim">
                         {new Date(task.fecha_programada).toLocaleString("es-ES", {
                           day: "2-digit",
                           month: "short",
@@ -516,23 +516,23 @@ function TabletMode({ zoneId }: { zoneId: string }) {
           </section>
 
           <section>
-            <p className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-tv-dim">
+            <p className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-app-dim">
               Detalle de tarea
             </p>
             {!selectedTask ? (
-              <div className="rounded-lg border border-dashed border-tv-border bg-tv-surface px-4 py-10 text-center text-sm text-tv-dim">
+              <div className="rounded-[10px] border border-dashed border-app-border bg-white px-4 py-10 text-center text-sm text-app-dim">
                 Selecciona una tarea para ver el detalle
               </div>
             ) : (
-              <div className="space-y-4 rounded-lg border border-tv-border bg-tv-surface p-5">
+              <div className="space-y-4 rounded-[10px] border border-app-border bg-white p-5">
                 <div>
                   <span className={`text-[10px] font-extrabold uppercase tracking-[0.14em] ${taskTone[selectedTask.estado]}`}>
                     {taskLabel[selectedTask.estado]}
                   </span>
-                  <h3 className="mt-1 font-heading text-base font-bold text-white">
+                  <h3 className="mt-1 font-heading text-base font-bold text-app-text">
                     {selectedTask.tarea_catalogo?.nombre ?? "Tarea"}
                   </h3>
-                  <p className="mt-0.5 text-xs text-tv-dim">
+                  <p className="mt-0.5 text-xs text-app-dim">
                     Programada:{" "}
                     {new Date(selectedTask.fecha_programada).toLocaleString("es-ES", {
                       dateStyle: "medium",
@@ -542,7 +542,7 @@ function TabletMode({ zoneId }: { zoneId: string }) {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-extrabold uppercase tracking-[0.14em] text-tv-dim">
+                  <label className="mb-1.5 block text-xs font-extrabold uppercase tracking-[0.14em] text-app-dim">
                     Observaciones
                   </label>
                   <textarea
@@ -550,7 +550,7 @@ function TabletMode({ zoneId }: { zoneId: string }) {
                     value={observaciones}
                     onChange={(event) => setObservaciones(event.target.value)}
                     placeholder="Incidencias encontradas, notas"
-                    className="w-full resize-none rounded-lg border border-tv-border bg-tv-surface2 px-3 py-2.5 text-sm text-white outline-none placeholder:text-tv-dim focus:border-tv-accent"
+                    className="w-full resize-none rounded-[10px] border border-app-border bg-white px-3 py-2.5 text-sm text-app-text outline-none placeholder:text-app-dim focus:border-brand"
                   />
                 </div>
 
@@ -583,13 +583,13 @@ function TabletMode({ zoneId }: { zoneId: string }) {
 
         {/* Incidents for this zone */}
         {tabletZoneIncidents.length > 0 && (
-          <div className="rounded-xl border border-tv-border bg-tv-surface p-4">
+          <div className="rounded-[14px] border border-app-border bg-white p-4 shadow-card">
             <p className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.14em] text-state-atencion">
               Incidencias en esta zona · {tabletZoneIncidents.length}
             </p>
             <div className="space-y-2">
               {tabletZoneIncidents.map((inc: { id: string; tipo: string; descripcion: string; prioridad: string }) => (
-                <div key={inc.id} className="rounded-lg border border-tv-border bg-tv-surface2 px-4 py-3">
+                <div key={inc.id} className="rounded-[10px] border border-app-border bg-app-bg px-4 py-3">
                   <div className="flex items-center gap-2">
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
                       inc.prioridad === "critica" ? "bg-state-critica/15 text-state-critica"
@@ -597,9 +597,9 @@ function TabletMode({ zoneId }: { zoneId: string }) {
                     }`}>
                       {inc.prioridad}
                     </span>
-                    <span className="text-xs capitalize text-tv-dim">{inc.tipo.replace(/_/g, " ")}</span>
+                    <span className="text-xs capitalize text-app-dim">{inc.tipo.replace(/_/g, " ")}</span>
                   </div>
-                  <p className="mt-1 text-sm font-semibold text-white">{inc.descripcion}</p>
+                  <p className="mt-1 text-sm font-semibold text-app-text">{inc.descripcion}</p>
                 </div>
               ))}
             </div>
@@ -608,8 +608,8 @@ function TabletMode({ zoneId }: { zoneId: string }) {
 
         {/* Current shift assignments for this zone */}
         {(assignmentsTabletQ.data?.asignaciones ?? []).filter((a) => a.zona_id === zoneId).length > 0 && (
-          <div className="rounded-xl border border-tv-border bg-tv-surface p-4">
-            <p className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.14em] text-tv-dim">
+          <div className="rounded-[14px] border border-app-border bg-white p-4 shadow-card">
+            <p className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.14em] text-app-dim">
               Personal asignado a esta zona
             </p>
             <div className="space-y-2">
@@ -621,15 +621,15 @@ function TabletMode({ zoneId }: { zoneId: string }) {
                     ? [emp.nombre, emp.apellidos].filter(Boolean).join(" ")
                     : a.empleado_id.slice(0, 8) + "…";
                   return (
-                    <div key={a.id} className="flex items-center gap-3 rounded-lg bg-tv-surface2 px-4 py-2.5">
-                      <span className="text-sm font-semibold text-white">{name}</span>
+                    <div key={a.id} className="flex items-center gap-3 rounded-[10px] border border-app-border bg-app-bg px-4 py-2.5">
+                      <span className="text-sm font-semibold text-app-text">{name}</span>
                       {emp?.role && (
-                        <span className="rounded-full bg-tv-surface px-2 py-0.5 text-xs capitalize text-tv-dim">
+                        <span className="rounded-full bg-app-bg px-2 py-0.5 text-xs capitalize text-app-dim">
                           {emp.role}
                         </span>
                       )}
                       {a.rol && (
-                        <span className="ml-auto rounded font-mono text-[10px] text-tv-dim">{a.rol}</span>
+                        <span className="ml-auto rounded font-mono text-[10px] text-app-dim">{a.rol}</span>
                       )}
                     </div>
                   );
@@ -837,26 +837,26 @@ export default function ZoneDetailPage({ params }: { params: Promise<{ id: strin
 
   const zone = zonesQuery.data?.find((item) => item.id === id);
 
-  const isManagement = viewMode === "management";
+  const isTvMode = viewMode === "tv";
 
   return (
-    <div className={`min-h-full ${isManagement ? "bg-app-bg" : "bg-tv-bg text-white"}`}>
-      {/* Header adapts to theme */}
-      <div className={`border-b px-6 py-4 lg:px-8 ${isManagement ? "border-app-border bg-white" : "border-tv-border"}`}>
+    <div className={`min-h-full ${isTvMode ? "bg-tv-bg text-white" : "bg-app-bg"}`}>
+      {/* Header adapts to theme: dark only for TV mode */}
+      <div className={`border-b px-6 py-4 lg:px-8 ${isTvMode ? "border-tv-border" : "border-app-border bg-white"}`}>
         <div className="flex flex-wrap items-center gap-4">
           <Link
             href="/zones"
-            className={`flex items-center gap-1 text-sm transition ${isManagement ? "text-app-dim hover:text-app-text" : "text-tv-dim hover:text-white"}`}
+            className={`flex items-center gap-1 text-sm transition ${isTvMode ? "text-tv-dim hover:text-white" : "text-app-dim hover:text-app-text"}`}
           >
             <ChevronLeft className="h-4 w-4" />
             Zonas
           </Link>
-          <div className={`h-4 w-px ${isManagement ? "bg-app-border" : "bg-tv-border"}`} />
+          <div className={`h-4 w-px ${isTvMode ? "bg-tv-border" : "bg-app-border"}`} />
           <div>
-            <h1 className={`font-heading text-xl font-bold ${isManagement ? "text-app-text" : "text-white"}`}>
+            <h1 className={`font-heading text-xl font-bold ${isTvMode ? "text-white" : "text-app-text"}`}>
               {zone?.nombre ?? id}
             </h1>
-            <span className={`font-mono text-xs ${isManagement ? "text-app-dim" : "text-tv-dim"}`}>
+            <span className={`font-mono text-xs ${isTvMode ? "text-tv-dim" : "text-app-dim"}`}>
               {zone?.codigo ?? "ZONA"}
             </span>
           </div>
@@ -865,9 +865,9 @@ export default function ZoneDetailPage({ params }: { params: Promise<{ id: strin
             <Link
               href="/tv"
               className={`inline-flex items-center gap-1.5 rounded-[10px] border px-3 py-2 text-xs font-semibold transition ${
-                isManagement
-                  ? "border-app-border bg-app-bg text-app-dim hover:border-brand/30 hover:text-brand"
-                  : "border-tv-border bg-tv-surface2 text-tv-accent hover:bg-tv-surface"
+                isTvMode
+                  ? "border-tv-border bg-tv-surface2 text-tv-accent hover:bg-tv-surface"
+                  : "border-app-border bg-app-bg text-app-dim hover:border-brand/30 hover:text-brand"
               }`}
             >
               <Monitor className="h-3.5 w-3.5" />
@@ -875,7 +875,7 @@ export default function ZoneDetailPage({ params }: { params: Promise<{ id: strin
             </Link>
 
             {/* Mode toggle: Management | TV | Tablet */}
-            <div className={`flex overflow-hidden rounded-[10px] border ${isManagement ? "border-app-border bg-white" : "border-tv-border bg-tv-surface"}`}>
+            <div className={`flex overflow-hidden rounded-[10px] border ${isTvMode ? "border-tv-border bg-tv-surface" : "border-app-border bg-white"}`}>
               {[
                 { key: "management", label: "Gestión", Icon: Settings2 },
                 { key: "tv", label: "TV", Icon: Monitor },
@@ -889,12 +889,12 @@ export default function ZoneDetailPage({ params }: { params: Promise<{ id: strin
                     onClick={() => setViewMode(key as "management" | "tv" | "tablet")}
                     className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold transition ${
                       active
-                        ? isManagement
-                          ? "bg-brand/10 text-brand"
-                          : "bg-tv-surface2 text-tv-accent"
-                        : isManagement
-                          ? "text-app-dim hover:text-app-text"
-                          : "text-tv-dim hover:text-white"
+                        ? isTvMode
+                          ? "bg-tv-surface2 text-tv-accent"
+                          : "bg-brand/10 text-brand"
+                        : isTvMode
+                          ? "text-tv-dim hover:text-white"
+                          : "text-app-dim hover:text-app-text"
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5" />

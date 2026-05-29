@@ -34,15 +34,15 @@ type ZoneTaskSummary = {
 const statusStyles: Record<ZoneStatus, string> = {
   critica: "border-state-critica/40 bg-state-critica/10 text-state-critica",
   atencion: "border-state-atencion/40 bg-state-atencion/10 text-state-atencion",
-  operativa: "border-tv-accent/30 bg-tv-accent/10 text-tv-accent",
-  inactiva: "border-tv-border bg-tv-surface2 text-tv-dim",
+  operativa: "border-brand/30 bg-brand/8 text-brand",
+  inactiva: "border-app-border bg-app-bg text-app-dim",
 };
 
 const statusDot: Record<ZoneStatus, string> = {
   critica: "bg-state-critica",
   atencion: "bg-state-atencion",
-  operativa: "bg-tv-accent",
-  inactiva: "bg-tv-dim",
+  operativa: "bg-brand",
+  inactiva: "bg-app-dim",
 };
 
 function getZoneStatus(summary: ZoneTaskSummary): ZoneStatus {
@@ -64,7 +64,7 @@ function TaskRow({
   const canComplete = task.estado === "programada" || task.estado === "retrasada";
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-tv-border bg-tv-surface2 px-3 py-2.5">
+    <div className="flex items-center justify-between gap-3 rounded-[10px] border border-app-border bg-app-bg px-3 py-2.5">
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           {task.estado === "retrasada" && (
@@ -73,11 +73,11 @@ function TaskRow({
           {task.es_urgente && task.estado !== "retrasada" && (
             <Clock className="h-3.5 w-3.5 shrink-0 text-state-atencion" />
           )}
-          <p className="truncate text-sm font-semibold text-white">
+          <p className="truncate text-sm font-semibold text-app-text">
             {task.tarea_catalogo?.nombre ?? "Tarea"}
           </p>
         </div>
-        <p className="mt-0.5 text-xs text-tv-dim">
+        <p className="mt-0.5 text-xs text-app-dim">
           {new Date(task.fecha_programada).toLocaleString("es-ES", {
             day: "2-digit",
             month: "short",
@@ -92,7 +92,7 @@ function TaskRow({
           type="button"
           disabled={completing}
           onClick={() => onComplete(task.id)}
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-tv-accent/15 text-tv-accent transition hover:bg-tv-accent/25 disabled:opacity-50"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand transition hover:bg-brand/15 disabled:opacity-50"
           title="Completar tarea"
         >
           <CheckCircle2 className="h-4 w-4" />
@@ -124,7 +124,7 @@ function ZoneCard({
   ];
 
   return (
-    <div className="rounded-lg border border-tv-border bg-tv-surface">
+    <div className="rounded-[10px] border border-app-border bg-white">
       <button
         type="button"
         className="w-full px-4 py-4 text-left"
@@ -134,11 +134,11 @@ function ZoneCard({
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${statusDot[status]}`} />
-              <span className="font-mono text-[11px] font-bold uppercase tracking-widest text-tv-dim">
+              <span className="font-mono text-[11px] font-bold uppercase tracking-widest text-app-dim">
                 {summary.zone.codigo}
               </span>
             </div>
-            <h2 className="mt-1 truncate font-heading text-lg font-bold text-white">
+            <h2 className="mt-1 truncate font-heading text-lg font-bold text-app-text">
               {summary.zone.nombre}
             </h2>
           </div>
@@ -148,12 +148,12 @@ function ZoneCard({
         </div>
 
         <div className="mt-4">
-          <div className="mb-1 flex justify-between text-xs font-semibold text-tv-dim">
+          <div className="mb-1 flex justify-between text-xs font-semibold text-app-dim">
             <span>{summary.ejecutadas.length} / {total || 0} completadas</span>
             <span>{pct}%</span>
           </div>
-          <div className="h-1.5 rounded-full bg-tv-surface2">
-            <div className="h-full rounded-full bg-tv-accent" style={{ width: `${pct}%` }} />
+          <div className="h-1.5 rounded-full bg-app-bg">
+            <div className="h-full rounded-full bg-brand" style={{ width: `${pct}%` }} />
           </div>
         </div>
 
@@ -164,16 +164,16 @@ function ZoneCard({
             { label: "Hechas", value: summary.ejecutadas.length, color: "text-state-ok" },
             { label: "Urg.", value: summary.urgentes.length, color: "text-state-atencion" },
           ].map(({ label, value, color }) => (
-            <div key={label} className="rounded-lg bg-tv-surface2 px-2 py-2 text-center">
+            <div key={label} className="rounded-[10px] bg-app-bg px-2 py-2 text-center">
               <div className={`font-heading text-lg font-bold ${color}`}>{value}</div>
-              <div className="text-[10px] font-bold uppercase text-tv-dim">{label}</div>
+              <div className="text-[10px] font-bold uppercase text-app-dim">{label}</div>
             </div>
           ))}
         </div>
       </button>
 
       {expanded && (
-        <div className="space-y-2 border-t border-tv-border px-4 pb-4 pt-3">
+        <div className="space-y-2 border-t border-app-border px-4 pb-4 pt-3">
           {priorityTasks.map((task) => (
             <TaskRow
               key={task.id}
@@ -183,13 +183,13 @@ function ZoneCard({
             />
           ))}
           {priorityTasks.length === 0 && (
-            <div className="rounded-lg bg-tv-surface2 px-3 py-6 text-center text-sm font-semibold text-tv-dim">
+            <div className="rounded-[10px] bg-app-bg px-3 py-6 text-center text-sm font-semibold text-app-dim">
               Sin tareas pendientes en esta zona.
             </div>
           )}
           <Link
             href={`/zones/${summary.zone.id}`}
-            className="block pt-1 text-center text-xs font-semibold text-tv-accent hover:underline"
+            className="block pt-1 text-center text-xs font-semibold text-brand hover:underline"
           >
             Abrir vista de zona completa →
           </Link>
@@ -229,12 +229,12 @@ function GlobalTaskList({
               onClick={() => setTab(key)}
               className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${
                 tab === key
-                  ? "bg-tv-surface2 text-white"
-                  : "bg-tv-surface text-tv-dim hover:bg-tv-surface2"
+                  ? "bg-app-bg text-app-text"
+                  : "bg-white text-app-dim hover:bg-app-bg"
               }`}
             >
               {label}
-              <span className={`rounded-full px-1.5 text-[11px] font-bold ${tab === key ? color : "text-tv-dim"}`}>
+              <span className={`rounded-full px-1.5 text-[11px] font-bold ${tab === key ? color : "text-app-dim"}`}>
                 {count}
               </span>
             </button>
@@ -243,9 +243,9 @@ function GlobalTaskList({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-lg border border-tv-border bg-tv-surface px-4 py-12 text-center">
+        <div className="rounded-[10px] border border-app-border bg-white px-4 py-12 text-center">
           <CheckCircle2 className="mx-auto h-8 w-8 text-state-ok" strokeWidth={1.6} />
-          <p className="mt-2 text-sm font-semibold text-white">No hay tareas en esta vista.</p>
+          <p className="mt-2 text-sm font-semibold text-app-text">No hay tareas en esta vista.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -369,21 +369,21 @@ export default function LeanFarmingPage() {
     : [];
 
   return (
-    <div className="min-h-full bg-tv-bg text-white">
-      <div className="border-b border-tv-border px-6 py-5 lg:px-8">
+    <div className="min-h-full bg-app-bg text-app-text">
+      <div className="border-b border-app-border px-6 py-5 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-tv-dim">
-              <ListTodo className="h-4 w-4 text-tv-accent" />
+            <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-app-dim">
+              <ListTodo className="h-4 w-4 text-brand" />
               LeanFarming
             </div>
-            <h1 className="mt-1 font-heading text-2xl font-bold text-white">
+            <h1 className="mt-1 font-heading text-2xl font-bold text-app-text">
               Gestion visual de tareas por zona
             </h1>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex overflow-hidden rounded-lg border border-tv-border bg-tv-surface">
+            <div className="flex overflow-hidden rounded-[10px] border border-app-border bg-white">
               {[
                 { key: "zonas", label: "Por zona", Icon: LayoutGrid },
                 { key: "lista", label: "Lista", Icon: ListChecks },
@@ -393,7 +393,7 @@ export default function LeanFarmingPage() {
                   type="button"
                   onClick={() => setView(key as ViewMode)}
                   className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold transition ${
-                    view === key ? "bg-tv-surface2 text-tv-accent" : "text-tv-dim hover:text-white"
+                    view === key ? "bg-app-bg text-brand" : "text-app-dim hover:text-app-text"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -404,7 +404,7 @@ export default function LeanFarmingPage() {
             <button
               type="button"
               onClick={() => tasksQuery.refetch()}
-              className="inline-flex items-center gap-2 rounded-lg border border-tv-border bg-tv-surface px-3 py-2 text-sm font-semibold text-tv-dim transition hover:text-white"
+              className="inline-flex items-center gap-2 rounded-[10px] border border-app-border bg-white px-3 py-2 text-sm font-semibold text-app-dim transition hover:text-app-text"
             >
               <RefreshCw className="h-4 w-4" />
               Actualizar
@@ -440,15 +440,15 @@ export default function LeanFarmingPage() {
               </div>
             )}
             {currentShift && (
-              <div className="flex items-center gap-2 rounded-lg border border-tv-border bg-tv-surface px-4 py-2.5">
-                <CalendarClock className="h-4 w-4 text-tv-accent" />
-                <span className="text-sm font-semibold text-white">
+              <div className="flex items-center gap-2 rounded-[10px] border border-app-border bg-white px-4 py-2.5">
+                <CalendarClock className="h-4 w-4 text-brand" />
+                <span className="text-sm font-semibold text-app-text">
                   Turno {currentShift.tipo_turno === "manana" ? "Mañana" : "Tarde"} · {currentShift.hora_inicio?.slice(0, 5)}–{currentShift.hora_fin?.slice(0, 5)}
                 </span>
                 {currentAssignments.length > 0 && (
                   <div className="flex items-center gap-1 ml-1">
-                    <UserRound className="h-3.5 w-3.5 text-tv-dim" />
-                    <span className="text-xs text-tv-dim">{currentAssignments.length} asignados</span>
+                    <UserRound className="h-3.5 w-3.5 text-app-dim" />
+                    <span className="text-xs text-app-dim">{currentAssignments.length} asignados</span>
                   </div>
                 )}
               </div>
@@ -463,10 +463,10 @@ export default function LeanFarmingPage() {
             { label: "Ejecutadas", value: totals.ejecutadas, Icon: CheckCircle2, color: "text-state-ok" },
             { label: "Urgentes", value: totals.urgentes, Icon: ListTodo, color: "text-state-atencion" },
           ].map(({ label, value, Icon, color }) => (
-            <div key={label} className="rounded-lg border border-tv-border bg-tv-surface p-4">
+            <div key={label} className="rounded-[10px] border border-app-border bg-white p-4">
               <div className="flex items-center gap-2">
                 <Icon className={`h-4 w-4 ${color}`} />
-                <span className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-tv-dim">
+                <span className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-app-dim">
                   {label}
                 </span>
               </div>
@@ -478,7 +478,7 @@ export default function LeanFarmingPage() {
         {tasksQuery.isLoading || zones.isLoading ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="h-52 animate-pulse rounded-lg bg-tv-surface" />
+              <div key={index} className="h-52 animate-pulse rounded-[10px] bg-white" />
             ))}
           </div>
         ) : view === "zonas" ? (
