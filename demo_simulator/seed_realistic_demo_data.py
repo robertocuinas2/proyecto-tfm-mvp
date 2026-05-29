@@ -507,7 +507,8 @@ def seed_tratamientos(conn, animales_por_estado: dict, empleado_ids: list[str]):
         activo = i < activos_objetivo
 
         if activo:
-            fecha_inicio = today() - timedelta(days=random.randint(1, dias - 1))
+            dias_offset = random.randint(0, max(0, dias - 1))
+            fecha_inicio = today() - timedelta(days=dias_offset)
             fecha_fin_prevista = fecha_inicio + timedelta(days=dias)
             fecha_fin_real = None
         else:
