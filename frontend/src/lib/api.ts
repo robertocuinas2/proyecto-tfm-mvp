@@ -54,13 +54,19 @@ function buildUrl(path: string, params?: QueryParams): string {
 
 async function request<T>(path: string, init: RequestInit = {}, params?: QueryParams): Promise<T> {
   const token = getToken();
-  const response = await fetch(buildUrl(path, params), {
+  const url = buildUrl(path, params);
+  const response = await fetch(url, {
     ...init,
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...init.headers,
     },
+  }).catch(() => {
+    if (process.env.NODE_ENV === "development") {
+      console.error(`[api] sin conexión: ${init.method ?? "GET"} ${url}`);
+    }
+    throw new Error("No se puede conectar con el servidor. Verifica que el backend esté activo.");
   });
 
   if (!response.ok) {

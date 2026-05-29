@@ -27,7 +27,10 @@ class Settings(BaseSettings):
     app_url: str = "http://localhost:8000"
 
     cors_origins: list[str] | str = [
+        "http://localhost",
+        "http://localhost:80",
         "http://localhost:3000",
+        "http://127.0.0.1",
         "http://127.0.0.1:3000",
     ]
 
