@@ -10,6 +10,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useToast } from "@/components/ui/toast";
 import { Pagination } from "@/components/common/Pagination";
 import { PageHeader } from "@/components/ui/page-header";
 import { api } from "@/lib/api";
@@ -200,6 +201,7 @@ function AlertCard({
 
 export default function AlertsPage() {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [filter, setFilter] = useState<FilterSeverity>("todas");
   const [page, setPage] = useState(1);
   const pageSize = DEFAULT_PAGE_SIZE;
@@ -242,6 +244,13 @@ export default function AlertsPage() {
   const updateMutation = useMutation({
     mutationFn: ({ id, estado }: { id: string; estado: AlertState }) =>
       api.reviewAlert(id, { estado }),
+    onSuccess: (_, { estado }) => {
+      const label = estado === "resuelta" ? "Alerta resuelta" : estado === "revisada" ? "Alerta revisada" : "Alerta actualizada";
+      toast.success(label);
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Error al actualizar la alerta");
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["alerts"] });
       queryClient.invalidateQueries({ queryKey: ["alerts-all"] });

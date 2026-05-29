@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -12,13 +12,14 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useToast } from "@/components/ui/toast";
 import { Pagination } from "@/components/common/Pagination";
 import { PageHeader } from "@/components/ui/page-header";
 import { api } from "@/lib/api";
 import { DEFAULT_PAGE_SIZE, getSkip } from "@/lib/pagination";
 import type { CreateOrderPayload, Order, OrderStatus } from "@/lib/types";
 
-// ── Constants ──────────────────────────────────────────────────────────────
+// â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const STATUS_SEQUENCE: OrderStatus[] = [
   "solicitado",
@@ -44,7 +45,7 @@ const STATUS_STYLES: Record<OrderStatus, string> = {
   cancelado: "bg-state-neutral/10 text-state-neutral border-state-neutral/20",
 };
 
-// Estado → próximos estados válidos
+// Estado â†’ prÃ³ximos estados vÃ¡lidos
 const NEXT_STATES: Partial<Record<OrderStatus, OrderStatus[]>> = {
   solicitado: ["aprobado", "cancelado"],
   aprobado: ["en_transito", "cancelado"],
@@ -58,10 +59,10 @@ const NEXT_BTN_STYLE: Partial<Record<OrderStatus, string>> = {
   cancelado: "bg-state-neutral/10 text-state-neutral hover:bg-state-neutral/20",
 };
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function formatDate(iso?: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "â€”";
   return new Date(iso).toLocaleString("es-ES", {
     day: "2-digit",
     month: "short",
@@ -72,11 +73,11 @@ function formatDate(iso?: string | null) {
 }
 
 function formatCurrency(value?: number | null) {
-  if (value == null) return "—";
+  if (value == null) return "â€”";
   return value.toLocaleString("es-ES", { style: "currency", currency: "EUR" });
 }
 
-// ── Sub-components ─────────────────────────────────────────────────────────
+// â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function StatusBadge({ estado }: { estado: OrderStatus }) {
   return (
@@ -137,10 +138,11 @@ function KpiCard({ label, value, tone }: { label: string; value: number; tone: s
   );
 }
 
-// ── Create order modal ─────────────────────────────────────────────────────
+// â”€â”€ Create order modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function CreateOrderModal({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [insumo, setInsumo] = useState("");
   const [cantidad, setCantidad] = useState("");
   const [unidad, setUnidad] = useState("");
@@ -153,6 +155,7 @@ function CreateOrderModal({ onClose }: { onClose: () => void }) {
     mutationFn: (payload: CreateOrderPayload) => api.createOrder(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
+      toast.success("Pedido creado");
       onClose();
     },
   });
@@ -224,7 +227,7 @@ function CreateOrderModal({ onClose }: { onClose: () => void }) {
 
             <label className="block">
               <span className="mb-1.5 block text-xs font-extrabold uppercase tracking-[0.14em] text-app-dim">
-                Coste estimado (€)
+                Coste estimado (â‚¬)
               </span>
               <input
                 type="number"
@@ -278,7 +281,7 @@ function CreateOrderModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ── Order card ─────────────────────────────────────────────────────────────
+// â”€â”€ Order card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function OrderCard({
   order,
@@ -388,7 +391,7 @@ function OrderCard({
 
           {order.estado === "recibido" && (
             <div className="rounded-[10px] bg-brand/8 px-3 py-2 text-xs font-bold text-brand">
-              Pedido recibido ✓
+              Pedido recibido âœ“
             </div>
           )}
           {order.estado === "cancelado" && (
@@ -402,13 +405,14 @@ function OrderCard({
   );
 }
 
-// ── Main page ──────────────────────────────────────────────────────────────
+// â”€â”€ Main page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type FilterStatus = OrderStatus | "todas";
 
 export default function OrdersPage() {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("todas");
   const [page, setPage] = useState(1);
   // Auto-open creation modal when ?new=1 is in the URL

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useToast } from "@/components/ui/toast";
 import { PageHeader } from "@/components/ui/page-header";
 import { api } from "@/lib/api";
 import type {
@@ -22,7 +23,7 @@ import type {
   IncidentStatus,
 } from "@/lib/types";
 
-// ── Constants ──────────────────────────────────────────────────────────────
+// â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const INCIDENT_TYPES = [
   "averia_maquinaria",
@@ -56,10 +57,10 @@ const PRIORITY_STYLES: Record<IncidentPriority, string> = {
 
 const PAGE_SIZE = 15;
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function formatDate(iso?: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "â€”";
   return new Date(iso).toLocaleString("es-ES", {
     day: "2-digit",
     month: "short",
@@ -68,7 +69,7 @@ function formatDate(iso?: string | null) {
   });
 }
 
-// ── Sub-components ─────────────────────────────────────────────────────────
+// â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function StatusBadge({ estado }: { estado: IncidentStatus }) {
   return (
@@ -103,7 +104,7 @@ function KpiCard({
   );
 }
 
-// ── Create incident modal ──────────────────────────────────────────────────
+// â”€â”€ Create incident modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function CreateIncidentModal({
   zones,
@@ -113,6 +114,7 @@ function CreateIncidentModal({
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [tipo, setTipo] = useState(INCIDENT_TYPES[0]);
   const [descripcion, setDescripcion] = useState("");
   const [prioridad, setPrioridad] = useState<IncidentPriority>("media");
@@ -122,6 +124,7 @@ function CreateIncidentModal({
     mutationFn: (payload: CreateIncidentPayload) => api.createIncident(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["incidents"] });
+      toast.success("Incidencia registrada");
       onClose();
     },
   });
@@ -194,7 +197,7 @@ function CreateIncidentModal({
             </select>
           </div>
 
-          {/* Descripción */}
+          {/* DescripciÃ³n */}
           <div>
             <label className="mb-1.5 block text-xs font-extrabold uppercase tracking-[0.14em] text-app-dim">
               Descripcion *
@@ -235,7 +238,7 @@ function CreateIncidentModal({
   );
 }
 
-// ── Incident card ──────────────────────────────────────────────────────────
+// â”€â”€ Incident card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function IncidentCard({
   incident,
@@ -301,7 +304,7 @@ function IncidentCard({
               <span>
                 Zona:{" "}
                 <span className="font-semibold text-app-text">
-                  {zoneLookup.get(incident.zona_id) ?? incident.zona_id.slice(0, 8) + "…"}
+                  {zoneLookup.get(incident.zona_id) ?? incident.zona_id.slice(0, 8) + "â€¦"}
                 </span>
               </span>
             )}
@@ -309,14 +312,14 @@ function IncidentCard({
               <span>
                 Animal:{" "}
                 <span className="font-mono font-bold text-brand">
-                  {animalLookup.get(incident.animal_id) ?? incident.animal_id.slice(0, 8) + "…"}
+                  {animalLookup.get(incident.animal_id) ?? incident.animal_id.slice(0, 8) + "â€¦"}
                 </span>
               </span>
             )}
             {incident.reportado_por && (
               <span>
                 Reportado por:{" "}
-                <span className="font-semibold text-app-text">{incident.reportado_por.slice(0, 8)}…</span>
+                <span className="font-semibold text-app-text">{incident.reportado_por.slice(0, 8)}â€¦</span>
               </span>
             )}
             {incident.fecha_resolucion && (
@@ -358,7 +361,7 @@ function IncidentCard({
   );
 }
 
-// ── Main page ──────────────────────────────────────────────────────────────
+// â”€â”€ Main page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type FilterEstado = IncidentStatus | "todas";
 type FilterPrioridad = IncidentPriority | "todas";
@@ -366,6 +369,7 @@ type FilterPrioridad = IncidentPriority | "todas";
 export default function IncidentsPage() {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [estadoFilter, setEstadoFilter] = useState<FilterEstado>("todas");
   const [prioridadFilter, setPrioridadFilter] = useState<FilterPrioridad>("todas");
   const [page, setPage] = useState(1);
@@ -396,7 +400,7 @@ export default function IncidentsPage() {
   const animalLookup = useMemo(() => {
     const map = new Map<string, string>();
     for (const a of animalsLookupQuery.data ?? []) {
-      map.set(a.id, a.crotal_oficial + (a.nombre ? ` · ${a.nombre}` : ""));
+      map.set(a.id, a.crotal_oficial + (a.nombre ? ` Â· ${a.nombre}` : ""));
     }
     return map;
   }, [animalsLookupQuery.data]);
@@ -591,7 +595,7 @@ export default function IncidentsPage() {
         {filtered.length > PAGE_SIZE && (
           <nav className="flex items-center justify-between rounded-[10px] border border-app-border bg-white px-4 py-3 text-sm text-app-dim">
             <span>
-              Mostrando <strong className="text-app-text">{(page - 1) * PAGE_SIZE + 1}</strong>–
+              Mostrando <strong className="text-app-text">{(page - 1) * PAGE_SIZE + 1}</strong>â€“
               <strong className="text-app-text">{Math.min(page * PAGE_SIZE, filtered.length)}</strong> de{" "}
               <strong className="text-app-text">{filtered.length}</strong>
             </span>

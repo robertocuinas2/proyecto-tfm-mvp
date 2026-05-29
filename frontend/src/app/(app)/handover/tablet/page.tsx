@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/components/ui/toast";
 import {
   AlertOctagon,
   AlertTriangle,
@@ -90,6 +91,7 @@ function CreateHandoverModal({
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [salienteId, setSalienteId] = useState(shifts[0]?.id ?? "");
   const [entranteId, setEntranteId] = useState(shifts[1]?.id ?? "");
   const [notas, setNotas] = useState("");
@@ -103,7 +105,11 @@ function CreateHandoverModal({
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shift-handovers"] });
+      toast.success("Cambio de turno registrado correctamente");
       onClose();
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Error al registrar el relevo");
     },
   });
 

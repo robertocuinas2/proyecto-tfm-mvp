@@ -17,7 +17,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { PanelCard, SectionTitle } from "@/components/ui/panel-card";
 import { api } from "@/lib/api";
 import { API_BASE_URL, API_V1_URL } from "@/lib/config";
-import { useAppStore } from "@/store/app-store";
+import { AccessDenied } from "@/components/ui/access-denied";
+import { usePermissions } from "@/lib/use-permissions";
 
 // ── Module status list ────────────────────────────────────────────────────────
 
@@ -70,8 +71,8 @@ function InfoLine({ label, value, mono = false }: { label: string; value: React.
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function IntegrationPage() {
-  const user = useAppStore((s) => s.user);
-  const isAdmin = user?.role === "admin";
+  const { role, user, can: userCan } = usePermissions();
+  const isAdmin = userCan("view_integration");
 
   const healthQ = useQuery({
     queryKey: ["health"],
@@ -110,6 +111,19 @@ export default function IntegrationPage() {
     : "ok";
 
   const systemOk = backendOnline && dbOnline;
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-full">
+        <PageHeader eyebrow="Estado del sistema" title="Integración API" EyebrowIcon={Activity} />
+        <AccessDenied
+          role={role}
+          requiredCapability="view_integration"
+          description="La vista de integración API es exclusiva para administradores del sistema."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-full">

@@ -1,6 +1,9 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AccessDenied } from "@/components/ui/access-denied";
+import { useToast } from "@/components/ui/toast";
+import { usePermissions } from "@/lib/use-permissions";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -14,7 +17,6 @@ import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PanelCard } from "@/components/ui/panel-card";
 import { api } from "@/lib/api";
-import { useAppStore } from "@/store/app-store";
 import type { Zone } from "@/lib/types";
 
 // ── Local-only zone config (stored in localStorage per zone) ─────────────────
@@ -125,8 +127,9 @@ function ZoneRow({
 
 export default function SettingsPage() {
   const queryClient = useQueryClient();
-  const role = useAppStore((s) => s.user?.role);
-  const canEdit = role === "admin";
+  const toast = useToast();
+  const { role, can: userCan } = usePermissions();
+  const canEdit = userCan("manage_settings");
 
   const zonesQ = useQuery({
     queryKey: ["zones"],
@@ -167,7 +170,11 @@ export default function SettingsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["zones"] });
       setSaveSuccess(true);
+      toast.success("Configuración de zona guardada");
       setTimeout(() => setSaveSuccess(false), 3000);
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Error al guardar la configuración");
     },
   });
 

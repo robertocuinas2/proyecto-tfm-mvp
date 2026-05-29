@@ -3,17 +3,22 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertOctagon,
+  AlertTriangle,
+  CalendarClock,
   CheckCircle2,
   Clock,
   LayoutGrid,
   ListChecks,
   ListTodo,
   RefreshCw,
+  UserRound,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
-import type { Task, Zone } from "@/lib/types";
+import { TV_REFETCH, TV_STALE } from "@/lib/tv-constants";
+import type { Employee, Task, Zone } from "@/lib/types";
 
 type ViewMode = "zonas" | "lista";
 type ZoneStatus = "critica" | "atencion" | "operativa" | "inactiva";
@@ -255,23 +260,63 @@ function GlobalTaskList({
 
 export default function LeanFarmingPage() {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [view, setView] = useState<ViewMode>("zonas");
 
   const zones = useQuery({
     queryKey: ["zones"],
     queryFn: api.zones,
-    staleTime: 60_000,
+    staleTime: TV_STALE.CATALOG,
   });
 
   const tasksQuery = useQuery({
     queryKey: ["tasks-all-lean"],
     queryFn: () => api.tasks({ limit: 500 }),
-    staleTime: 30_000,
-    refetchInterval: 60_000,
+    staleTime: TV_STALE.NORMAL,
+    refetchInterval: TV_REFETCH.NORMAL,
+  });
+
+  // Additional context queries for the operational summary
+  const incidentsQuery = useQuery({
+    queryKey: ["tv-incidents"],
+    queryFn: () => api.incidents({ limit: 100 }),
+    staleTime: TV_STALE.NORMAL,
+    refetchInterval: TV_REFETCH.NORMAL,
+  });
+
+  const alertsQuery = useQuery({
+    queryKey: ["tv-alerts-critical"],
+    queryFn: () => api.alerts({ severidad: "critica", limit: 10 }),
+    staleTime: TV_STALE.FAST,
+    refetchInterval: TV_REFETCH.FAST,
+  });
+
+  const shiftsQuery = useQuery({
+    queryKey: ["tv-shifts"],
+    queryFn: () => api.shifts({ limit: 4 }),
+    staleTime: TV_STALE.SLOW,
+  });
+
+  const assignmentsQuery = useQuery({
+    queryKey: ["tv-shift-assignments"],
+    queryFn: () => api.shiftAssignments({ limit: 30 }),
+    staleTime: TV_STALE.SLOW,
+  });
+
+  const employeesQuery = useQuery({
+    queryKey: ["employees-lookup"],
+    queryFn: () => api.employees(),
+    staleTime: TV_STALE.CATALOG,
   });
 
   const completeMutation = useMutation({
     mutationFn: (id: string) => api.completeTask(id),
+    onSuccess: () => {
+      toast.success("Tarea completada");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Error al completar la tarea");
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks-all-lean"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
@@ -296,6 +341,32 @@ export default function LeanFarmingPage() {
     ejecutadas: tasks.filter((task) => task.estado === "ejecutada").length,
     urgentes: tasks.filter((task) => task.es_urgente && task.estado !== "ejecutada").length,
   };
+
+  // Operational context
+  const openIncidents = (incidentsQuery.data ?? []).filter(
+    (i: { estado: string }) => i.estado === "abierta" || i.estado === "en_gestion",
+  );
+  const criticalAlerts = alertsQuery.data?.alertas ?? [];
+
+  // Current shift
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const currentHour = new Date().getHours();
+  const todayShifts = (shiftsQuery.data?.turnos ?? []).filter((s) => s.fecha === todayStr);
+  const currentShift = todayShifts.find((s) => {
+    const start = parseInt(s.hora_inicio?.slice(0, 2) ?? "0");
+    const end = parseInt(s.hora_fin?.slice(0, 2) ?? "24");
+    return currentHour >= start && currentHour < end;
+  }) ?? todayShifts[0];
+
+  const employeeById = useMemo(() => {
+    const map = new Map<string, Employee>();
+    for (const e of employeesQuery.data ?? []) map.set(e.id, e);
+    return map;
+  }, [employeesQuery.data]);
+
+  const currentAssignments = currentShift
+    ? (assignmentsQuery.data?.asignaciones ?? []).filter((a) => a.turno_id === currentShift.id)
+    : [];
 
   return (
     <div className="min-h-full bg-tv-bg text-white">
@@ -343,6 +414,48 @@ export default function LeanFarmingPage() {
       </div>
 
       <div className="space-y-6 px-6 py-6 lg:px-8">
+        {/* Operational context: incidents + critical alerts */}
+        {(openIncidents.length > 0 || criticalAlerts.length > 0 || currentShift) && (
+          <div className="flex flex-wrap gap-3">
+            {criticalAlerts.length > 0 && (
+              <div className="flex items-center gap-2 rounded-lg border border-state-critica/40 bg-state-critica/10 px-4 py-2.5">
+                <AlertTriangle className="h-4 w-4 text-state-critica" />
+                <span className="text-sm font-bold text-state-critica">
+                  {criticalAlerts.length} alerta{criticalAlerts.length > 1 ? "s" : ""} crítica{criticalAlerts.length > 1 ? "s" : ""}
+                </span>
+                <Link href="/alerts" className="ml-1 text-[11px] font-semibold text-state-critica underline">
+                  Ver
+                </Link>
+              </div>
+            )}
+            {openIncidents.length > 0 && (
+              <div className="flex items-center gap-2 rounded-lg border border-state-atencion/40 bg-state-atencion/10 px-4 py-2.5">
+                <AlertOctagon className="h-4 w-4 text-state-atencion" />
+                <span className="text-sm font-bold text-state-atencion">
+                  {openIncidents.length} incidencia{openIncidents.length > 1 ? "s" : ""} abierta{openIncidents.length > 1 ? "s" : ""}
+                </span>
+                <Link href="/incidents" className="ml-1 text-[11px] font-semibold text-state-atencion underline">
+                  Ver
+                </Link>
+              </div>
+            )}
+            {currentShift && (
+              <div className="flex items-center gap-2 rounded-lg border border-tv-border bg-tv-surface px-4 py-2.5">
+                <CalendarClock className="h-4 w-4 text-tv-accent" />
+                <span className="text-sm font-semibold text-white">
+                  Turno {currentShift.tipo_turno === "manana" ? "Mañana" : "Tarde"} · {currentShift.hora_inicio?.slice(0, 5)}–{currentShift.hora_fin?.slice(0, 5)}
+                </span>
+                {currentAssignments.length > 0 && (
+                  <div className="flex items-center gap-1 ml-1">
+                    <UserRound className="h-3.5 w-3.5 text-tv-dim" />
+                    <span className="text-xs text-tv-dim">{currentAssignments.length} asignados</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           {[
             { label: "Programadas", value: totals.programadas, Icon: Clock, color: "text-state-info" },

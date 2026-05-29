@@ -6,13 +6,13 @@ import {
   ChevronUp,
   Database,
   ShieldCheck,
-  ShieldX,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { AccessDenied } from "@/components/ui/access-denied";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { api } from "@/lib/api";
-import { useAppStore } from "@/store/app-store";
+import { usePermissions } from "@/lib/use-permissions";
 import type { AuditLogEntry, AuditOperation } from "@/lib/types";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -113,8 +113,8 @@ const TABLE_OPTIONS = [
 ];
 
 export default function AuditLogPage() {
-  const role = useAppStore((s) => s.user?.role);
-  const isAdmin = role === "admin";
+  const { role, can: userCan } = usePermissions();
+  const isAdmin = userCan("view_audit_log");
 
   const [tabla, setTabla] = useState("");
   const [accion, setAccion] = useState<FilterOp>("");
@@ -159,15 +159,11 @@ export default function AuditLogPage() {
     return (
       <div className="min-h-full">
         <PageHeader eyebrow="Sistema" title="Audit Log" EyebrowIcon={ShieldCheck} />
-        <div className="flex flex-col items-center gap-4 px-6 py-16 text-center lg:px-8">
-          <ShieldX className="h-16 w-16 text-state-atencion" strokeWidth={1.5} />
-          <div>
-            <p className="font-heading text-xl font-bold text-app-text">Acceso restringido</p>
-            <p className="mt-2 text-sm text-app-dim">
-              Esta sección es exclusiva para administradores del sistema.
-            </p>
-          </div>
-        </div>
+        <AccessDenied
+          role={role}
+          requiredCapability="view_audit_log"
+          description="El registro de auditoría es exclusivo para administradores del sistema."
+        />
       </div>
     );
   }

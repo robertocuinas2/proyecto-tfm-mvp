@@ -1,10 +1,22 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertOctagon, CheckCircle2, ClipboardList, Clock, MapPin, TimerReset } from "lucide-react";
-import { useState } from "react";
+import {
+  AlertOctagon,
+  CheckCircle2,
+  ClipboardList,
+  Clock,
+  Loader2,
+  MapPin,
+  Plus,
+  TimerReset,
+  X,
+} from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 import { Pagination } from "@/components/common/Pagination";
 import { PageHeader } from "@/components/ui/page-header";
+import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { DEFAULT_PAGE_SIZE, getSkip } from "@/lib/pagination";
 import type { Task, TaskStatus } from "@/lib/types";
@@ -81,7 +93,7 @@ function TaskCard({
             className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-brand/10 text-brand transition hover:bg-brand/15 disabled:opacity-50"
             title="Completar tarea"
           >
-            <CheckCircle2 className="h-4 w-4" />
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
           </button>
         ) : (
           <CheckCircle2 className="h-5 w-5 shrink-0 text-state-ok" />
@@ -91,11 +103,173 @@ function TaskCard({
   );
 }
 
-export default function TasksPage() {
+// ── Create task modal ─────────────────────────────────────────────────────────
+
+function CreateTaskModal({
+  zones,
+  catalogOptions,
+  onClose,
+  onSuccess,
+}: {
+  zones: { id: string; nombre: string }[];
+  catalogOptions: { id: string; nombre: string; categoria?: string }[];
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
   const queryClient = useQueryClient();
+  const toast = useToast();
+
+  const now = new Date();
+  const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
+    .toISOString()
+    .slice(0, 16);
+
+  const [catalogId, setCatalogId] = useState(catalogOptions[0]?.id ?? "");
+  const [zonaId, setZonaId] = useState("");
+  const [fechaPlanificada, setFechaPlanificada] = useState(localNow);
+  const [notas, setNotas] = useState("");
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      api.createTask({
+        ...(catalogId ? { tarea_catalogo_id: catalogId } : {}),
+        ...(zonaId ? { zona_id: zonaId } : {}),
+        fecha_programada: new Date(fechaPlanificada).toISOString(),
+        ...(notas.trim() ? { observaciones: notas.trim() } : {}),
+        estado: "programada",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+      toast.success("Tarea creada correctamente");
+      onSuccess();
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Error al crear la tarea");
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
+      <div className="w-full max-w-lg rounded-t-[20px] border border-app-border bg-white shadow-panel sm:rounded-[14px]">
+        <div className="flex items-center justify-between border-b border-app-border px-6 py-4">
+          <h2 className="font-heading text-lg font-bold text-app-text">Nueva tarea</h2>
+          <button type="button" onClick={onClose} className="text-app-dim hover:text-app-text">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="space-y-4 px-6 py-5">
+          {/* Catalog selector */}
+          <div>
+            <label className="mb-1.5 block text-xs font-extrabold uppercase tracking-[0.14em] text-app-dim">
+              Tipo de tarea
+              {catalogOptions.length === 0 && (
+                <span className="ml-2 text-state-atencion">(sin catálogo disponible)</span>
+              )}
+            </label>
+            {catalogOptions.length > 0 ? (
+              <select
+                value={catalogId}
+                onChange={(e) => setCatalogId(e.target.value)}
+                className="h-11 w-full rounded-[10px] border border-app-border bg-white px-3 text-sm text-app-text outline-none focus:border-brand"
+              >
+                <option value="">Auto-seleccionar (primer catálogo disponible)</option>
+                {catalogOptions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}{c.categoria ? ` · ${c.categoria}` : ""}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="rounded-[10px] border border-state-atencion/30 bg-state-atencion/5 px-3 py-3 text-sm text-state-atencion">
+                Sin elementos en el catálogo. El backend creará la tarea con el primer tipo disponible.
+                {/* TODO: Añadir endpoint GET /tareas-catalogo cuando esté disponible en backend */}
+              </div>
+            )}
+          </div>
+
+          {/* Zone selector */}
+          <div>
+            <label className="mb-1.5 block text-xs font-extrabold uppercase tracking-[0.14em] text-app-dim">
+              Zona (opcional)
+            </label>
+            <select
+              value={zonaId}
+              onChange={(e) => setZonaId(e.target.value)}
+              className="h-11 w-full rounded-[10px] border border-app-border bg-white px-3 text-sm text-app-text outline-none focus:border-brand"
+            >
+              <option value="">Sin zona específica</option>
+              {zones.map((z) => (
+                <option key={z.id} value={z.id}>{z.nombre}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Scheduled date/time */}
+          <div>
+            <label className="mb-1.5 block text-xs font-extrabold uppercase tracking-[0.14em] text-app-dim">
+              Fecha y hora planificada *
+            </label>
+            <input
+              type="datetime-local"
+              value={fechaPlanificada}
+              onChange={(e) => setFechaPlanificada(e.target.value)}
+              className="h-11 w-full rounded-[10px] border border-app-border bg-white px-3 text-sm text-app-text outline-none focus:border-brand"
+            />
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="mb-1.5 block text-xs font-extrabold uppercase tracking-[0.14em] text-app-dim">
+              Observaciones (opcional)
+            </label>
+            <textarea
+              rows={2}
+              value={notas}
+              onChange={(e) => setNotas(e.target.value)}
+              className="w-full resize-none rounded-[10px] border border-app-border bg-white px-3 py-2.5 text-sm text-app-text outline-none placeholder:text-app-dim focus:border-brand"
+            />
+          </div>
+
+          {mutation.isError && (
+            <p className="rounded-[10px] bg-state-critica/10 px-3 py-2 text-sm text-state-critica">
+              {mutation.error.message}
+            </p>
+          )}
+
+          <button
+            type="button"
+            disabled={!fechaPlanificada || mutation.isPending}
+            onClick={() => mutation.mutate()}
+            className="w-full rounded-[14px] bg-brand py-3.5 font-heading text-base font-bold text-white shadow-brand transition hover:bg-[#135532] disabled:opacity-50"
+          >
+            {mutation.isPending ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Creando…
+              </span>
+            ) : (
+              "Crear tarea"
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
+export default function TasksPage() {
+  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  const toast = useToast();
   const [tab, setTab] = useState<FilterTab>("programada");
   const [page, setPage] = useState(1);
   const [zoneFilter, setZoneFilter] = useState<string>("");
+  // Auto-open create modal from ?new=1
+  const [showCreate, setShowCreate] = useState(() => searchParams.get("new") === "1");
   const pageSize = DEFAULT_PAGE_SIZE;
 
   const zonesQuery = useQuery({
@@ -116,11 +290,37 @@ export default function TasksPage() {
     refetchInterval: 30_000,
   });
 
+  // Load sample tasks to extract catalog options (workaround — no catalog endpoint)
+  const allTasksQuery = useQuery({
+    queryKey: ["tasks-catalog-lookup"],
+    queryFn: () => api.tasks({ limit: 200 }),
+    staleTime: 5 * 60_000,
+    enabled: showCreate,
+  });
+
+  const catalogOptions = useMemo(() => {
+    const seen = new Map<string, { id: string; nombre: string; categoria?: string }>();
+    for (const t of allTasksQuery.data ?? []) {
+      if (t.tarea_catalogo && !seen.has(t.tarea_catalogo_id)) {
+        seen.set(t.tarea_catalogo_id, {
+          id: t.tarea_catalogo_id,
+          nombre: t.tarea_catalogo.nombre,
+          categoria: t.tarea_catalogo.categoria,
+        });
+      }
+    }
+    return Array.from(seen.values());
+  }, [allTasksQuery.data]);
+
   const completeMutation = useMutation({
     mutationFn: (id: string) => api.completeTask(id),
-    onSettled: () => {
+    onSuccess: () => {
+      toast.success("Tarea completada");
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Error al completar la tarea");
     },
   });
 
@@ -130,10 +330,29 @@ export default function TasksPage() {
 
   return (
     <div className="min-h-full">
+      {showCreate && (
+        <CreateTaskModal
+          zones={zonesQuery.data ?? []}
+          catalogOptions={catalogOptions}
+          onClose={() => setShowCreate(false)}
+          onSuccess={() => setShowCreate(false)}
+        />
+      )}
+
       <PageHeader eyebrow="Plan diario" title="Tareas" EyebrowIcon={ClipboardList}>
-        <span className="rounded-full border border-app-border bg-white px-3 py-1.5 text-sm font-bold text-app-text">
-          {list.length} en pagina
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="rounded-full border border-app-border bg-white px-3 py-1.5 text-sm font-bold text-app-text">
+            {list.length} en página
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowCreate(true)}
+            className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-2 text-sm font-bold text-white shadow-brand transition hover:bg-[#135532]"
+          >
+            <Plus className="h-4 w-4" />
+            Nueva tarea
+          </button>
+        </div>
       </PageHeader>
 
       <div className="space-y-5 px-6 py-6 lg:px-8">
@@ -163,7 +382,7 @@ export default function TasksPage() {
             )}
           </div>
 
-          {/* Filtro por zona */}
+          {/* Zone filter */}
           <div className="flex items-center gap-2 rounded-[10px] border border-app-border bg-white px-3 py-2.5">
             <MapPin className="h-4 w-4 shrink-0 text-app-dim" />
             <select
@@ -189,7 +408,7 @@ export default function TasksPage() {
         )}
 
         {tasksQuery.isError && (
-          <div className="rounded-[10px] border border-state-critica/30 bg-state-critica/10 px-4 py-3 text-sm font-semibold text-state-critica">
+          <div className="rounded-[14px] border border-state-critica/20 bg-state-critica/5 px-4 py-3 text-sm font-semibold text-state-critica">
             Error al cargar tareas.
           </div>
         )}
@@ -200,6 +419,15 @@ export default function TasksPage() {
             <p className="mt-3 font-heading text-lg font-bold text-app-text">
               No hay tareas {tabConfig[tab].label.toLowerCase()}
             </p>
+            {tab === "programada" && (
+              <button
+                type="button"
+                onClick={() => setShowCreate(true)}
+                className="mt-4 rounded-[10px] bg-brand px-4 py-2 text-sm font-bold text-white hover:bg-[#135532]"
+              >
+                + Crear primera tarea
+              </button>
+            )}
           </div>
         )}
 

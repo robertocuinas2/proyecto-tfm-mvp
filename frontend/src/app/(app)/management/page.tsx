@@ -17,6 +17,7 @@ import {
 import { useMemo, useState } from "react";
 import { Pagination } from "@/components/common/Pagination";
 import { PageHeader } from "@/components/ui/page-header";
+import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { hasPermission, roleLabel, type Permission } from "@/lib/permissions";
 import type { Animal, Employee, EmployeeRol, Lactation, Machinery, Treatment, UserRole, Zone } from "@/lib/types";
@@ -356,6 +357,7 @@ function EditButton({ onClick, disabled }: { onClick: () => void; disabled?: boo
 export default function ManagementPage() {
   const queryClient = useQueryClient();
   const role = useAppStore((state) => state.user?.role);
+  const toast = useToast();
   const [section, setSection] = useState<SectionId>("animals");
   const [listPage, setListPage] = useState(1);
 
@@ -432,12 +434,14 @@ export default function ManagementPage() {
       return editingAnimal ? api.updateAnimal(editingAnimal.id, payload) : api.createAnimal(payload);
     },
     onSuccess: () => {
+      toast.success(editingAnimal ? "Animal actualizado" : "Animal creado");
       setAnimalForm(blankAnimal());
       setEditingAnimal(null);
       queryClient.invalidateQueries({ queryKey: ["management-animals"] });
       queryClient.invalidateQueries({ queryKey: ["animals"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
     },
+    onError: (err: Error) => toast.error(err.message || "Error al guardar el animal"),
   });
 
   const zoneMutation = useMutation({
@@ -450,11 +454,13 @@ export default function ManagementPage() {
       return editingZone ? api.updateZone(editingZone.id, payload) : api.createZone(payload);
     },
     onSuccess: () => {
+      toast.success(editingZone ? "Zona actualizada" : "Zona creada");
       setZoneForm(blankZone());
       setEditingZone(null);
       queryClient.invalidateQueries({ queryKey: ["management-zones"] });
       queryClient.invalidateQueries({ queryKey: ["zones"] });
     },
+    onError: (err: Error) => toast.error(err.message || "Error al guardar la zona"),
   });
 
   const lactationMutation = useMutation({
@@ -476,12 +482,14 @@ export default function ManagementPage() {
         : api.createLactation(payload);
     },
     onSuccess: () => {
+      toast.success(editingLactation ? "Lactación actualizada" : "Lactación registrada");
       setLactationForm(blankLactation());
       setEditingLactation(null);
       queryClient.invalidateQueries({ queryKey: ["management-lactations"] });
       queryClient.invalidateQueries({ queryKey: ["animals-produccion-quality"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
     },
+    onError: (err: Error) => toast.error(err.message || "Error al guardar la lactación"),
   });
 
   const treatmentMutation = useMutation({
@@ -505,11 +513,13 @@ export default function ManagementPage() {
         : api.createTreatment(payload);
     },
     onSuccess: () => {
+      toast.success(editingTreatment ? "Tratamiento actualizado" : "Tratamiento registrado");
       setTreatmentForm(blankTreatment());
       setEditingTreatment(null);
       queryClient.invalidateQueries({ queryKey: ["management-treatments"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
     },
+    onError: (err: Error) => toast.error(err.message || "Error al guardar el tratamiento"),
   });
 
   const employeeMutation = useMutation({
@@ -525,10 +535,12 @@ export default function ManagementPage() {
         : api.createEmployee(payload);
     },
     onSuccess: () => {
+      toast.success(editingEmployee ? "Empleado actualizado" : "Empleado creado");
       setEmployeeForm(blankEmployee());
       setEditingEmployee(null);
       queryClient.invalidateQueries({ queryKey: ["management-employees"] });
     },
+    onError: (err: Error) => toast.error(err.message || "Error al guardar el empleado"),
   });
 
   const machineryMutation = useMutation({
@@ -546,10 +558,12 @@ export default function ManagementPage() {
         : api.createMachinery(payload);
     },
     onSuccess: () => {
+      toast.success(editingMachinery ? "Maquinaria actualizada" : "Maquinaria creada");
       setMachineryForm(blankMachinery());
       setEditingMachinery(null);
       queryClient.invalidateQueries({ queryKey: ["management-machinery"] });
     },
+    onError: (err: Error) => toast.error(err.message || "Error al guardar la maquinaria"),
   });
 
   const active = sections.find((item) => item.id === section) ?? sections[0];

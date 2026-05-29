@@ -314,7 +314,7 @@ export default function DashboardPage() {
               {[
                 { href: "/incidents?new=1", label: "Nueva incidencia", Icon: AlertOctagon, tone: "text-state-critica" },
                 { href: "/orders?new=1", label: "Nuevo pedido", Icon: Package, tone: "text-brand" },
-                { href: "/tasks", label: "Gestionar tareas", Icon: ClipboardList, tone: "text-state-info" },
+                { href: "/tasks?new=1", label: "Nueva tarea", Icon: ClipboardList, tone: "text-state-info" },
                 { href: "/handover/tablet", label: "Cambio de turno", Icon: ArrowLeftRight, tone: "text-state-atencion" },
                 { href: "/tv", label: "TV Global", Icon: Monitor, tone: "text-brand" },
                 { href: "/report", label: "Informe semanal", Icon: BarChart3, tone: "text-state-ok" },

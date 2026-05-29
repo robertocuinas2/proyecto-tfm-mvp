@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
+import { ToastProvider } from "@/components/ui/toast";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -24,8 +25,10 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div aria-live="polite" aria-atomic="true" className="sr-only" id="app-live-region" />
-      {children}
+      <ToastProvider>
+        <div aria-live="polite" aria-atomic="true" className="sr-only" id="app-live-region" />
+        {children}
+      </ToastProvider>
     </QueryClientProvider>
   );
 }
