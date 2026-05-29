@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * Active worker store — local/experimental mode for worker selection.
  *

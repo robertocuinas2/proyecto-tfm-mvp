@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Pagination } from "@/components/common/Pagination";
 import { PageHeader } from "@/components/ui/page-header";
+import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { DEFAULT_PAGE_SIZE, getSkip } from "@/lib/pagination";
 import type {
@@ -82,6 +83,7 @@ function KpiCard({ label, value, tone }: { label: string; value: number | string
 
 function CreateShiftModal({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const today = new Date().toISOString().slice(0, 10);
   const [fecha, setFecha] = useState(today);
   const [tipoTurno, setTipoTurno] = useState<ShiftType>("manana");
@@ -92,9 +94,11 @@ function CreateShiftModal({ onClose }: { onClose: () => void }) {
   const mutation = useMutation({
     mutationFn: (payload: CreateShiftPayload) => api.createShift(payload),
     onSuccess: () => {
+      toast.success("Turno creado correctamente");
       queryClient.invalidateQueries({ queryKey: ["shifts"] });
       onClose();
     },
+    onError: (err: Error) => toast.error(err.message || "Error al crear el turno"),
   });
 
   const handleTipoChange = (tipo: ShiftType) => {
@@ -240,12 +244,15 @@ function AssignEmployeeModal({
   const [zonaId, setZonaId] = useState("");
   const [rol, setRol] = useState("");
 
+  const toast = useToast();
   const mutation = useMutation({
     mutationFn: (payload: CreateShiftAssignmentPayload) => api.createShiftAssignment(payload),
     onSuccess: () => {
+      toast.success("Empleado asignado al turno");
       queryClient.invalidateQueries({ queryKey: ["shift-assignments"] });
       onClose();
     },
+    onError: (err: Error) => toast.error(err.message || "Error al asignar empleado"),
   });
 
   return (

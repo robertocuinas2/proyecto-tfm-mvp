@@ -190,6 +190,7 @@ export default function SettingsPage() {
     localStorage.setItem(TV_MODULES_KEY, JSON.stringify([...tvModules]));
     localStorage.setItem(TV_INTERVAL_KEY, String(tvInterval));
     localStorage.setItem(TABLET_ACTIONS_KEY, JSON.stringify([...tabletActions]));
+    toast.info("Preferencias guardadas localmente");
   }
 
   function toggleModule(id: string) {

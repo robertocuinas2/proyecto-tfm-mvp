@@ -443,6 +443,12 @@ export default function OrdersPage() {
     mutationFn: ({ id, estado }: { id: string; estado: OrderStatus }) =>
       api.updateOrderStatus(id, estado),
     onMutate: ({ id }) => setUpdatingId(id),
+    onSuccess: (_, { estado }) => {
+      toast.success(`Pedido marcado como ${STATUS_LABELS[estado].toLowerCase()}`);
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Error al cambiar el estado del pedido");
+    },
     onSettled: () => {
       setUpdatingId(null);
       queryClient.invalidateQueries({ queryKey: ["orders"] });

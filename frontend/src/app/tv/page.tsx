@@ -63,7 +63,7 @@ const zoneStatusStyles: Record<ZoneStatus, { ring: string; dot: string; label: s
   atencion:  { ring: "border-state-atencion/50 bg-state-atencion/10", dot: "bg-state-atencion",  label: "ATENCIÓN",  text: "text-state-atencion" },
   operativa: { ring: "border-tv-accent/30 bg-tv-accent/5",             dot: "bg-tv-accent",       label: "OPERATIVA", text: "text-tv-accent" },
   sin_datos: { ring: "border-tv-border bg-tv-surface",                 dot: "bg-tv-dim",          label: "SIN DATOS", text: "text-tv-dim" },
-  inactiva:  { ring: "border-tv-border/30 bg-tv-bg",                   dot: "bg-tv-dim/40",       label: "INACTIVA",  text: "text-tv-dim/60" },
+  inactiva:  { ring: "border-tv-border/30 bg-tv-bg",                   dot: "bg-tv-dim/40",       label: "INACTIVA",  text: "text-tv-dim opacity-60" },
 };
 
 // ── Alert severity helpers ───────────────────────────────────────────────────
