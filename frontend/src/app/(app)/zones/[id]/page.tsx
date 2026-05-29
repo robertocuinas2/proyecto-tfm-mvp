@@ -9,14 +9,16 @@ import {
   Clock,
   Monitor,
   Plus,
+  Settings2,
   Tablet,
   X,
 } from "lucide-react";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
+import { WeatherPanel } from "@/components/ui/WeatherPanel";
 import { api } from "@/lib/api";
 import { TV_REFETCH, TV_STALE } from "@/lib/tv-constants";
-import type { CreateIncidentPayload, Employee, IncidentPriority, Task } from "@/lib/types";
+import type { CreateIncidentPayload, Employee, IncidentPriority, Machinery, Task } from "@/lib/types";
 
 const severityBar: Record<string, string> = {
   critica: "border-l-state-critica",
@@ -640,9 +642,192 @@ function TabletMode({ zoneId }: { zoneId: string }) {
   );
 }
 
+// ── Management view (light theme) ────────────────────────────────────────────
+
+function ManagementMode({ zoneId, zone }: { zoneId: string; zone: { id: string; nombre: string; codigo?: string; tipo?: string | null; descripcion?: string | null; activa?: boolean; tiene_pantalla_tv: boolean; tiene_tablet: boolean } | undefined }) {
+  const machineryQ = useQuery({
+    queryKey: ["machinery-zone", zoneId],
+    queryFn: () => api.machinery({ zona_id: zoneId, limit: 50 }),
+    staleTime: TV_STALE.CATALOG,
+  });
+
+  const tasksQ = useQuery({
+    queryKey: ["tasks-zone", zoneId],
+    queryFn: () => api.tasks({ zona_id: zoneId, limit: 100 }),
+    staleTime: TV_STALE.NORMAL,
+    refetchInterval: TV_REFETCH.NORMAL,
+  });
+
+  const incidentsQ = useQuery({
+    queryKey: ["tv-incidents"],
+    queryFn: () => api.incidents({ limit: 100 }),
+    staleTime: TV_STALE.NORMAL,
+  });
+
+  const assignmentsQ = useQuery({
+    queryKey: ["tv-shift-assignments"],
+    queryFn: () => api.shiftAssignments({ limit: 50 }),
+    staleTime: TV_STALE.SLOW,
+  });
+
+  const employeesQ = useQuery({
+    queryKey: ["employees-lookup"],
+    queryFn: () => api.employees(),
+    staleTime: TV_STALE.CATALOG,
+  });
+
+  const machinery = (machineryQ.data ?? []) as Machinery[];
+  const allTasks = tasksQ.data ?? [];
+  const zoneIncidents = (incidentsQ.data ?? []).filter((i: { zona_id?: string | null; estado: string }) => i.zona_id === zoneId && (i.estado === "abierta" || i.estado === "en_gestion"));
+
+  const pendingTasks = allTasks.filter((t: Task) => t.estado === "programada" || t.estado === "retrasada");
+  const delayedTasks = allTasks.filter((t: Task) => t.estado === "retrasada");
+  const doneTasks = allTasks.filter((t: Task) => t.estado === "ejecutada");
+
+  const empById = new Map<string, Employee>((employeesQ.data ?? []).map((e) => [e.id, e] as [string, Employee]));
+  const zoneAssignments = (assignmentsQ.data?.asignaciones ?? []).filter((a: { zona_id?: string | null }) => a.zona_id === zoneId);
+
+  const machineryStateStyles: Record<string, string> = {
+    operativa: "bg-state-ok/10 text-state-ok",
+    revision: "bg-state-atencion/10 text-state-atencion",
+    baja: "bg-state-neutral/10 text-state-neutral",
+  };
+
+  return (
+    <div className="space-y-5 bg-app-bg px-6 py-6 lg:px-8">
+      {/* Zone summary KPIs */}
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        {[
+          { label: "Tareas pendientes", value: pendingTasks.length, color: delayedTasks.length > 0 ? "text-state-critica" : "text-app-text" },
+          { label: "Retrasadas", value: delayedTasks.length, color: delayedTasks.length > 0 ? "text-state-critica" : "text-state-ok" },
+          { label: "Incidencias", value: zoneIncidents.length, color: zoneIncidents.length > 0 ? "text-state-atencion" : "text-app-text" },
+          { label: "Maquinaria", value: machinery.length, color: "text-app-text" },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="rounded-[14px] border border-app-border bg-white p-4 shadow-card">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-app-dim">{label}</p>
+            <p className={`mt-2 font-heading text-4xl font-bold ${color}`}>{value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        {/* Machinery */}
+        <div className="rounded-[14px] border border-app-border bg-white p-5 shadow-card">
+          <h3 className="mb-4 font-heading text-base font-bold text-app-text">
+            Maquinaria de zona ({machinery.length})
+          </h3>
+          {machineryQ.isError ? (
+            <p className="text-sm text-state-critica">Error al cargar maquinaria.</p>
+          ) : machineryQ.isLoading ? (
+            <div className="h-20 animate-pulse rounded-[10px] bg-app-surface2" />
+          ) : machinery.length === 0 ? (
+            <p className="text-sm text-app-dim">Sin maquinaria asignada a esta zona.</p>
+          ) : (
+            <div className="space-y-2">
+              {machinery.map((m: Machinery) => (
+                <div key={m.id} className="flex items-center justify-between gap-3 rounded-[10px] border border-app-border bg-app-bg px-4 py-3">
+                  <div>
+                    <p className="text-sm font-semibold text-app-text">{m.nombre}</p>
+                    <p className="text-xs capitalize text-app-dim">{m.tipo.replace(/_/g, " ")}</p>
+                    {m.observaciones && <p className="mt-0.5 text-xs text-app-dim">{m.observaciones}</p>}
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold capitalize ${machineryStateStyles[m.estado] ?? "bg-app-bg text-app-dim"}`}>
+                    {m.estado}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Weather */}
+        <div className="space-y-5">
+          <WeatherPanel />
+
+          {/* Zone personnel */}
+          {zoneAssignments.length > 0 && (
+            <div className="rounded-[14px] border border-app-border bg-white p-5 shadow-card">
+              <h3 className="mb-3 font-heading text-base font-bold text-app-text">
+                Personal asignado
+              </h3>
+              <div className="space-y-2">
+                {zoneAssignments.map((a: { id: string; empleado_id: string; rol?: string | null }) => {
+                  const emp = empById.get(a.empleado_id);
+                  const name = emp ? [emp.nombre, emp.apellidos].filter(Boolean).join(" ") : a.empleado_id.slice(0, 8) + "…";
+                  return (
+                    <div key={a.id} className="flex items-center gap-3 rounded-[10px] border border-app-border bg-app-bg px-4 py-2.5">
+                      <span className="text-sm font-semibold text-app-text">{name}</span>
+                      {emp?.role && <span className="text-xs capitalize text-app-dim">{emp.role}</span>}
+                      {a.rol && <span className="ml-auto rounded bg-white px-2 py-0.5 font-mono text-[10px] text-app-dim">{a.rol}</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Tasks summary */}
+      {allTasks.length > 0 && (
+        <div className="rounded-[14px] border border-app-border bg-white p-5 shadow-card">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="font-heading text-base font-bold text-app-text">
+              Tareas de zona ({allTasks.length})
+            </h3>
+            <div className="flex gap-2 text-xs">
+              <span className="rounded-full bg-state-ok/10 px-2.5 py-1 font-semibold text-state-ok">{doneTasks.length} hechas</span>
+              <span className={`rounded-full px-2.5 py-1 font-semibold ${delayedTasks.length > 0 ? "bg-state-critica/10 text-state-critica" : "bg-app-bg text-app-dim"}`}>{delayedTasks.length} retrasadas</span>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {[...delayedTasks, ...pendingTasks.filter((t: Task) => t.estado !== "retrasada")].slice(0, 8).map((task: Task) => (
+              <div key={task.id} className={`rounded-[10px] border px-4 py-3 ${task.estado === "retrasada" ? "border-state-critica/20 bg-state-critica/5" : "border-app-border bg-app-bg"}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-app-text">
+                    {task.tarea_catalogo?.nombre ?? "Tarea"}
+                  </p>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${task.estado === "retrasada" ? "bg-state-critica/10 text-state-critica" : "bg-state-info/10 text-state-info"}`}>
+                    {task.estado}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-app-dim">
+                  {new Date(task.fecha_programada).toLocaleString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Incidents */}
+      {zoneIncidents.length > 0 && (
+        <div className="rounded-[14px] border border-state-atencion/20 bg-state-atencion/5 p-5">
+          <h3 className="mb-3 font-heading text-base font-bold text-state-atencion">
+            Incidencias de zona ({zoneIncidents.length})
+          </h3>
+          <div className="space-y-2">
+            {zoneIncidents.map((inc: { id: string; tipo: string; descripcion: string; prioridad: string; estado: string }) => (
+              <div key={inc.id} className="rounded-[10px] border border-app-border bg-white px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs capitalize text-app-dim">{inc.tipo.replace(/_/g, " ")}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${inc.prioridad === "critica" ? "bg-state-critica/10 text-state-critica" : "bg-state-atencion/10 text-state-atencion"}`}>
+                    {inc.prioridad}
+                  </span>
+                </div>
+                <p className="mt-1 text-sm font-semibold text-app-text">{inc.descripcion}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ZoneDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [viewMode, setViewMode] = useState<"tv" | "tablet">("tv");
+  const [viewMode, setViewMode] = useState<"management" | "tv" | "tablet">("management");
 
   const zonesQuery = useQuery({
     queryKey: ["zones"],
@@ -652,57 +837,88 @@ export default function ZoneDetailPage({ params }: { params: Promise<{ id: strin
 
   const zone = zonesQuery.data?.find((item) => item.id === id);
 
+  const isManagement = viewMode === "management";
+
   return (
-    <div className="min-h-full bg-tv-bg text-white">
-      <div className="border-b border-tv-border px-6 py-4 lg:px-8">
+    <div className={`min-h-full ${isManagement ? "bg-app-bg" : "bg-tv-bg text-white"}`}>
+      {/* Header adapts to theme */}
+      <div className={`border-b px-6 py-4 lg:px-8 ${isManagement ? "border-app-border bg-white" : "border-tv-border"}`}>
         <div className="flex flex-wrap items-center gap-4">
-          <Link href="/zones" className="flex items-center gap-1 text-sm text-tv-dim hover:text-white">
+          <Link
+            href="/zones"
+            className={`flex items-center gap-1 text-sm transition ${isManagement ? "text-app-dim hover:text-app-text" : "text-tv-dim hover:text-white"}`}
+          >
             <ChevronLeft className="h-4 w-4" />
             Zonas
           </Link>
-          <div className="h-4 w-px bg-tv-border" />
+          <div className={`h-4 w-px ${isManagement ? "bg-app-border" : "bg-tv-border"}`} />
           <div>
-            <h1 className="font-heading text-xl font-bold text-white">{zone?.nombre ?? id}</h1>
-            <span className="font-mono text-xs text-tv-dim">{zone?.codigo ?? "ZONA"}</span>
+            <h1 className={`font-heading text-xl font-bold ${isManagement ? "text-app-text" : "text-white"}`}>
+              {zone?.nombre ?? id}
+            </h1>
+            <span className={`font-mono text-xs ${isManagement ? "text-app-dim" : "text-tv-dim"}`}>
+              {zone?.codigo ?? "ZONA"}
+            </span>
           </div>
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
             <Link
               href="/tv"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-tv-border bg-tv-surface2 px-3 py-2 text-xs font-semibold text-tv-accent transition hover:bg-tv-surface"
+              className={`inline-flex items-center gap-1.5 rounded-[10px] border px-3 py-2 text-xs font-semibold transition ${
+                isManagement
+                  ? "border-app-border bg-app-bg text-app-dim hover:border-brand/30 hover:text-brand"
+                  : "border-tv-border bg-tv-surface2 text-tv-accent hover:bg-tv-surface"
+              }`}
             >
               <Monitor className="h-3.5 w-3.5" />
               TV Global
             </Link>
-            <div className="flex overflow-hidden rounded-lg border border-tv-border bg-tv-surface">
+
+            {/* Mode toggle: Management | TV | Tablet */}
+            <div className={`flex overflow-hidden rounded-[10px] border ${isManagement ? "border-app-border bg-white" : "border-tv-border bg-tv-surface"}`}>
               {[
+                { key: "management", label: "Gestión", Icon: Settings2 },
                 { key: "tv", label: "TV", Icon: Monitor },
                 { key: "tablet", label: "Tablet", Icon: Tablet },
-              ].map(({ key, label, Icon }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setViewMode(key as "tv" | "tablet")}
-                  className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold transition ${
-                    viewMode === key ? "bg-tv-surface2 text-tv-accent" : "text-tv-dim hover:text-white"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </button>
-              ))}
+              ].map(({ key, label, Icon }) => {
+                const active = viewMode === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setViewMode(key as "management" | "tv" | "tablet")}
+                    className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold transition ${
+                      active
+                        ? isManagement
+                          ? "bg-brand/10 text-brand"
+                          : "bg-tv-surface2 text-tv-accent"
+                        : isManagement
+                          ? "text-app-dim hover:text-app-text"
+                          : "text-tv-dim hover:text-white"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="px-6 py-6 lg:px-8">
-        {viewMode === "tv" ? (
+      {/* Content */}
+      {viewMode === "management" ? (
+        <ManagementMode zoneId={id} zone={zone} />
+      ) : viewMode === "tv" ? (
+        <div className="px-6 py-6 lg:px-8">
           <TVMode zoneId={id} zoneName={zone?.nombre ?? "Zona"} />
-        ) : (
+        </div>
+      ) : (
+        <div className="px-6 py-6 lg:px-8">
           <TabletMode zoneId={id} />
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

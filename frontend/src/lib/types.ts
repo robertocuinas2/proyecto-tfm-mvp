@@ -391,10 +391,29 @@ export type Machinery = {
 
 export type WeatherData = {
   temperatura_actual?: number | null;
+  temperatura?: number | null;
   humedad?: number | null;
   descripcion?: string | null;
   impacto_productivo?: string | null;
   fecha?: string | null;
+  ubicacion?: string | null;
+};
+
+export type WeatherForecastDay = {
+  fecha: string | null;
+  temperatura_media: number | null;
+  temperatura_maxima: number | null;
+  temperatura_minima: number | null;
+  humedad: number | null;
+  precipitacion: number | null;
+  viento: number | null;
+  descripcion: string | null;
+  fuente: string;
+};
+
+export type WeatherForecast = {
+  ubicacion: string;
+  dias: WeatherForecastDay[];
 };
 
 export type ApiErrorPayload = {

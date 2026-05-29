@@ -32,6 +32,7 @@ import type {
   Task,
   Treatment,
   WeatherData,
+  WeatherForecast,
   Zone,
 } from "@/lib/types";
 
@@ -342,7 +343,7 @@ export const api = {
   // ── Weather (extended) ────────────────────────────────────────────────────
 
   weatherForecast() {
-    return request<unknown>("/weather/forecast");
+    return request<WeatherForecast>("/weather/forecast");
   },
 
   // ── Audit Log ─────────────────────────────────────────────────────────────
