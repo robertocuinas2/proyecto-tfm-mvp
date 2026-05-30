@@ -9,7 +9,6 @@ import {
   Milk,
   ShieldCheck,
   Sprout,
-  UserRound,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -26,7 +25,6 @@ const roles: {
 }[] = [
   { value: "admin", label: "Gestor / Administrador", short: "Control", Icon: ShieldCheck },
   { value: "veterinario", label: "Veterinario", short: "Sanidad", Icon: HeartPulse },
-  { value: "operario", label: "Operario de zona", short: "Zona", Icon: UserRound },
   { value: "alimentacion", label: "Responsable alimentación", short: "Nutrición", Icon: Sprout },
 ];
 
@@ -220,28 +218,6 @@ export function LoginScreen() {
             </div>
 
             <div className="px-5 py-5 sm:px-7 sm:py-6">
-              {/* Role selector */}
-              <div className="mb-5 grid grid-cols-2 gap-3">
-                {roles.map(({ value, short, Icon }) => {
-                  const active = selectedRole === value;
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setSelectedRole(value)}
-                      className={`flex min-h-[72px] items-center gap-3 rounded-[14px] border px-4 text-left transition ${
-                        active
-                          ? "border-brand bg-white text-brand shadow-panel"
-                          : "border-app-border bg-white/70 text-app-dim hover:border-brand/50"
-                      }`}
-                    >
-                      <Icon className="h-5 w-5 shrink-0" strokeWidth={2.2} />
-                      <span className="font-heading text-[15px] font-bold">{short}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
               {/* Login form */}
               <form
                 className="grid gap-4"
