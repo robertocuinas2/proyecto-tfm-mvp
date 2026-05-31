@@ -133,3 +133,19 @@ def test_operational_modules_support_updates(client, auth_headers):
     )
     assert machinery_update.status_code == 200
     assert machinery_update.json()["estado"] == "revision"
+
+    incident = client.post(
+        "/api/v1/incidents",
+        headers=auth_headers,
+        json={
+            "animal_id": "animal-001",
+            "tipo": "sanitaria",
+            "descripcion": "Cojera leve observada en control",
+            "prioridad": "media",
+        },
+    )
+    assert incident.status_code == 201
+    incidents = client.get("/api/v1/incidents?animal_id=animal-001", headers=auth_headers)
+    assert incidents.status_code == 200
+    assert incidents.json()
+    assert all(item["animal_id"] == incident.json()["animal_id"] for item in incidents.json())

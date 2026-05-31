@@ -517,8 +517,11 @@ def incidents(
     fecha_hasta: str | None = None,
 ) -> list[dict[str, Any]]:
     from datetime import datetime as _dt
-    fd = _dt.fromisoformat(fecha_desde.replace("Z", "+00:00")) if fecha_desde else None
-    fh = _dt.fromisoformat(fecha_hasta.replace("Z", "+00:00")) if fecha_hasta else None
+    try:
+        fd = _dt.fromisoformat(fecha_desde.replace("Z", "+00:00")) if fecha_desde else None
+        fh = _dt.fromisoformat(fecha_hasta.replace("Z", "+00:00")) if fecha_hasta else None
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="Formato de fecha invalido") from exc
     items = incidents_repository.get_all(
         db, skip=skip, limit=limit,
         zona_id=zona_id, animal_id=animal_id, maquinaria_id=maquinaria_id,

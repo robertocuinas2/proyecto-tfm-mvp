@@ -282,17 +282,13 @@ function AlertsPanel({ animalId }: { animalId: string }) {
 }
 
 function IncidentsPanel({ animalId }: { animalId: string }) {
-  // TODO: The incidents endpoint has no animal_id filter server-side.
-  // Loading limit=100 and filtering client-side. If there are many incidents,
-  // some for this animal might not appear. When backend adds filter support,
-  // replace with: api.incidents({ animal_id: animalId })
   const q = useQuery({
     queryKey: ["incidents-for-animal", animalId],
-    queryFn: () => api.incidents({ limit: 100 }),
+    queryFn: () => api.incidents({ animal_id: animalId, limit: 100 }),
     staleTime: 60_000,
   });
 
-  const incidents = ((q.data ?? []) as Incident[]).filter((i) => i.animal_id === animalId);
+  const incidents = (q.data ?? []) as Incident[];
 
   if (!q.isLoading && incidents.length === 0 && !q.isError) return null;
 

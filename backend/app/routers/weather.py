@@ -70,7 +70,7 @@ def weather_forecast(db: Annotated[Session, Depends(get_db)]) -> dict[str, Any]:
 def weather_readings(
     db: Annotated[Session, Depends(get_db)],
     limit: Annotated[int, Query(ge=1, le=90)] = 14,
-    order: Annotated[str, Query(regex="^(asc|desc)$")] = "desc",
+    order: Annotated[str, Query(pattern="^(asc|desc)$")] = "desc",
 ) -> dict[str, Any]:
     """Returns recent sensor readings ordered by timestamp.
     More accurate label than /forecast — these are real sensor readings, not predictions.

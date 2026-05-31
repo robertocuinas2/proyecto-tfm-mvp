@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.tools4milk import Incidencia
+from app.models.tools4milk import Animal, Incidencia
 
 
 def get_all(
@@ -28,10 +28,10 @@ def get_all(
             return []
 
     if animal_id is not None:
-        try:
-            query = query.where(Incidencia.animal_id == uuid.UUID(animal_id))
-        except (ValueError, AttributeError):
+        resolved_animal_id = _resolve_animal_uuid(db, animal_id)
+        if resolved_animal_id is None:
             return []
+        query = query.where(Incidencia.animal_id == resolved_animal_id)
 
     if maquinaria_id is not None:
         try:
@@ -73,7 +73,7 @@ def create(db: Session, data: dict) -> Incidencia:
         descripcion=data.get("descripcion"),
         zona_id=_to_uuid(data.get("zona_id")),
         maquinaria_id=_to_uuid(data.get("maquinaria_id")),
-        animal_id=_to_uuid(data.get("animal_id")),
+        animal_id=_resolve_animal_uuid(db, data.get("animal_id")),
         reportado_por=_to_uuid(data.get("reportado_por")),
         ts_apertura=datetime.now(tz=timezone.utc),
         acciones=[],
@@ -110,3 +110,18 @@ def _to_uuid(value: str | None) -> uuid.UUID | None:
         return uuid.UUID(value)
     except (ValueError, AttributeError):
         return None
+
+
+def _resolve_animal_uuid(db: Session, value: str | None) -> uuid.UUID | None:
+    if not value:
+        return None
+    try:
+        return uuid.UUID(value)
+    except (ValueError, AttributeError):
+        animal = db.scalar(
+            select(Animal).where(
+                (Animal.crotal_oficial == value)
+                | (Animal.nombre == value)
+            )
+        )
+        return animal.id if animal else None
