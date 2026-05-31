@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertOctagon,
+  AlertTriangle,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -15,12 +16,15 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 import { PageHeader } from "@/components/ui/page-header";
-import { api } from "@/lib/api";
+import { api, normalizeAlert, normalizeIncident } from "@/lib/api";
 import type {
+  AlertState,
   CreateIncidentPayload,
-  Incident,
   IncidentPriority,
   IncidentStatus,
+  UnifiedEstado,
+  UnifiedIncident,
+  UnifiedIncidentOrigen,
 } from "@/lib/types";
 
 // â"€â"€ Constants â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
@@ -48,12 +52,23 @@ const STATUS_STYLES: Record<IncidentStatus, string> = {
   cerrada: "bg-state-neutral/10 text-state-neutral border-state-neutral/20",
 };
 
-const PRIORITY_STYLES: Record<IncidentPriority, string> = {
+const SEVERITY_STYLES: Record<string, string> = {
   critica: "bg-state-critica/15 text-state-critica",
   alta: "bg-state-atencion/15 text-state-atencion",
   media: "bg-state-info/15 text-state-info",
   baja: "bg-state-neutral/10 text-state-neutral",
 };
+
+function OrigenBadge({ origen }: { origen: UnifiedIncidentOrigen }) {
+  if (origen === "alerta")
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-state-atencion/30 bg-state-atencion/10 px-2 py-0.5 text-[10px] font-extrabold uppercase text-state-atencion">
+        <AlertTriangle className="h-2.5 w-2.5" />
+        Alerta
+      </span>
+    );
+  return null;
+}
 
 const PAGE_SIZE = 15;
 
@@ -75,14 +90,6 @@ function StatusBadge({ estado }: { estado: IncidentStatus }) {
   return (
     <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${STATUS_STYLES[estado]}`}>
       {STATUS_LABELS[estado]}
-    </span>
-  );
-}
-
-function PriorityBadge({ prioridad }: { prioridad: IncidentPriority }) {
-  return (
-    <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase ${PRIORITY_STYLES[prioridad]}`}>
-      {prioridad}
     </span>
   );
 }
@@ -240,30 +247,38 @@ function CreateIncidentModal({
 
 // â"€â"€ Incident card â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
-function IncidentCard({
-  incident,
+function getNextStatuses(item: UnifiedIncident): UnifiedEstado[] {
+  if (item.origen === "alerta") {
+    if (item.estado === "abierta") return ["en_gestion", "resuelta"];
+    if (item.estado === "en_gestion") return ["resuelta", "cerrada"];
+    return [];
+  }
+  const machine: Partial<Record<UnifiedEstado, UnifiedEstado[]>> = {
+    abierta: ["en_gestion", "resuelta"],
+    en_gestion: ["resuelta"],
+    resuelta: ["cerrada"],
+  };
+  return machine[item.estado] ?? [];
+}
+
+function UnifiedCard({
+  item,
   onStatusChange,
   updatingId,
   animalLookup,
   zoneLookup,
 }: {
-  incident: Incident;
-  onStatusChange: (id: string, estado: IncidentStatus) => void;
+  item: UnifiedIncident;
+  onStatusChange: (item: UnifiedIncident, estado: UnifiedEstado) => void;
   updatingId: string | null;
   animalLookup: Map<string, string>;
   zoneLookup: Map<string, string>;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const isUpdating = updatingId === incident.id;
+  const isUpdating = updatingId === item.id;
+  const available = getNextStatuses(item);
 
-  const nextStatuses: Partial<Record<IncidentStatus, IncidentStatus[]>> = {
-    abierta: ["en_gestion", "resuelta"],
-    en_gestion: ["resuelta"],
-    resuelta: ["cerrada"],
-  };
-  const available = nextStatuses[incident.estado] ?? [];
-
-  const statusBtnStyle: Record<IncidentStatus, string> = {
+  const statusBtnStyle: Record<UnifiedEstado, string> = {
     en_gestion: "bg-state-atencion/15 text-state-atencion hover:bg-state-atencion/25",
     resuelta: "bg-state-ok/15 text-state-ok hover:bg-state-ok/25",
     cerrada: "bg-state-neutral/10 text-state-neutral hover:bg-state-neutral/20",
@@ -280,13 +295,15 @@ function IncidentCard({
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge estado={incident.estado} />
-              <PriorityBadge prioridad={incident.prioridad} />
-              <span className="text-xs text-app-dim capitalize">{incident.tipo.replace(/_/g, " ")}</span>
-              <span className="text-xs text-app-dim">{formatDate(incident.fecha_creacion)}</span>
+              <StatusBadge estado={item.estado} />
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase ${SEVERITY_STYLES[item.severidad]}`}>
+                {item.severidad}
+              </span>
+              <OrigenBadge origen={item.origen} />
+              <span className="text-xs text-app-dim">{formatDate(item.fecha_creacion)}</span>
             </div>
             <p className="mt-2 text-sm font-semibold leading-snug text-app-text">
-              {incident.descripcion}
+              {item.titulo}
             </p>
           </div>
           {expanded ? (
@@ -299,35 +316,43 @@ function IncidentCard({
 
       {expanded && (
         <div className="space-y-3 border-t border-app-border px-4 py-4">
+          <p className="text-sm text-app-text">{item.descripcion}</p>
+
           <div className="flex flex-wrap gap-4 text-xs text-app-dim">
-            {incident.zona_id && (
+            {item.zona_id && (
               <span>
                 Zona:{" "}
                 <span className="font-semibold text-app-text">
-                  {zoneLookup.get(incident.zona_id) ?? incident.zona_id.slice(0, 8) + "\u2026"}
+                  {zoneLookup.get(item.zona_id) ?? item.zona_id.slice(0, 8) + "\u2026"}
                 </span>
               </span>
             )}
-            {incident.animal_id && (
+            {item.animal_id && (
               <span>
                 Animal:{" "}
                 <span className="font-mono font-bold text-brand">
-                  {animalLookup.get(incident.animal_id) ?? incident.animal_id.slice(0, 8) + "\u2026"}
+                  {animalLookup.get(item.animal_id) ?? item.animal_id.slice(0, 8) + "\u2026"}
                 </span>
               </span>
             )}
-            {incident.reportado_por && (
+            {item.reportado_por && (
               <span>
                 Reportado por:{" "}
-                <span className="font-semibold text-app-text">{incident.reportado_por.slice(0, 8)}\u2026</span>
+                <span className="font-semibold text-app-text">{item.reportado_por.slice(0, 8)}\u2026</span>
               </span>
             )}
-            {incident.fecha_resolucion && (
+            {item.fecha_resolucion && (
               <span>
-                Resuelto: <span className="text-app-text">{formatDate(incident.fecha_resolucion)}</span>
+                Resuelto: <span className="text-app-text">{formatDate(item.fecha_resolucion)}</span>
               </span>
             )}
           </div>
+
+          {item.recomendacion && (
+            <div className="rounded-[10px] bg-brand/5 px-3 py-2 text-xs text-app-text">
+              <span className="font-semibold">Recomendaci\u00f3n:</span> {item.recomendacion}
+            </div>
+          )}
 
           {available.length > 0 && (
             <div className="flex flex-wrap gap-2">
@@ -336,7 +361,7 @@ function IncidentCard({
                   key={next}
                   type="button"
                   disabled={isUpdating}
-                  onClick={() => onStatusChange(incident.id, next)}
+                  onClick={() => onStatusChange(item, next)}
                   className={`inline-flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-xs font-bold transition disabled:opacity-50 ${statusBtnStyle[next]}`}
                 >
                   {isUpdating ? (
@@ -350,9 +375,9 @@ function IncidentCard({
             </div>
           )}
 
-          {incident.estado === "cerrada" && (
+          {item.estado === "cerrada" && (
             <div className="rounded-[10px] bg-state-neutral/10 px-3 py-2 text-xs font-bold text-state-neutral">
-              Incidencia cerrada
+              Registro cerrado
             </div>
           )}
         </div>
@@ -363,8 +388,8 @@ function IncidentCard({
 
 // â"€â"€ Main page â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
-type FilterEstado = IncidentStatus | "todas";
-type FilterPrioridad = IncidentPriority | "todas";
+type FilterEstado = UnifiedEstado | "todas";
+type FilterPrioridad = "baja" | "media" | "alta" | "critica" | "todas";
 
 export default function IncidentsPage() {
   const searchParams = useSearchParams();
@@ -373,20 +398,22 @@ export default function IncidentsPage() {
   const [estadoFilter, setEstadoFilter] = useState<FilterEstado>("todas");
   const [prioridadFilter, setPrioridadFilter] = useState<FilterPrioridad>("todas");
   const [page, setPage] = useState(1);
-  // Auto-open creation modal when ?new=1 is in the URL
   const [showCreate, setShowCreate] = useState(() => searchParams.get("new") === "1");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  // Incidents query: now uses server-side filters for estado and prioridad when applied.
-  // Client-side filtering still used for estadoFilter/prioridadFilter on the loaded data
-  // to keep UX responsive without a query per tab change.
   const incidentsQuery = useQuery({
-    queryKey: ["incidents", estadoFilter, prioridadFilter],
+    queryKey: ["incidents", estadoFilter],
     queryFn: () => api.incidents({
       limit: 200,
-      // Pass estado filter server-side when a specific state is selected
       ...(estadoFilter !== "todas" ? { estado: estadoFilter } : {}),
     }),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+
+  const alertsQuery = useQuery({
+    queryKey: ["alerts-unified"],
+    queryFn: () => api.alerts({ limit: 200 }),
     staleTime: 30_000,
     refetchInterval: 60_000,
   });
@@ -420,37 +447,56 @@ export default function IncidentsPage() {
   }, [zonesQuery.data]);
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, estado }: { id: string; estado: IncidentStatus }) =>
-      api.updateIncident(id, { estado }),
-    onMutate: ({ id }) => setUpdatingId(id),
+    mutationFn: async ({ item, estado }: { item: UnifiedIncident; estado: UnifiedEstado }) => {
+      if (item.origen === "alerta") {
+        const alertEstado: AlertState =
+          estado === "abierta" ? "pendiente"
+          : estado === "en_gestion" ? "revisada"
+          : estado === "resuelta" ? "resuelta"
+          : "falsa_alarma";
+        return api.reviewAlert(item.rawId, { estado: alertEstado });
+      }
+      return api.updateIncident(item.rawId, { estado });
+    },
+    onMutate: ({ item }) => setUpdatingId(item.id),
     onError: (err: Error) => {
-      toast.error(err.message || "Error al actualizar la incidencia");
+      toast.error(err.message || "Error al actualizar");
     },
     onSettled: () => {
       setUpdatingId(null);
       queryClient.invalidateQueries({ queryKey: ["incidents"] });
+      queryClient.invalidateQueries({ queryKey: ["alerts-unified"] });
     },
   });
 
-  const all = useMemo(() => incidentsQuery.data ?? [], [incidentsQuery.data]);
+  const all = useMemo<UnifiedIncident[]>(() => {
+    const items = [
+      ...(incidentsQuery.data ?? []).map(normalizeIncident),
+      ...(alertsQuery.data?.alertas ?? []).map(normalizeAlert),
+    ];
+    return items.sort((a, b) =>
+      new Date(b.fecha_creacion).getTime() - new Date(a.fecha_creacion).getTime()
+    );
+  }, [incidentsQuery.data, alertsQuery.data]);
 
-  // Client-side filtering
+  const isLoading = incidentsQuery.isLoading || alertsQuery.isLoading;
+  const isError = incidentsQuery.isError || alertsQuery.isError;
+
   const filtered = useMemo(() => {
     return all.filter((i) => {
       if (estadoFilter !== "todas" && i.estado !== estadoFilter) return false;
-      if (prioridadFilter !== "todas" && i.prioridad !== prioridadFilter) return false;
+      if (prioridadFilter !== "todas" && i.severidad !== prioridadFilter) return false;
       return true;
     });
   }, [all, estadoFilter, prioridadFilter]);
 
-  // KPIs from all incidents (regardless of filter)
   const stats = useMemo(() => ({
     total: all.length,
     abiertas: all.filter((i) => i.estado === "abierta").length,
     en_gestion: all.filter((i) => i.estado === "en_gestion").length,
     resueltas: all.filter((i) => i.estado === "resuelta" || i.estado === "cerrada").length,
-    criticas: all.filter((i) => i.prioridad === "critica").length,
-    altas: all.filter((i) => i.prioridad === "alta").length,
+    criticas: all.filter((i) => i.severidad === "critica").length,
+    altas: all.filter((i) => i.severidad === "alta").length,
   }), [all]);
 
   // Client-side pagination
@@ -482,9 +528,9 @@ export default function IncidentsPage() {
 
       <PageHeader eyebrow="Seguimiento operativo" title="Incidencias" EyebrowIcon={AlertOctagon}>
         <div className="flex items-center gap-3">
-          {incidentsQuery.data && (
+          {incidentsQuery.isSuccess && alertsQuery.isSuccess && (
             <span className="rounded-full border border-app-border bg-white px-3 py-1.5 text-sm font-bold text-app-text">
-              {filtered.length} incidencias
+              {filtered.length} registros
             </span>
           )}
           <button
@@ -558,7 +604,7 @@ export default function IncidentsPage() {
         </div>
 
         {/* Loading */}
-        {incidentsQuery.isLoading && (
+        {isLoading && (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="h-20 animate-pulse rounded-[10px] bg-app-bg" />
@@ -567,32 +613,32 @@ export default function IncidentsPage() {
         )}
 
         {/* Error */}
-        {incidentsQuery.isError && (
+        {isError && (
           <div className="rounded-[10px] border border-state-critica/30 bg-state-critica/10 px-4 py-3 text-sm font-semibold text-state-critica">
-            Error al cargar incidencias: {incidentsQuery.error.message}
+            Error al cargar: {incidentsQuery.error?.message || alertsQuery.error?.message || "Error desconocido"}
           </div>
         )}
 
         {/* Empty */}
-        {incidentsQuery.isSuccess && filtered.length === 0 && (
+        {!isLoading && !isError && filtered.length === 0 && (
           <div className="rounded-[10px] border border-app-border bg-white py-16 text-center">
             <Siren className="mx-auto h-12 w-12 text-app-dim" strokeWidth={1.5} />
-            <p className="mt-3 font-heading text-lg font-bold text-app-text">Sin incidencias</p>
+            <p className="mt-3 font-heading text-lg font-bold text-app-text">Sin registros</p>
             <p className="mt-1 text-sm text-app-dim">
               {estadoFilter !== "todas" || prioridadFilter !== "todas"
                 ? "Prueba a cambiar los filtros"
-                : "No hay incidencias registradas"}
+                : "No hay incidencias ni alertas registradas"}
             </p>
           </div>
         )}
 
         {/* List */}
         <div className="space-y-3">
-          {pageItems.map((incident) => (
-            <IncidentCard
-              key={incident.id}
-              incident={incident}
-              onStatusChange={(id, estado) => updateMutation.mutate({ id, estado })}
+          {pageItems.map((item) => (
+            <UnifiedCard
+              key={item.id}
+              item={item}
+              onStatusChange={(item, estado) => updateMutation.mutate({ item, estado })}
               updatingId={updatingId}
               animalLookup={animalLookup}
               zoneLookup={zoneLookup}

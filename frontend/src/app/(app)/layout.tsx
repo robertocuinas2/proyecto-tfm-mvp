@@ -3,7 +3,6 @@
 import {
   Activity,
   AlertOctagon,
-  AlertTriangle,
   ArrowLeftRight,
   BarChart3,
   Beef,
@@ -44,7 +43,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "",
     items: [
-      { href: "/dashboard", label: "Control", Icon: LayoutDashboard },
+      { href: "/dashboard", label: "Control de explotación", Icon: LayoutDashboard },
       { href: "/report", label: "Informe", Icon: BarChart3 },
     ],
   },
@@ -53,31 +52,25 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/leanfarming", label: "LeanFarming", Icon: ListTodo },
       { href: "/tasks", label: "Tareas", Icon: ClipboardList },
-      { href: "/alerts", label: "Alertas", Icon: AlertTriangle },
       { href: "/incidents", label: "Incidencias", Icon: AlertOctagon },
-      { href: "/handover", label: "Relevos", Icon: ArrowLeftRight },
-    ],
-  },
-  {
-    label: "Ganadería",
-    items: [
-      { href: "/animals", label: "Animales", Icon: Beef },
+      { href: "/shifts", label: "Turnos", Icon: CalendarClock },
       { href: "/quality", label: "Calidad", Icon: Droplets },
       { href: "/predictions", label: "Predicciones", Icon: BrainCircuit },
     ],
   },
   {
-    label: "Recursos",
+    label: "Explotación",
     items: [
-      { href: "/shifts", label: "Turnos", Icon: CalendarClock },
+      { href: "/zones", label: "Zonas", Icon: MapPin },
+      { href: "/handover", label: "Relevos", Icon: ArrowLeftRight },
       { href: "/orders", label: "Pedidos", Icon: Package },
+      { href: "/animals", label: "Animales", Icon: Beef },
     ],
   },
   {
     label: "Sistema",
     items: [
       { href: "/profile", label: "Perfil", Icon: UserRound },
-      { href: "/zones", label: "Zonas", Icon: MapPin },
       // Items below require specific capabilities — hidden for non-admin roles
       { href: "/management", label: "Gestión", Icon: Settings2, capability: "view_management" },
       { href: "/settings", label: "Configuración", Icon: SlidersHorizontal, capability: "manage_settings" },

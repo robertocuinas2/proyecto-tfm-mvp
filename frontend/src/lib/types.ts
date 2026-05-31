@@ -455,3 +455,26 @@ export type AssistantResponse = {
   draft?: Record<string, unknown> | null;
   result?: Record<string, unknown> | null;
 };
+
+// ── Unified Incidents+Alerts view type ──────────────────────────────────────
+
+export type UnifiedIncidentOrigen = "incidencia" | "alerta";
+export type UnifiedSeverity = "baja" | "media" | "alta" | "critica";
+export type UnifiedEstado = "abierta" | "en_gestion" | "resuelta" | "cerrada";
+
+export type UnifiedIncident = {
+  id: string;
+  rawId: string;
+  origen: UnifiedIncidentOrigen;
+  titulo: string;
+  descripcion: string;
+  severidad: UnifiedSeverity;
+  estado: UnifiedEstado;
+  fecha_creacion: string;
+  fecha_resolucion?: string | null;
+  zona_id?: string | null;
+  animal_id?: string | null;
+  reportado_por?: string | null;
+  recomendacion?: string | null;
+  alertaEstado?: AlertState;
+};

@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertOctagon,
-  AlertTriangle,
   ArrowLeftRight,
   BarChart3,
   Beef,
@@ -135,10 +134,10 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-            <Link href="/alerts">
+            <Link href="/incidents">
               <KpiCard
-                Icon={AlertTriangle}
-                label="Alertas pendientes"
+                Icon={AlertOctagon}
+                label="Incidencias activas"
                 value={s?.alertas.total_pendientes ?? "—"}
                 sublabel={`${s?.alertas.criticas ?? 0} críticas · ${s?.alertas.altas ?? 0} altas`}
                 tone={s && s.alertas.criticas > 0 ? "critical" : s && s.alertas.altas > 0 ? "warning" : "success"}
@@ -263,14 +262,14 @@ export default function DashboardPage() {
 
         {/* Bottom row */}
         <div className="grid gap-5 xl:grid-cols-2">
-          {/* Recent alerts */}
+          {/* Recent alerts/incidents */}
           <PanelCard>
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-state-critica" />
-                <h2 className="font-heading text-base font-bold text-app-text">Alertas recientes</h2>
+                <AlertOctagon className="h-4 w-4 text-state-atencion" />
+                <h2 className="font-heading text-base font-bold text-app-text">Incidencias recientes</h2>
               </div>
-              <Link href="/alerts" className="text-xs font-semibold text-brand hover:underline">
+              <Link href="/incidents" className="text-xs font-semibold text-brand hover:underline">
                 Ver todas →
               </Link>
             </div>
@@ -335,7 +334,7 @@ export default function DashboardPage() {
               <div className="flex flex-wrap gap-2">
                 {[
                   { href: "/zones", label: "Zonas", Icon: MapPin },
-                  { href: "/alerts", label: "Alertas", Icon: AlertTriangle },
+                  { href: "/incidents", label: "Incidencias", Icon: AlertOctagon },
                   { href: "/leanfarming", label: "LeanFarming", Icon: ListTodo },
                   { href: "/animals", label: "Animales", Icon: Beef },
                 ].map(({ href, label, Icon }) => (

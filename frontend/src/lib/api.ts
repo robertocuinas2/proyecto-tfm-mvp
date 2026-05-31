@@ -1,6 +1,7 @@
 import { API_BASE_URL, API_V1_URL, TOKEN_STORAGE_KEY } from "@/lib/config";
 import type {
   Alert,
+  AlertState,
   AlertsResponse,
   Animal,
   AnimalPrediction,
@@ -28,6 +29,9 @@ import type {
   ShiftAssignmentsResponse,
   ShiftHandover,
   ShiftHandoversResponse,
+  UnifiedEstado,
+  UnifiedIncident,
+  UnifiedSeverity,
   ShiftsResponse,
   Task,
   TaskCatalogItem,
@@ -371,3 +375,53 @@ export const api = {
     return request<{ ubicacion: string; total: number; order: string; lecturas: unknown[] }>("/weather/readings", {}, params);
   },
 };
+
+// ── Unified Incident Normalizers ────────────────────────────────────────────
+
+function alertEstadoToUnified(estado: AlertState): UnifiedEstado {
+  switch (estado) {
+    case "pendiente": return "abierta";
+    case "revisada": return "en_gestion";
+    case "resuelta": return "resuelta";
+    case "falsa_alarma": return "cerrada";
+    default: return "abierta";
+  }
+}
+
+export function normalizeAlert(a: Alert): UnifiedIncident {
+  return {
+    id: `a:${a.id}`,
+    rawId: a.id,
+    origen: "alerta",
+    titulo: a.tipo_alerta,
+    descripcion: a.descripcion,
+    severidad: (a.severidad === "critica" ? "alta" : a.severidad) as UnifiedSeverity,
+    estado: alertEstadoToUnified(a.estado),
+    fecha_creacion: a.fecha_creacion ?? new Date(0).toISOString(),
+    fecha_resolucion: a.fecha_revision ?? null,
+    zona_id: null,
+    animal_id: a.animal_id ?? null,
+    reportado_por: null,
+    recomendacion: a.recomendacion ?? null,
+    alertaEstado: a.estado,
+  };
+}
+
+export function normalizeIncident(i: Incident): UnifiedIncident {
+  return {
+    id: `i:${i.id}`,
+    rawId: i.id,
+    origen: "incidencia",
+    titulo: i.tipo.replace(/_/g, " "),
+    descripcion: i.descripcion,
+    severidad: i.prioridad,
+    estado: i.estado,
+    fecha_creacion: i.fecha_creacion ?? new Date(0).toISOString(),
+    fecha_resolucion: i.fecha_resolucion ?? null,
+    zona_id: i.zona_id ?? null,
+    animal_id: i.animal_id ?? null,
+    reportado_por: i.reportado_por ?? null,
+    recomendacion: undefined,
+    alertaEstado: undefined,
+  };
+}
