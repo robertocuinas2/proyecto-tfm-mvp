@@ -101,6 +101,7 @@ CREATE TABLE maquinaria (
     numero_serie      VARCHAR(100) UNIQUE,
     fecha_instalacion DATE,
     activa            BOOLEAN NOT NULL DEFAULT TRUE,
+    estado            VARCHAR(40) NOT NULL DEFAULT 'operativa',
     notas             TEXT
 );
 
