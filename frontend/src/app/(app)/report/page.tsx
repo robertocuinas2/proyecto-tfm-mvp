@@ -19,7 +19,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { PanelCard, SectionTitle } from "@/components/ui/panel-card";
 import { WeatherPanel } from "@/components/ui/WeatherPanel";
 import { api } from "@/lib/api";
-import type { Alert, Incident, Order, Task } from "@/lib/types";
+import { visualZoneSummaries } from "@/lib/visual-zones";
+import type { Incident, Order, Task } from "@/lib/types";
 
 // ── Period helpers ────────────────────────────────────────────────────────────
 
@@ -66,13 +67,13 @@ function MiniRow({ label, value, tone = "" }: { label: string; value: number | s
 // ── Status comment generator ──────────────────────────────────────────────────
 
 function buildStatusComment(
-  criticalAlerts: number,
+  criticalIncidents: number,
   openIncidents: number,
   delayedTasks: number,
   pendingOrders: number,
 ): { text: string; tone: string } {
-  if (criticalAlerts > 0) {
-    return { text: `⚠️ ${criticalAlerts} alerta${criticalAlerts > 1 ? "s" : ""} crítica${criticalAlerts > 1 ? "s" : ""} requiere${criticalAlerts > 1 ? "n" : ""} atención inmediata.`, tone: "text-state-critica" };
+  if (criticalIncidents > 0) {
+    return { text: `${criticalIncidents} incidencia${criticalIncidents > 1 ? "s" : ""} critica${criticalIncidents > 1 ? "s" : ""} requiere${criticalIncidents > 1 ? "n" : ""} atencion inmediata.`, tone: "text-state-critica" };
   }
   if (openIncidents > 2) {
     return { text: `${openIncidents} incidencias abiertas en curso. Verificar estado de gestión.`, tone: "text-state-atencion" };
@@ -95,26 +96,25 @@ export default function ReportPage() {
   const summaryQ = useQuery({ queryKey: ["dashboard-summary"], queryFn: api.dashboardSummary, staleTime: 30_000 });
   const tasksQ = useQuery({ queryKey: ["report-tasks"], queryFn: () => api.tasks({ limit: 300 }), staleTime: 30_000 });
   const incidentsQ = useQuery({ queryKey: ["report-incidents"], queryFn: () => api.incidents({ limit: 200 }), staleTime: 30_000 });
-  const alertsQ = useQuery({ queryKey: ["report-alerts"], queryFn: () => api.alerts({ limit: 200 }), staleTime: 30_000 });
   const ordersQ = useQuery({ queryKey: ["report-orders"], queryFn: () => api.orders({ limit: 100 }), staleTime: 30_000 });
   const qualityQ = useQuery({ queryKey: ["quality-summary"], queryFn: api.qualitySummary, staleTime: 60_000 });
   const zonesQ = useQuery({ queryKey: ["zones"], queryFn: api.zones, staleTime: 60_000 });
 
   const allTasks = useMemo(() => tasksQ.data ?? [], [tasksQ.data]);
   const allIncidents = useMemo(() => (incidentsQ.data ?? []) as Incident[], [incidentsQ.data]);
-  const allAlerts = useMemo(() => alertsQ.data?.alertas ?? [], [alertsQ.data]);
   const allOrders = useMemo(() => ordersQ.data?.pedidos ?? [], [ordersQ.data]);
   const zones = zonesQ.data ?? [];
+  const zoneSummaries = visualZoneSummaries(zones, allTasks);
 
   // Period-filtered data
   const tasks = useMemo(() => allTasks.filter((t: Task) => inPeriod(t.fecha_programada, periodStart)), [allTasks, periodStart]);
   const incidents = useMemo(() => allIncidents.filter((i) => inPeriod(i.fecha_creacion, periodStart)), [allIncidents, periodStart]);
-  const alerts = useMemo(() => allAlerts.filter((a: Alert) => inPeriod(a.fecha_creacion, periodStart)), [allAlerts, periodStart]);
   const orders = useMemo(() => allOrders.filter((o: Order) => inPeriod(o.ts_solicitud, periodStart)), [allOrders, periodStart]);
 
   // Current state (regardless of period)
   const openIncidents = allIncidents.filter((i) => i.estado === "abierta" || i.estado === "en_gestion");
-  const criticalAlerts = allAlerts.filter((a: Alert) => a.severidad === "critica" && a.estado === "pendiente");
+  const criticalIncidents = openIncidents.filter((i) => i.prioridad === "critica");
+  const highIncidents = incidents.filter((i) => i.prioridad === "alta").length;
   const pendingOrders = allOrders.filter((o: Order) => o.estado === "solicitado" || o.estado === "aprobado");
 
   // Period stats
@@ -126,16 +126,12 @@ export default function ReportPage() {
   const incidentsClosed = incidents.filter((i) => i.estado === "resuelta" || i.estado === "cerrada").length;
   const incidentsCritical = incidents.filter((i) => i.prioridad === "critica").length;
 
-  const alertsCritical = alerts.filter((a: Alert) => a.severidad === "critica").length;
-  const alertsHigh = alerts.filter((a: Alert) => a.severidad === "alta").length;
-  const alertsResolved = alerts.filter((a: Alert) => a.estado === "resuelta" || a.estado === "falsa_alarma").length;
-
   const ordersReceived = orders.filter((o: Order) => o.estado === "recibido").length;
   const ordersPending = orders.filter((o: Order) => o.estado === "solicitado" || o.estado === "en_transito").length;
 
-  const statusComment = buildStatusComment(criticalAlerts.length, openIncidents.length, tasksDelayed, pendingOrders.length);
+  const statusComment = buildStatusComment(criticalIncidents.length, openIncidents.length, tasksDelayed, pendingOrders.length);
 
-  const isLoading = summaryQ.isLoading || tasksQ.isLoading || incidentsQ.isLoading || alertsQ.isLoading;
+  const isLoading = summaryQ.isLoading || tasksQ.isLoading || incidentsQ.isLoading;
 
   return (
     <div className="min-h-full">
@@ -186,7 +182,7 @@ export default function ReportPage() {
               <KpiCard label="Tareas pendientes" value={tasksPending} tone={tasksPending > 10 ? "warning" : "default"} Icon={ClipboardList} />
               <KpiCard label="Retrasadas" value={tasksDelayed} tone={tasksDelayed > 0 ? "critical" : "success"} Icon={AlertOctagon} />
               <KpiCard label="Incidencias abiertas" value={openIncidents.length} tone={openIncidents.length > 0 ? "warning" : "success"} Icon={AlertTriangle} sublabel="estado actual" />
-              <KpiCard label="Alertas críticas" value={criticalAlerts.length} tone={criticalAlerts.length > 0 ? "critical" : "success"} Icon={AlertTriangle} sublabel="pendientes" />
+              <KpiCard label="Incidencias criticas" value={criticalIncidents.length} tone={criticalIncidents.length > 0 ? "critical" : "success"} Icon={AlertTriangle} sublabel="abiertas" />
               <KpiCard label="Pedidos pend." value={pendingOrders.length} tone={pendingOrders.length > 0 ? "info" : "success"} Icon={Package} sublabel="por recibir" />
             </>
           )}
@@ -277,24 +273,24 @@ export default function ReportPage() {
 
           {/* RIGHT: Alerts + Orders + Quality */}
           <div className="space-y-5">
-            {/* Alerts */}
+            {/* Priority incidents */}
             <PanelCard>
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-state-critica" />
-                  <SectionTitle>Alertas</SectionTitle>
+                  <SectionTitle>Incidencias prioritarias</SectionTitle>
                 </div>
-                <Link href="/alerts" className="text-xs font-semibold text-brand hover:underline">Ver todas →</Link>
+                <Link href="/incidents" className="text-xs font-semibold text-brand hover:underline">Ver todas</Link>
               </div>
 
-              {alertsQ.isLoading ? (
+              {incidentsQ.isLoading ? (
                 <div className="h-16 animate-pulse rounded-[10px] bg-app-surface2" />
               ) : (
                 <>
-                  <MiniRow label="En periodo" value={alerts.length} />
-                  <MiniRow label="Críticas" value={alertsCritical} tone={alertsCritical > 0 ? "text-state-critica" : ""} />
-                  <MiniRow label="Altas" value={alertsHigh} tone={alertsHigh > 0 ? "text-state-atencion" : ""} />
-                  <MiniRow label="Resueltas / falsa alarma" value={alertsResolved} tone="text-state-ok" />
+                  <MiniRow label="En periodo" value={incidents.length} />
+                  <MiniRow label="Criticas" value={incidentsCritical} tone={incidentsCritical > 0 ? "text-state-critica" : ""} />
+                  <MiniRow label="Altas" value={highIncidents} tone={highIncidents > 0 ? "text-state-atencion" : ""} />
+                  <MiniRow label="Resueltas / cerradas" value={incidentsClosed} tone="text-state-ok" />
                 </>
               )}
             </PanelCard>
@@ -365,21 +361,21 @@ export default function ReportPage() {
 
           {zonesQ.isLoading ? (
             <div className="h-16 animate-pulse rounded-[10px] bg-app-surface2" />
-          ) : zones.length === 0 ? (
+          ) : zoneSummaries.length === 0 ? (
             <p className="text-sm text-app-dim">Sin zonas configuradas.</p>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
-              {zones.map((z) => {
-                const zTasks = allTasks.filter((t: Task) => t.zona_id === z.id);
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-2">
+              {zoneSummaries.map((z) => {
+                const zTasks = z.items;
                 const delayed = zTasks.filter((t: Task) => t.estado === "retrasada").length;
                 return (
                   <Link
-                    key={z.id}
-                    href={`/zones/${z.id}`}
+                    key={z.key}
+                    href={`/zones/${z.key}`}
                     className="rounded-[10px] border border-app-border bg-app-bg px-4 py-3 transition hover:border-brand/30 hover:bg-white"
                   >
-                    <p className="font-mono text-[11px] text-app-dim">{z.codigo}</p>
-                    <p className="text-sm font-bold text-app-text">{z.nombre}</p>
+                    <p className="font-mono text-[11px] text-app-dim">{z.key}</p>
+                    <p className="text-sm font-bold text-app-text">{z.title}</p>
                     {delayed > 0 && (
                       <p className="mt-1 text-[11px] font-semibold text-state-critica">{delayed} retrasadas</p>
                     )}
@@ -434,7 +430,7 @@ export default function ReportPage() {
               { href: "/zones", label: "Zonas" },
               { href: "/quality", label: "Calidad" },
               { href: "/animals", label: "Animales" },
-              { href: "/alerts", label: "Alertas" },
+              { href: "/incidents", label: "Incidencias" },
             ].map(({ href, label }) => (
               <Link
                 key={href}

@@ -9,6 +9,7 @@ import type {
   AssistantResponse,
   AuditLogResponse,
   AuthResponse,
+  BoxRecria,
   CreateIncidentPayload,
   CreateOrderPayload,
   CreateShiftAssignmentPayload,
@@ -117,6 +118,10 @@ export const api = {
 
   zones() {
     return request<Zone[]>("/zones");
+  },
+
+  boxesRecria(params?: QueryParams) {
+    return request<BoxRecria[]>("/boxes-recria", {}, params);
   },
 
   zone(zoneId: string) {

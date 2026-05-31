@@ -19,6 +19,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { DEFAULT_PAGE_SIZE, getSkip } from "@/lib/pagination";
+import { displayZoneName, visualZoneOptions } from "@/lib/visual-zones";
 import type { Task, TaskStatus } from "@/lib/types";
 
 type FilterTab = "programada" | "retrasada" | "ejecutada";
@@ -49,14 +50,16 @@ function TaskCard({
   task,
   onComplete,
   loading,
+  zoneLookup,
 }: {
   task: Task;
   onComplete: (id: string) => void;
   loading: boolean;
+  zoneLookup: Map<string, string>;
 }) {
   const nombre = task.tarea_catalogo?.nombre ?? "Tarea sin nombre";
   const categoria = task.tarea_catalogo?.categoria;
-  const zona = task.tarea_catalogo?.zona_aplicable;
+  const zona = task.zona_id ? zoneLookup.get(task.zona_id) : task.tarea_catalogo?.zona_aplicable;
   const fecha = new Date(task.fecha_programada);
   const canComplete = task.estado === "programada" || task.estado === "retrasada";
 
@@ -309,12 +312,14 @@ export default function TasksPage() {
   const fetched = tasksQuery.data ?? [];
   const hasNext = fetched.length > pageSize;
   const list = fetched.slice(0, pageSize);
+  const zoneOptions = visualZoneOptions(zonesQuery.data ?? []);
+  const zoneLookup = new Map((zonesQuery.data ?? []).map((zone) => [zone.id, displayZoneName(zone) ?? zone.nombre]));
 
   return (
     <div className="min-h-full">
       {showCreate && (
         <CreateTaskModal
-          zones={zonesQuery.data ?? []}
+          zones={zoneOptions}
           onClose={() => setShowCreate(false)}
           onSuccess={() => setShowCreate(false)}
         />
@@ -373,7 +378,7 @@ export default function TasksPage() {
               aria-label="Filtrar por zona"
             >
               <option value="">Todas las zonas</option>
-              {(zonesQuery.data ?? []).map((z) => (
+              {zoneOptions.map((z) => (
                 <option key={z.id} value={z.id}>{z.nombre}</option>
               ))}
             </select>
@@ -419,6 +424,7 @@ export default function TasksPage() {
               task={task}
               onComplete={(id) => completeMutation.mutate(id)}
               loading={completeMutation.isPending}
+              zoneLookup={zoneLookup}
             />
           ))}
         </div>

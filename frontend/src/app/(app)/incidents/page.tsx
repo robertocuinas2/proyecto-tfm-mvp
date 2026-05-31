@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertOctagon,
-  AlertTriangle,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -59,14 +58,29 @@ const SEVERITY_STYLES: Record<string, string> = {
   baja: "bg-state-neutral/10 text-state-neutral",
 };
 
+const INCIDENT_ZONE_OPTIONS = [
+  { label: "Boxes de terneros", codes: ["boxes_terneros", "becerrero"] },
+  { label: "Zona de recria", codes: ["zona_recria", "recria"] },
+  { label: "Patio de alimentacion", codes: ["patio_alimentacion", "silos", "almacen"] },
+  { label: "Enfermeria", codes: ["enfermeria"] },
+  { label: "Maquinaria", codes: ["maquinaria", "robots", "sala_ordeno", "oficina", "general"] },
+];
+
+function displayZoneName(codigo?: string | null, fallback?: string | null) {
+  if (!codigo) return fallback ?? null;
+  const option = INCIDENT_ZONE_OPTIONS.find((item) => item.codes.includes(codigo));
+  return option?.label ?? fallback ?? codigo;
+}
+
+function incidentZoneOptions(zones: { id: string; nombre: string; codigo: string }[]) {
+  return INCIDENT_ZONE_OPTIONS.map((option) => {
+    const zone = zones.find((z) => option.codes.includes(z.codigo));
+    return zone ? { id: zone.id, nombre: option.label } : null;
+  }).filter((zone): zone is { id: string; nombre: string } => Boolean(zone));
+}
+
 function OrigenBadge({ origen }: { origen: UnifiedIncidentOrigen }) {
-  if (origen === "alerta")
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-state-atencion/30 bg-state-atencion/10 px-2 py-0.5 text-[10px] font-extrabold uppercase text-state-atencion">
-        <AlertTriangle className="h-2.5 w-2.5" />
-        Alerta
-      </span>
-    );
+  void origen;
   return null;
 }
 
@@ -441,10 +455,15 @@ export default function IncidentsPage() {
   const zoneLookup = useMemo(() => {
     const map = new Map<string, string>();
     for (const z of zonesQuery.data ?? []) {
-      map.set(z.id, z.nombre);
+      map.set(z.id, displayZoneName(z.codigo, z.nombre) ?? z.nombre);
     }
     return map;
   }, [zonesQuery.data]);
+
+  const createIncidentZones = useMemo(
+    () => incidentZoneOptions(zonesQuery.data ?? []),
+    [zonesQuery.data],
+  );
 
   const updateMutation = useMutation({
     mutationFn: async ({ item, estado }: { item: UnifiedIncident; estado: UnifiedEstado }) => {
@@ -521,7 +540,7 @@ export default function IncidentsPage() {
     <div className="min-h-full">
       {showCreate && (
         <CreateIncidentModal
-          zones={zonesQuery.data ?? []}
+          zones={createIncidentZones}
           onClose={() => setShowCreate(false)}
         />
       )}
@@ -627,7 +646,7 @@ export default function IncidentsPage() {
             <p className="mt-1 text-sm text-app-dim">
               {estadoFilter !== "todas" || prioridadFilter !== "todas"
                 ? "Prueba a cambiar los filtros"
-                : "No hay incidencias ni alertas registradas"}
+                : "No hay incidencias registradas"}
             </p>
           </div>
         )}

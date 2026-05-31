@@ -6,7 +6,6 @@ import {
   ArrowLeftRight,
   CheckCircle2,
   ClipboardList,
-  Siren,
   Tablet,
 } from "lucide-react";
 import Link from "next/link";
@@ -104,12 +103,6 @@ function HandoverCard({ handover, shiftLookup }: {
             label="tareas pendientes"
             Icon={ClipboardList}
             tone={handover.tareas_pendientes.length > 0 ? "text-state-atencion" : "text-app-dim"}
-          />
-          <CountPill
-            count={handover.alertas_pendientes.length}
-            label="alertas"
-            Icon={Siren}
-            tone={handover.alertas_pendientes.length > 0 ? "text-state-info" : "text-app-dim"}
           />
         </div>
 
@@ -215,7 +208,7 @@ export default function HandoverPage() {
         {/* Info notice */}
         <div className="rounded-[10px] border border-state-info/30 bg-state-info/5 px-4 py-3 text-xs font-semibold text-state-info">
           Los resumenes de relevo se generan al crear un cambio de turno. Incluyen incidencias abiertas,
-          tareas pendientes y alertas activas del turno saliente.
+          tareas pendientes y notas del turno saliente.
         </div>
 
         {/* Loading */}

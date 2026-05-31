@@ -24,6 +24,8 @@ export type LoginPayload = {
   password: string;
 };
 
+export type VisualZoneKey = "recria" | "nave";
+
 export type Zone = {
   id: string;
   nombre: string;
@@ -110,7 +112,7 @@ export type Animal = {
   sexo: string;
   fecha_nacimiento: string;
   raza?: string | null;
-  estado: "recria" | "crianza" | "produccion" | "baja";
+  estado: "recria" | "crianza" | "produccion" | "seca" | "gestante" | "baja";
   estado_reproductivo?: string | null;
   fecha_entrada: string;
   fecha_baja?: string | null;
@@ -148,6 +150,17 @@ export type Treatment = {
   motivo?: string | null;
   veterinario?: string | null;
   observaciones?: string | null;
+};
+
+export type BoxRecria = {
+  id: string;
+  box_numero: number;
+  ternero_id?: string | null;
+  fecha_entrada?: string | null;
+  fecha_salida?: string | null;
+  activo: boolean;
+  alertas_box: unknown[];
+  notas?: string | null;
 };
 
 export type IncidentPriority = "baja" | "media" | "alta" | "critica";

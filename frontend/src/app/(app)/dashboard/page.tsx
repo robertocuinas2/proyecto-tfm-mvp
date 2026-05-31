@@ -25,10 +25,10 @@ import { KpiCard } from "@/components/ui/kpi-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { PanelCard } from "@/components/ui/panel-card";
 import { api } from "@/lib/api";
-import type { Alert, Lactation } from "@/lib/types";
+import type { Incident, Lactation } from "@/lib/types";
 
-function SeverityBadge({ severity }: { severity: Alert["severidad"] }) {
-  const map: Record<Alert["severidad"], string> = {
+function SeverityBadge({ severity }: { severity: Incident["prioridad"] }) {
+  const map: Record<Incident["prioridad"], string> = {
     critica: "bg-state-critica/10 text-state-critica",
     alta: "bg-state-atencion/10 text-state-atencion",
     media: "bg-state-info/10 text-state-info",
@@ -68,9 +68,9 @@ export default function DashboardPage() {
     staleTime: 10_000,
   });
 
-  const alerts = useQuery({
-    queryKey: ["alerts-recent"],
-    queryFn: () => api.alerts({ limit: 5 }),
+  const incidents = useQuery({
+    queryKey: ["dashboard-incidents-recent"],
+    queryFn: () => api.incidents({ limit: 5 }),
     refetchInterval: 30_000,
     staleTime: 10_000,
   });
@@ -99,7 +99,8 @@ export default function DashboardPage() {
   const s = summary.data;
   const q = quality.data;
   const w = weather.data;
-  const recentAlerts = alerts.data?.alertas?.slice(0, 5) ?? [];
+  const recentIncidents = incidents.data?.slice(0, 5) ?? [];
+  const activeIncidents = recentIncidents.filter((item) => item.estado === "abierta" || item.estado === "en_gestion");
   const trend = lactationTrend(lactations.data ?? []);
   const taskTotal = (s?.tareas.programadas ?? 0) + (s?.tareas.ejecutadas ?? 0) + (s?.tareas.retrasadas ?? 0);
   const taskDonePct = s ? Math.round((s.tareas.ejecutadas / Math.max(1, taskTotal)) * 100) : 0;
@@ -138,9 +139,9 @@ export default function DashboardPage() {
               <KpiCard
                 Icon={AlertOctagon}
                 label="Incidencias activas"
-                value={s?.alertas.total_pendientes ?? "—"}
-                sublabel={`${s?.alertas.criticas ?? 0} críticas · ${s?.alertas.altas ?? 0} altas`}
-                tone={s && s.alertas.criticas > 0 ? "critical" : s && s.alertas.altas > 0 ? "warning" : "success"}
+                value={activeIncidents.length}
+                sublabel={`${recentIncidents.filter((item) => item.prioridad === "critica").length} criticas · ${recentIncidents.filter((item) => item.prioridad === "alta").length} altas`}
+                tone={recentIncidents.some((item) => item.prioridad === "critica") ? "critical" : recentIncidents.some((item) => item.prioridad === "alta") ? "warning" : "success"}
               />
             </Link>
             <Link href="/tasks">
@@ -274,29 +275,29 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            {alerts.isLoading ? (
+            {incidents.isLoading ? (
               <div className="space-y-2">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="h-14 animate-pulse rounded-[10px] bg-app-surface2" />
                 ))}
               </div>
-            ) : recentAlerts.length === 0 ? (
+            ) : recentIncidents.length === 0 ? (
               <div className="py-8 text-center text-sm text-app-dim">
                 <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-state-ok" strokeWidth={1.5} />
-                No hay alertas pendientes.
+                No hay incidencias recientes.
               </div>
             ) : (
               <div className="space-y-2">
-                {recentAlerts.map((alert) => (
+                {recentIncidents.map((incident) => (
                   <div
-                    key={alert.id}
+                    key={incident.id}
                     className="rounded-[10px] border border-app-border bg-app-bg px-4 py-3"
                   >
                     <div className="flex items-center gap-2">
-                      <SeverityBadge severity={alert.severidad} />
-                      <span className="text-xs capitalize text-app-dim">{alert.tipo_alerta}</span>
+                      <SeverityBadge severity={incident.prioridad} />
+                      <span className="text-xs capitalize text-app-dim">{incident.tipo.replace(/_/g, " ")}</span>
                     </div>
-                    <p className="mt-1 truncate text-sm font-semibold text-app-text">{alert.descripcion}</p>
+                    <p className="mt-1 truncate text-sm font-semibold text-app-text">{incident.descripcion}</p>
                   </div>
                 ))}
               </div>

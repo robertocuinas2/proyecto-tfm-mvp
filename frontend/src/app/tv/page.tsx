@@ -19,11 +19,21 @@ import { TvPanel, TvEmptyRow } from "@/components/tv/TvPanel";
 import { TvShell } from "@/components/tv/TvShell";
 import { api } from "@/lib/api";
 import { TV_REFETCH, TV_STALE } from "@/lib/tv-constants";
-import type { Alert, Employee, Incident, ShiftAssignment, Task, Zone } from "@/lib/types";
+import type { Employee, Incident, ShiftAssignment, Task, Zone } from "@/lib/types";
 
 // ── Zone status helpers ─────────────────────────────────────────────────────
 
 type ZoneStatus = "critica" | "atencion" | "operativa" | "sin_datos" | "inactiva";
+
+const TV_VISUAL_ZONES = [
+  { key: "recria", name: "Recria", codes: ["boxes_terneros", "zona_recria", "recria", "becerrero"] },
+  { key: "nave", name: "Nave", codes: ["patio_alimentacion", "enfermeria", "maquinaria", "robots", "sala_ordeno", "silos", "almacen", "oficina", "general"] },
+];
+
+function idsForCodes(zones: Zone[], codes: string[]) {
+  const wanted = new Set(codes);
+  return new Set(zones.filter((z) => wanted.has(z.codigo)).map((z) => z.id));
+}
 
 function getZoneStatus(
   zone: Zone,
@@ -66,22 +76,6 @@ const zoneStatusStyles: Record<ZoneStatus, { ring: string; dot: string; label: s
   inactiva:  { ring: "border-tv-border/30 bg-tv-bg",                   dot: "bg-tv-dim/40",       label: "INACTIVA",  text: "text-tv-dim opacity-60" },
 };
 
-// ── Alert severity helpers ───────────────────────────────────────────────────
-
-const sevBar: Record<Alert["severidad"], string> = {
-  critica: "border-l-state-critica",
-  alta: "border-l-state-atencion",
-  media: "border-l-state-info",
-  baja: "border-l-tv-dim",
-};
-
-const sevBadge: Record<Alert["severidad"], string> = {
-  critica: "bg-state-critica/15 text-state-critica",
-  alta: "bg-state-atencion/15 text-state-atencion",
-  media: "bg-state-info/15 text-state-info",
-  baja: "bg-tv-dim/10 text-tv-dim",
-};
-
 // ── Employee helper ──────────────────────────────────────────────────────────
 
 function employeeName(e: Employee | undefined, fallbackId: string): string {
@@ -94,7 +88,6 @@ function employeeName(e: Employee | undefined, fallbackId: string): string {
 export default function TvGlobalPage() {
   const [
     summaryQ,
-    criticalAlertsQ,
     incidentsQ,
     tasksQ,
     zonesQ,
@@ -110,12 +103,6 @@ export default function TvGlobalPage() {
         queryFn: api.dashboardSummary,
         refetchInterval: TV_REFETCH.NORMAL,
         staleTime: TV_STALE.NORMAL,
-      },
-      {
-        queryKey: ["tv-alerts-critical"],
-        queryFn: () => api.alerts({ severidad: "critica", limit: 8 }),
-        refetchInterval: TV_REFETCH.FAST,
-        staleTime: TV_STALE.FAST,
       },
       {
         queryKey: ["tv-incidents"],
@@ -169,7 +156,7 @@ export default function TvGlobalPage() {
 
   // All queries for the refresh status indicator
   const allQueryStatuses = [
-    summaryQ, criticalAlertsQ, incidentsQ, tasksQ, zonesQ, weatherQ, shiftsQ, assignmentsQ, qualityQ,
+    summaryQ, incidentsQ, tasksQ, zonesQ, weatherQ, shiftsQ, assignmentsQ, qualityQ,
   ].map((q) => ({
     isLoading: q.isLoading,
     isFetching: q.isFetching,
@@ -178,7 +165,6 @@ export default function TvGlobalPage() {
   }));
 
   const summary = summaryQ.data;
-  const criticalAlerts = criticalAlertsQ.data?.alertas ?? [];
   const allIncidents = incidentsQ.data ?? [];
   const allTasks = tasksQ.data ?? [];
   const zones = zonesQ.data ?? [];
@@ -235,10 +221,10 @@ export default function TvGlobalPage() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
           <TvKpiCard
             Icon={AlertTriangle}
-            label="Alertas críticas"
-            value={summary?.alertas.criticas ?? criticalAlerts.length}
-            sublabel={`${summary?.alertas.total_pendientes ?? 0} total pendientes`}
-            tone={criticalAlerts.length > 0 ? "critical" : "ok"}
+            label="Incidencias criticas"
+            value={openIncidents.filter((i) => i.prioridad === "critica" || i.prioridad === "alta").length}
+            sublabel="Alertas integradas como incidencias"
+            tone={openIncidents.some((i) => i.prioridad === "critica" || i.prioridad === "alta") ? "critical" : "ok"}
           />
           <TvKpiCard
             Icon={AlertOctagon}
@@ -289,23 +275,33 @@ export default function TvGlobalPage() {
             </span>
           </div>
           <div className="flex flex-wrap gap-3">
-            {zones.map((zone) => {
-              const status = getZoneStatus(zone, allTasks, allIncidents as Incident[], currentAssignments);
+            {TV_VISUAL_ZONES.map((visualZone) => {
+              const zoneIds = idsForCodes(zones, visualZone.codes);
+              const representative = zones.find((z) => zoneIds.has(z.id)) ?? {
+                id: visualZone.key,
+                nombre: visualZone.name,
+                codigo: visualZone.key,
+                tiene_pantalla_tv: true,
+                tiene_tablet: true,
+                activa: true,
+              };
+              const groupedTasks = allTasks.filter((t) => t.zona_id && zoneIds.has(t.zona_id));
+              const groupedIncidents = (allIncidents as Incident[]).filter((i) => i.zona_id && zoneIds.has(i.zona_id));
+              const groupedAssignments = currentAssignments.filter((a) => a.zona_id && zoneIds.has(a.zona_id));
+              const status = getZoneStatus(representative, groupedTasks, groupedIncidents, groupedAssignments);
               const s = zoneStatusStyles[status];
-              const zoneTasks = allTasks.filter((t) => t.zona_id === zone.id && t.estado !== "ejecutada");
-              const zoneInc = (allIncidents as Incident[]).filter(
-                (i) => i.zona_id === zone.id && (i.estado === "abierta" || i.estado === "en_gestion"),
-              );
-              const zoneWorkers = currentAssignments.filter((a) => a.zona_id === zone.id);
+              const zoneTasks = groupedTasks.filter((t) => t.estado !== "ejecutada");
+              const zoneInc = groupedIncidents.filter((i) => i.estado === "abierta" || i.estado === "en_gestion");
+              const zoneWorkers = groupedAssignments;
 
               return (
                 <div
-                  key={zone.id}
+                  key={visualZone.key}
                   className={`flex min-w-[160px] flex-col gap-1.5 rounded-xl border px-4 py-3 ${s.ring}`}
                 >
                   <div className="flex items-center gap-2">
                     <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${s.dot}`} />
-                    <span className="font-heading text-sm font-bold text-white">{zone.nombre}</span>
+                    <span className="font-heading text-sm font-bold text-white">{visualZone.name}</span>
                   </div>
                   <span className={`text-[10px] font-extrabold uppercase ${s.text}`}>{s.label}</span>
                   <div className="flex flex-wrap gap-2 text-[10px] text-tv-dim">
@@ -327,8 +323,8 @@ export default function TvGlobalPage() {
                         {zoneWorkers.length}
                       </span>
                     )}
-                    {zone.tiene_pantalla_tv && <Monitor className="h-3 w-3" />}
-                    {zone.tiene_tablet && <Tablet className="h-3 w-3" />}
+                    <Monitor className="h-3 w-3" />
+                    <Tablet className="h-3 w-3" />
                   </div>
                 </div>
               );
@@ -341,33 +337,33 @@ export default function TvGlobalPage() {
 
         {/* ── Main panels ── */}
         <div className="grid flex-1 gap-5 xl:grid-cols-3">
-          {/* Critical alerts */}
+          {/* Critical incidents: alerts are integrated as incidents */}
           <TvPanel
             Icon={AlertTriangle}
             iconTone="text-state-critica"
-            title="Alertas críticas"
-            count={criticalAlerts.length}
+            title="Incidencias criticas"
+            count={openIncidents.filter((i) => i.prioridad === "critica" || i.prioridad === "alta").length}
             className="min-h-[280px]"
           >
-            {criticalAlertsQ.isError ? (
-              <TvEmptyRow text="Error al cargar alertas" />
-            ) : criticalAlerts.length === 0 ? (
-              <TvEmptyRow text="Sin alertas críticas ✓" />
+            {incidentsQ.isError ? (
+              <TvEmptyRow text="Error al cargar incidencias" />
+            ) : openIncidents.filter((i) => i.prioridad === "critica" || i.prioridad === "alta").length === 0 ? (
+              <TvEmptyRow text="Sin incidencias criticas" />
             ) : (
               <div className="space-y-2">
-                {criticalAlerts.slice(0, 6).map((alert) => (
+                {openIncidents.filter((i) => i.prioridad === "critica" || i.prioridad === "alta").slice(0, 6).map((inc) => (
                   <div
-                    key={alert.id}
-                    className={`rounded-xl border border-l-4 border-tv-border bg-tv-surface2 px-4 py-3 ${sevBar[alert.severidad]}`}
+                    key={inc.id}
+                    className="rounded-xl border border-l-4 border-tv-border border-l-state-critica bg-tv-surface2 px-4 py-3"
                   >
                     <div className="flex items-center gap-2">
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase ${sevBadge[alert.severidad]}`}>
-                        {alert.severidad}
+                      <span className="rounded-full bg-state-critica/15 px-2 py-0.5 text-[10px] font-extrabold uppercase text-state-critica">
+                        {inc.prioridad}
                       </span>
-                      <span className="text-xs capitalize text-tv-dim">{alert.tipo_alerta}</span>
+                      <span className="text-xs capitalize text-tv-dim">{inc.tipo.replace(/_/g, " ")}</span>
                     </div>
                     <p className="mt-1 text-sm font-semibold leading-snug text-white">
-                      {alert.descripcion}
+                      {inc.descripcion}
                     </p>
                   </div>
                 ))}

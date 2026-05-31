@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertOctagon,
-  AlertTriangle,
   CalendarClock,
   CheckCircle2,
   Clock,
@@ -18,13 +17,14 @@ import { useState } from "react";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { TV_REFETCH, TV_STALE } from "@/lib/tv-constants";
-import type { Task, Zone } from "@/lib/types";
+import { visualZoneSummaries } from "@/lib/visual-zones";
+import type { Task } from "@/lib/types";
 
 type ViewMode = "zonas" | "lista";
 type ZoneStatus = "critica" | "atencion" | "operativa" | "inactiva";
 
 type ZoneTaskSummary = {
-  zone: Zone;
+  zone: { id: string; codigo: string; nombre: string };
   programadas: Task[];
   retrasadas: Task[];
   ejecutadas: Task[];
@@ -284,13 +284,6 @@ export default function LeanFarmingPage() {
     refetchInterval: TV_REFETCH.NORMAL,
   });
 
-  const alertsQuery = useQuery({
-    queryKey: ["tv-alerts-critical"],
-    queryFn: () => api.alerts({ severidad: "critica", limit: 10 }),
-    staleTime: TV_STALE.FAST,
-    refetchInterval: TV_REFETCH.FAST,
-  });
-
   const shiftsQuery = useQuery({
     queryKey: ["tv-shifts"],
     queryFn: () => api.shifts({ limit: 4 }),
@@ -318,10 +311,10 @@ export default function LeanFarmingPage() {
   });
 
   const tasks = tasksQuery.data ?? [];
-  const zoneSummaries: ZoneTaskSummary[] = (zones.data ?? []).map((zone) => {
-    const zoneTasks = tasks.filter((task) => task.zona_id === zone.id);
+  const zoneSummaries: ZoneTaskSummary[] = visualZoneSummaries(zones.data ?? [], tasks).map((visualZone) => {
+    const zoneTasks = visualZone.items;
     return {
-      zone,
+      zone: { id: visualZone.key, codigo: visualZone.key, nombre: visualZone.title },
       programadas: zoneTasks.filter((task) => task.estado === "programada"),
       retrasadas: zoneTasks.filter((task) => task.estado === "retrasada"),
       ejecutadas: zoneTasks.filter((task) => task.estado === "ejecutada"),
@@ -340,7 +333,7 @@ export default function LeanFarmingPage() {
   const openIncidents = (incidentsQuery.data ?? []).filter(
     (i: { estado: string }) => i.estado === "abierta" || i.estado === "en_gestion",
   );
-  const criticalAlerts = alertsQuery.data?.alertas ?? [];
+  const criticalIncidents = openIncidents.filter((i: { prioridad: string }) => i.prioridad === "critica" || i.prioridad === "alta");
 
   // Current shift
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -402,16 +395,16 @@ export default function LeanFarmingPage() {
       </div>
 
       <div className="space-y-6 px-6 py-6 lg:px-8">
-        {/* Operational context: incidents + critical alerts */}
-        {(openIncidents.length > 0 || criticalAlerts.length > 0 || currentShift) && (
+        {/* Operational context */}
+        {(openIncidents.length > 0 || currentShift) && (
           <div className="flex flex-wrap gap-3">
-            {criticalAlerts.length > 0 && (
+            {criticalIncidents.length > 0 && (
               <div className="flex items-center gap-2 rounded-lg border border-state-critica/40 bg-state-critica/10 px-4 py-2.5">
-                <AlertTriangle className="h-4 w-4 text-state-critica" />
+                <AlertOctagon className="h-4 w-4 text-state-critica" />
                 <span className="text-sm font-bold text-state-critica">
-                  {criticalAlerts.length} alerta{criticalAlerts.length > 1 ? "s" : ""} crítica{criticalAlerts.length > 1 ? "s" : ""}
+                  {criticalIncidents.length} incidencia{criticalIncidents.length > 1 ? "s" : ""} critica{criticalIncidents.length > 1 ? "s" : ""}
                 </span>
-                <Link href="/alerts" className="ml-1 text-[11px] font-semibold text-state-critica underline">
+                <Link href="/incidents" className="ml-1 text-[11px] font-semibold text-state-critica underline">
                   Ver
                 </Link>
               </div>

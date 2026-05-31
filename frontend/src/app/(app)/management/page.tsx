@@ -21,6 +21,7 @@ import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { hasPermission, roleLabel, type Permission } from "@/lib/permissions";
 import type { Animal, Employee, EmployeeRol, Lactation, Machinery, Treatment, UserRole, Zone } from "@/lib/types";
+import { displayZoneName, visualZoneOptions } from "@/lib/visual-zones";
 import { useAppStore } from "@/store/app-store";
 
 const MGMT_LIST_PAGE_SIZE = 20;
@@ -409,6 +410,7 @@ export default function ManagementPage() {
 
   const animals = useMemo(() => animalsQuery.data ?? [], [animalsQuery.data]);
   const zones = useMemo(() => zonesQuery.data ?? [], [zonesQuery.data]);
+  const visibleZoneOptions = useMemo(() => visualZoneOptions(zones), [zones]);
 
   const animalOptions = useMemo(
     () => animals.map((animal) => ({ value: animal.id, label: `${animal.crotal_oficial} - ${animal.nombre ?? "Sin nombre"}` })),
@@ -417,9 +419,9 @@ export default function ManagementPage() {
   const zoneOptions = useMemo(
     () => [
       { value: "", label: "Sin zona asignada" },
-      ...zones.map((zone) => ({ value: zone.id, label: `${zone.codigo} - ${zone.nombre}` })),
+      ...visibleZoneOptions.map((zone) => ({ value: zone.id, label: zone.nombre })),
     ],
-    [zones],
+    [visibleZoneOptions],
   );
 
   const animalMutation = useMutation({
@@ -572,7 +574,7 @@ export default function ManagementPage() {
   // Record counts for section tabs
   const sectionCounts: Record<SectionId, number | null> = {
     animals: animalsQuery.data?.length ?? null,
-    zones: zonesQuery.data?.length ?? null,
+    zones: visibleZoneOptions.length || null,
     lactations: lactationsQuery.data?.length ?? null,
     treatments: treatmentsQuery.data?.length ?? null,
     employees: employeesQuery.data?.length ?? null,
@@ -635,6 +637,8 @@ export default function ManagementPage() {
                 { value: "recria", label: "Recria" },
                 { value: "crianza", label: "Crianza" },
                 { value: "produccion", label: "Produccion" },
+                { value: "seca", label: "Seca" },
+                { value: "gestante", label: "Gestante" },
                 { value: "baja", label: "Baja" },
               ]} />
               <SelectField label="Sexo" value={animalForm.sexo} disabled={!canEditActive} onChange={(value) => setAnimalForm({ ...animalForm, sexo: value })} options={[
@@ -693,7 +697,7 @@ export default function ManagementPage() {
         )}
 
         {section === "zones" && (
-          <Panel title="Zonas" subtitle="Alta y edicion de zonas operativas. Requiere admin." count={zonesQuery.data?.length} editingItem={!!editingZone} onClearEdit={() => { setEditingZone(null); setZoneForm(blankZone()); }}>
+          <Panel title="Zonas" subtitle="Configuracion de subzonas visibles: Recria y Nave." count={visibleZoneOptions.length} editingItem={!!editingZone} onClearEdit={() => { setEditingZone(null); setZoneForm(blankZone()); }}>
             <form className="grid gap-3 lg:grid-cols-4" onSubmit={(event) => { event.preventDefault(); if (canEditActive) zoneMutation.mutate(); }}>
               <TextField label="Nombre" value={zoneForm.nombre} required disabled={!canEditActive} onChange={(value) => setZoneForm({ ...zoneForm, nombre: value })} />
               <TextField label="Codigo" value={zoneForm.codigo} required disabled={!canEditActive} onChange={(value) => setZoneForm({ ...zoneForm, codigo: value.toUpperCase() })} />
@@ -709,26 +713,29 @@ export default function ManagementPage() {
             </form>
             {zoneMutation.isError && <p className="mt-3 text-sm font-semibold text-state-critica">{zoneMutation.error.message}</p>}
             <div className="mt-6 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {zones.map((zone) => (
+              {visibleZoneOptions.map((zone) => {
+                const rawZone = zones.find((item) => item.id === zone.id);
+                if (!rawZone) return null;
+                return (
                 <div key={zone.id} className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-app-text">{zone.codigo} - {zone.nombre}</p>
-                    <p className="text-xs text-app-dim">{zone.tipo ?? "operativa"}</p>
+                    <p className="truncate text-sm font-bold text-app-text">{displayZoneName(rawZone) ?? zone.nombre}</p>
+                    <p className="text-xs text-app-dim">{rawZone.tipo ?? "operativa"}</p>
                   </div>
                   <EditButton disabled={!canEditActive} onClick={() => {
-                    setEditingZone(zone);
+                    setEditingZone(rawZone);
                     setZoneForm({
-                      nombre: zone.nombre,
-                      codigo: zone.codigo,
-                      descripcion: zone.descripcion ?? "",
-                      tipo: zone.tipo ?? "",
-                      tiene_pantalla_tv: zone.tiene_pantalla_tv,
-                      tiene_tablet: zone.tiene_tablet,
-                      activa: zone.activa ?? true,
+                      nombre: displayZoneName(rawZone) ?? rawZone.nombre,
+                      codigo: rawZone.codigo,
+                      descripcion: rawZone.descripcion ?? "",
+                      tipo: rawZone.tipo ?? "",
+                      tiene_pantalla_tv: rawZone.tiene_pantalla_tv,
+                      tiene_tablet: rawZone.tiene_tablet,
+                      activa: rawZone.activa ?? true,
                     });
                   }} />
                 </div>
-              ))}
+              );})}
             </div>
           </Panel>
         )}

@@ -17,6 +17,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { PanelCard } from "@/components/ui/panel-card";
 import { api } from "@/lib/api";
 import type { Zone } from "@/lib/types";
+import { displayZoneName, visualZoneOptions } from "@/lib/visual-zones";
 
 // ── Local-only zone config (stored in localStorage per zone) ─────────────────
 // NOTE: These settings are NOT persisted to backend. For full persistence,
@@ -28,7 +29,7 @@ const TV_INTERVAL_KEY = "t4m-tv-interval";
 const TABLET_ACTIONS_KEY = "t4m-tablet-actions";
 
 const TV_MODULES = [
-  { id: "alertas_criticas", label: "Alertas críticas" },
+  { id: "incidencias_criticas", label: "Incidencias criticas" },
   { id: "animales_prioritarios", label: "Animales prioritarios" },
   { id: "tareas_en_curso", label: "Tareas en curso" },
   { id: "metricas_zona", label: "Métricas de zona" },
@@ -37,7 +38,6 @@ const TV_MODULES = [
 
 const TABLET_ACTIONS = [
   { id: "registrar_produccion", label: "Registrar producción" },
-  { id: "nueva_alerta", label: "Nueva alerta" },
   { id: "buscar_animal", label: "Buscar animal" },
   { id: "confirmar_tarea", label: "Confirmar tarea" },
   { id: "nueva_incidencia", label: "Nueva incidencia" },
@@ -71,7 +71,7 @@ function ZoneRow({
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-mono text-xs font-bold text-brand">{zone.codigo}</span>
-          <span className="font-heading text-sm font-bold text-app-text">{zone.nombre}</span>
+          <span className="font-heading text-sm font-bold text-app-text">{displayZoneName(zone) ?? zone.nombre}</span>
           {zone.activa === false && (
             <span className="rounded-full bg-state-neutral/10 px-2 py-0.5 text-[10px] font-bold text-state-neutral">
               Inactiva
@@ -96,7 +96,7 @@ function ZoneRow({
 
       <div className="flex items-center gap-2">
         <Link
-          href={`/zones/${zone.id}`}
+          href={`/zones/${["boxes_terneros", "zona_recria", "recria", "becerrero"].includes(zone.codigo) ? "recria" : "nave"}`}
           className="rounded-[10px] border border-app-border bg-app-bg px-3 py-1.5 text-xs font-semibold text-app-dim hover:border-brand/30 hover:text-brand"
         >
           Ver zona
@@ -136,6 +136,7 @@ export default function SettingsPage() {
     staleTime: 60_000,
   });
   const zones = zonesQ.data ?? [];
+  const visibleZones = visualZoneOptions(zones).map((zone) => zones.find((raw) => raw.id === zone.id) ?? zone as Zone);
 
   // Selected zone for editing
   const [editingZone, setEditingZone] = useState<Zone | null>(null);
@@ -230,12 +231,12 @@ export default function SettingsPage() {
             <p className="text-sm text-state-critica">Error al cargar las zonas.</p>
           )}
 
-          {zones.length === 0 && !zonesQ.isLoading && (
+          {visibleZones.length === 0 && !zonesQ.isLoading && (
             <p className="text-sm text-app-dim">No hay zonas registradas.</p>
           )}
 
           <div>
-            {zones.map((zone) => (
+            {visibleZones.map((zone) => (
               <ZoneRow key={zone.id} zone={zone} onEdit={handleZoneEdit} />
             ))}
           </div>

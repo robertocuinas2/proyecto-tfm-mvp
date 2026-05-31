@@ -17,12 +17,14 @@ import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { DEFAULT_PAGE_SIZE, getSkip } from "@/lib/pagination";
+import { displayZoneName, visualZoneOptions } from "@/lib/visual-zones";
 import type {
   CreateShiftAssignmentPayload,
   CreateShiftPayload,
   Shift,
   ShiftAssignment,
   ShiftType,
+  Zone,
 } from "@/lib/types";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -503,10 +505,15 @@ export default function ShiftsPage() {
   const zoneLookup = useMemo(() => {
     const map = new Map<string, string>();
     for (const z of zonesQuery.data ?? []) {
-      map.set(z.id, z.nombre);
+      map.set(z.id, displayZoneName(z) ?? z.nombre);
     }
     return map;
   }, [zonesQuery.data]);
+
+  const assignableZones = useMemo(
+    () => visualZoneOptions((zonesQuery.data ?? []) as Zone[]),
+    [zonesQuery.data],
+  );
 
   const assignmentsByShift = useMemo(() => {
     const map = new Map<string, ShiftAssignment[]>();
@@ -637,7 +644,7 @@ export default function ShiftsPage() {
               assignments={assignmentsByShift.get(shift.id) ?? []}
               employeeLookup={employeeLookup}
               zoneLookup={zoneLookup}
-              zones={zonesQuery.data ?? []}
+              zones={assignableZones}
               employees={employeesQuery.data ?? []}
             />
           ))}

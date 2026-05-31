@@ -48,6 +48,8 @@ const estadoStyles: Record<Animal["estado"], string> = {
   produccion: "bg-state-ok/10 text-state-ok border-state-ok/20",
   recria: "bg-state-info/10 text-state-info border-state-info/20",
   crianza: "bg-state-info/10 text-state-info border-state-info/20",
+  seca: "bg-state-atencion/10 text-state-atencion border-state-atencion/20",
+  gestante: "bg-state-atencion/10 text-state-atencion border-state-atencion/20",
   baja: "bg-state-neutral/10 text-state-neutral border-state-neutral/20",
 };
 

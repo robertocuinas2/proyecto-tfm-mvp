@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/toast";
 import {
   AlertOctagon,
-  AlertTriangle,
   ArrowLeftRight,
   CheckCircle2,
   ClipboardList,
@@ -247,13 +246,6 @@ export default function TabletHandoverPage() {
     refetchInterval: 60_000,
   });
 
-  const alertsQuery = useQuery({
-    queryKey: ["alerts-recent"],
-    queryFn: () => api.alerts({ limit: 10 }),
-    staleTime: 30_000,
-    refetchInterval: 30_000,
-  });
-
   const incidentsQuery = useQuery({
     queryKey: ["incidents"],
     queryFn: () => api.incidents({ limit: 20 }),
@@ -263,7 +255,6 @@ export default function TabletHandoverPage() {
   const recent = handoversQuery.data?.resumenes ?? [];
   const shifts = shiftsQuery.data?.turnos ?? [];
   const pendingTasks = tasksQuery.data ?? [];
-  const pendingAlerts = (alertsQuery.data?.alertas ?? []).filter((a) => a.estado === "pendiente");
   const openIncidents = (incidentsQuery.data ?? []).filter((i: { estado: string }) => i.estado === "abierta" || i.estado === "en_gestion");
 
   const lastHandover: ShiftHandover | undefined = recent[0];
@@ -304,9 +295,9 @@ export default function TabletHandoverPage() {
               : "border-app-border bg-white text-app-dim"}
           />
           <CountPill
-            count={pendingAlerts.length}
-            label="Alertas"
-            tone={pendingAlerts.length > 0
+            count={recent.length}
+            label="Relevos"
+            tone={recent.length > 0
               ? "border-state-info/30 bg-state-info/5 text-state-info"
               : "border-app-border bg-white text-app-dim"}
           />
@@ -351,9 +342,6 @@ export default function TabletHandoverPage() {
                   </span>
                   <span className="rounded-full bg-app-bg px-2.5 py-1 font-semibold text-app-dim">
                     {lastHandover.tareas_pendientes.length} tareas
-                  </span>
-                  <span className="rounded-full bg-app-bg px-2.5 py-1 font-semibold text-app-dim">
-                    {lastHandover.alertas_pendientes.length} alertas
                   </span>
                 </div>
                 {lastHandover.notas_saliente && (
@@ -465,30 +453,6 @@ export default function TabletHandoverPage() {
           </div>
         )}
 
-        {pendingAlerts.length > 0 && (
-          <div className="rounded-[14px] border border-app-border bg-white p-5 shadow-card">
-            <div className="mb-3 flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-state-atencion" />
-              <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-app-dim">
-                Alertas activas ({pendingAlerts.length})
-              </p>
-            </div>
-            <div className="space-y-2">
-              {pendingAlerts.slice(0, 4).map((alert) => (
-                <div key={alert.id} className="rounded-[10px] border border-app-border bg-app-bg px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase ${
-                      alert.severidad === "critica" ? "bg-state-critica/10 text-state-critica" : "bg-state-atencion/10 text-state-atencion"
-                    }`}>
-                      {alert.severidad}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-sm font-semibold text-app-text">{alert.descripcion}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

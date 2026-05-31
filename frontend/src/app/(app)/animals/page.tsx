@@ -17,6 +17,8 @@ const estadoStyles: Record<Animal["estado"], string> = {
   produccion: "bg-state-ok/15 text-state-ok",
   recria: "bg-state-info/15 text-state-info",
   crianza: "bg-state-info/15 text-state-info",
+  seca: "bg-state-atencion/15 text-state-atencion",
+  gestante: "bg-state-atencion/15 text-state-atencion",
   baja: "bg-state-neutral/10 text-state-neutral",
 };
 
@@ -24,6 +26,8 @@ const estadoLabels: Record<Animal["estado"], string> = {
   produccion: "Produccion",
   recria: "Recria",
   crianza: "Crianza",
+  seca: "Seca",
+  gestante: "Gestante",
   baja: "Baja",
 };
 
@@ -123,6 +127,8 @@ export default function AnimalsPage() {
     produccion: allAnimals.filter((animal) => animal.estado === "produccion").length,
     recria: allAnimals.filter((animal) => animal.estado === "recria").length,
     crianza: allAnimals.filter((animal) => animal.estado === "crianza").length,
+    seca: allAnimals.filter((animal) => animal.estado === "seca").length,
+    gestante: allAnimals.filter((animal) => animal.estado === "gestante").length,
     baja: allAnimals.filter((animal) => animal.estado === "baja").length,
   };
 
@@ -131,6 +137,8 @@ export default function AnimalsPage() {
     { key: "produccion", label: "Produccion" },
     { key: "recria", label: "Recria" },
     { key: "crianza", label: "Crianza" },
+    { key: "seca", label: "Seca" },
+    { key: "gestante", label: "Gestante" },
     { key: "baja", label: "Baja" },
   ];
 

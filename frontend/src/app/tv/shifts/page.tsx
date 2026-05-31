@@ -15,7 +15,7 @@ import { TvPanel, TvEmptyRow } from "@/components/tv/TvPanel";
 import { TvShell } from "@/components/tv/TvShell";
 import { api } from "@/lib/api";
 import { TV_REFETCH, TV_STALE } from "@/lib/tv-constants";
-import type { Employee, ShiftAssignment, ShiftType } from "@/lib/types";
+import type { Employee, ShiftAssignment, ShiftType, Zone } from "@/lib/types";
 
 const shiftTypeLabel: Record<ShiftType, string> = { manana: "Mañana", tarde: "Tarde" };
 const shiftTypeStyle: Record<ShiftType, string> = {
@@ -26,6 +26,21 @@ const shiftTypeStyle: Record<ShiftType, string> = {
 function empName(emp: Employee | undefined, fallbackId: string): string {
   if (!emp) return fallbackId.slice(0, 8) + "…";
   return [emp.nombre, emp.apellidos].filter(Boolean).join(" ");
+}
+
+const TV_VISUAL_ZONES = [
+  { key: "recria", name: "Recria", codes: ["boxes_terneros", "zona_recria", "recria", "becerrero"] },
+  { key: "nave", name: "Nave", codes: ["patio_alimentacion", "enfermeria", "maquinaria", "robots", "sala_ordeno", "silos", "almacen", "oficina", "general"] },
+];
+
+function displayZoneName(zone?: Pick<Zone, "codigo" | "nombre">) {
+  if (!zone) return null;
+  if (["boxes_terneros", "becerrero"].includes(zone.codigo)) return "Boxes de terneros";
+  if (["zona_recria", "recria"].includes(zone.codigo)) return "Zona de recria";
+  if (["patio_alimentacion", "silos", "almacen"].includes(zone.codigo)) return "Patio de alimentacion";
+  if (zone.codigo === "enfermeria") return "Enfermeria";
+  if (["maquinaria", "robots", "sala_ordeno", "oficina", "general"].includes(zone.codigo)) return "Maquinaria";
+  return zone.nombre;
 }
 
 // ── Shift card ────────────────────────────────────────────────────────────────
@@ -46,7 +61,7 @@ function ShiftCard({
     notas?: string | null;
   };
   assignments: ShiftAssignment[];
-  zones: { id: string; nombre: string }[];
+  zones: Pick<Zone, "id" | "nombre" | "codigo">[];
   employeeById: Map<string, Employee>;
   isCurrent: boolean;
 }) {
@@ -54,7 +69,7 @@ function ShiftCard({
 
   const zoneLookup = useMemo(() => {
     const map = new Map<string, string>();
-    for (const z of zones) map.set(z.id, z.nombre);
+    for (const z of zones) map.set(z.id, displayZoneName(z) ?? z.nombre);
     return map;
   }, [zones]);
 
@@ -166,13 +181,6 @@ export default function TvShiftsPage() {
     staleTime: TV_STALE.NORMAL,
   });
 
-  const alertsQ = useQuery({
-    queryKey: ["tv-alerts-board"],
-    queryFn: () => api.alerts({ limit: 20 }),
-    refetchInterval: TV_REFETCH.FAST,
-    staleTime: TV_STALE.FAST,
-  });
-
   const incidentsQ = useQuery({
     queryKey: ["tv-incidents-board"],
     queryFn: () => api.incidents({ limit: 20 }),
@@ -187,7 +195,7 @@ export default function TvShiftsPage() {
     refetchInterval: TV_REFETCH.CATALOG,
   });
 
-  const allQueryStatuses = [shiftsQ, assignmentsQ, tasksQ, alertsQ, incidentsQ].map((q) => ({
+  const allQueryStatuses = [shiftsQ, assignmentsQ, tasksQ, incidentsQ].map((q) => ({
     isLoading: q.isLoading,
     isFetching: q.isFetching,
     isError: q.isError,
@@ -205,7 +213,6 @@ export default function TvShiftsPage() {
   const assignments = assignmentsQ.data?.asignaciones ?? [];
   const zones = zonesQ.data ?? [];
   const allTasks = tasksQ.data ?? [];
-  const allAlerts = alertsQ.data?.alertas ?? [];
   const allIncidents = incidentsQ.data ?? [];
 
   // Identify current shift
@@ -217,8 +224,8 @@ export default function TvShiftsPage() {
 
   const pendingTasks = allTasks.filter((t) => t.estado === "programada" || t.estado === "retrasada");
   const delayedTasks = allTasks.filter((t) => t.estado === "retrasada");
-  const criticalAlerts = allAlerts.filter((a) => a.severidad === "critica" && a.estado === "pendiente");
   const openIncidents = allIncidents.filter((i: { estado: string }) => i.estado === "abierta" || i.estado === "en_gestion");
+  const criticalIncidents = openIncidents.filter((i: { prioridad: string }) => i.prioridad === "critica" || i.prioridad === "alta");
 
   // Zone coverage check
   const coveredZoneIds = new Set(
@@ -226,7 +233,11 @@ export default function TvShiftsPage() {
       .filter((a) => currentShift && a.turno_id === currentShift.id && a.zona_id)
       .map((a) => a.zona_id!),
   );
-  const uncoveredZones = zones.filter((z) => !coveredZoneIds.has(z.id));
+  const uncoveredZones = TV_VISUAL_ZONES.filter((visualZone) => {
+    const codeSet = new Set(visualZone.codes);
+    const ids = zones.filter((z) => codeSet.has(z.codigo)).map((z) => z.id);
+    return ids.length > 0 && !ids.some((id) => coveredZoneIds.has(id));
+  });
 
   return (
     <TvShell
@@ -275,10 +286,10 @@ export default function TvShiftsPage() {
             <div className="mt-2 flex flex-wrap gap-2">
               {uncoveredZones.map((z) => (
                 <span
-                  key={z.id}
+                  key={z.key}
                   className="rounded-full bg-state-atencion/10 px-3 py-1 text-sm font-semibold text-state-atencion"
                 >
-                  {z.nombre}
+                  {z.name}
                 </span>
               ))}
             </div>
@@ -369,23 +380,23 @@ export default function TvShiftsPage() {
           <TvPanel
             Icon={AlertTriangle}
             iconTone="text-state-critica"
-            title="Alertas críticas"
-            count={criticalAlerts.length}
+            title="Incidencias criticas"
+            count={criticalIncidents.length}
             className="min-h-[260px]"
           >
-            {alertsQ.isError ? (
-              <TvEmptyRow text="Error al cargar alertas" />
-            ) : criticalAlerts.length === 0 ? (
-              <TvEmptyRow text="Sin alertas críticas ✓" />
+            {incidentsQ.isError ? (
+              <TvEmptyRow text="Error al cargar incidencias" />
+            ) : criticalIncidents.length === 0 ? (
+              <TvEmptyRow text="Sin incidencias criticas" />
             ) : (
               <div className="space-y-2">
-                {criticalAlerts.slice(0, 6).map((alert) => (
+                {criticalIncidents.slice(0, 6).map((inc: { id: string; tipo: string; descripcion: string; prioridad: string }) => (
                   <div
-                    key={alert.id}
+                    key={inc.id}
                     className="rounded-xl border border-l-4 border-tv-border border-l-state-critica bg-tv-surface2 px-4 py-3"
                   >
-                    <p className="text-xs capitalize text-tv-dim">{alert.tipo_alerta}</p>
-                    <p className="mt-0.5 text-sm font-semibold text-white">{alert.descripcion}</p>
+                    <p className="text-xs capitalize text-tv-dim">{inc.tipo.replace(/_/g, " ")}</p>
+                    <p className="mt-0.5 text-sm font-semibold text-white">{inc.descripcion}</p>
                   </div>
                 ))}
               </div>
