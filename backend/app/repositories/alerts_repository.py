@@ -4,19 +4,20 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.enums import NivelAlerta
 from app.models.tools4milk import Alerta
 
 
 def get_all(db: Session, skip: int = 0, limit: int = 50, nivel: str | None = None) -> list[Alerta]:
     query = select(Alerta).order_by(Alerta.ts_generacion.desc())
     if nivel is not None:
-        query = query.where(Alerta.nivel == nivel)
+        query = query.where(Alerta.nivel == _map_nivel(nivel))
     return list(db.scalars(query.offset(skip).limit(limit)).all())
 
 
 def get_critical(db: Session) -> list[Alerta]:
     return list(
-        db.scalars(select(Alerta).where(Alerta.nivel.in_(["alta"])).order_by(Alerta.ts_generacion.desc())).all()
+        db.scalars(select(Alerta).where(Alerta.nivel.in_([NivelAlerta.ALTA])).order_by(Alerta.ts_generacion.desc())).all()
     )
 
 
@@ -43,7 +44,7 @@ def get_by_id(db: Session, alert_id: str) -> Alerta | None:
 def create(db: Session, data: dict) -> Alerta:
     item = Alerta(
         id=uuid.uuid4(),
-        nivel=data.get("severidad") or data.get("nivel", "media"),
+        nivel=_map_nivel(data.get("severidad") or data.get("nivel", "media")),
         titulo=data.get("tipo_alerta") or data.get("titulo", "Alerta"),
         mensaje=data.get("descripcion") or data.get("mensaje"),
         animal_id=_to_uuid(data.get("animal_id")),
@@ -76,6 +77,19 @@ def resolve(db: Session, item: Alerta, data: dict) -> Alerta:
     db.commit()
     db.refresh(item)
     return item
+
+
+def _map_nivel(nivel: str | NivelAlerta) -> NivelAlerta:
+    """Map frontend/API nivel strings to NivelAlerta enum."""
+    if isinstance(nivel, NivelAlerta):
+        return nivel
+    mapping = {
+        "baja": NivelAlerta.BAJA,
+        "media": NivelAlerta.MEDIA,
+        "alta": NivelAlerta.ALTA,
+        "critica": NivelAlerta.ALTA,
+    }
+    return mapping.get(nivel, NivelAlerta.MEDIA)
 
 
 def _to_uuid(value: str | None) -> uuid.UUID | None:

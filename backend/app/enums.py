@@ -38,3 +38,10 @@ class EstadoIncidencia(str, Enum):
     EN_GESTION = "en_gestion"
     RESUELTA = "resuelta"
     CERRADA = "cerrada"
+
+
+class NivelAlerta(str, Enum):
+    """Niveles de alerta (alertas.nivel)."""
+    BAJA = "baja"
+    MEDIA = "media"
+    ALTA = "alta"
