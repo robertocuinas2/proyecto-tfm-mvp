@@ -11,6 +11,7 @@ from sqlalchemy.pool import StaticPool
 
 os.environ["REDIS_ENABLED"] = "False"
 os.environ["AEMET_API_KEY"] = ""
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
 from app.time_utils import utc_now
 
