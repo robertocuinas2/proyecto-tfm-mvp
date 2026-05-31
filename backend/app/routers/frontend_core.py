@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.enums import EstadoTarea, EstadoAnimal
 from app.models import Usuario
 from app.models.tools4milk import Alerta, Animal, TareaEjecucion, TareaCatalogo, TratamientoActivo
 from app.repositories import (
@@ -112,12 +113,12 @@ def dashboard_summary(db: DbSession) -> dict[str, Any]:
             "altas": len([a for a in pending_alerts if a.nivel == "alta"]),
         },
         "tareas": {
-            "programadas": db.scalar(select(func.count()).select_from(TareaEjecucion).where(TareaEjecucion.estado == "pendiente")) or 0,
-            "ejecutadas": db.scalar(select(func.count()).select_from(TareaEjecucion).where(TareaEjecucion.estado == "completada")) or 0,
-            "retrasadas": db.scalar(select(func.count()).select_from(TareaEjecucion).where(TareaEjecucion.estado == "vencida")) or 0,
+            "programadas": db.scalar(select(func.count()).select_from(TareaEjecucion).where(TareaEjecucion.estado == EstadoTarea.PENDIENTE)) or 0,
+            "ejecutadas": db.scalar(select(func.count()).select_from(TareaEjecucion).where(TareaEjecucion.estado == EstadoTarea.COMPLETADA)) or 0,
+            "retrasadas": db.scalar(select(func.count()).select_from(TareaEjecucion).where(TareaEjecucion.estado == EstadoTarea.VENCIDA)) or 0,
         },
         "animales": {
-            "activos": db.scalar(select(func.count()).select_from(Animal).where(Animal.estado != "baja")) or 0,
+            "activos": db.scalar(select(func.count()).select_from(Animal).where(Animal.estado != EstadoAnimal.BAJA)) or 0,
         },
         "tratamientos": {
             "activos": db.scalar(select(func.count()).select_from(TratamientoActivo).where(TratamientoActivo.activo.is_(True))) or 0,

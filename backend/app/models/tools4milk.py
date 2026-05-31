@@ -14,6 +14,7 @@ from sqlalchemy import (
     Boolean,
     Date,
     DateTime,
+    Enum,
     ForeignKey,
     Integer,
     JSON,
@@ -29,6 +30,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+from app.enums import EstadoTarea, EstadoAnimal
 
 
 POSTGRES_JSON = JSONB().with_variant(JSON(), "sqlite")
@@ -104,7 +106,12 @@ class Animal(Base):
     sexo: Mapped[str] = mapped_column(String(20), nullable=False, default="hembra")
     fecha_nacimiento: Mapped[date] = mapped_column(Date, nullable=False)
     raza: Mapped[str | None] = mapped_column(String(80))
-    estado: Mapped[str] = mapped_column(String(30), nullable=False, default="recria", index=True)
+    estado: Mapped[EstadoAnimal] = mapped_column(
+        Enum(EstadoAnimal, name="estado_animal", values_callable=lambda x: [e.value for e in x]).with_variant(String(30), "sqlite"),
+        nullable=False,
+        default=EstadoAnimal.RECRIA,
+        index=True,
+    )
     estado_reproductivo: Mapped[str | None] = mapped_column(String(40), index=True)
     madre_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("animales.id"))
     fecha_entrada: Mapped[date] = mapped_column(Date, nullable=False)
@@ -302,7 +309,12 @@ class TareaEjecucion(Base):
     empleado_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("empleados.id"))
     zona_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("zonas.id"), index=True)
     maquinaria_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("maquinaria.id"))
-    estado: Mapped[str] = mapped_column(String(20), nullable=False, default="pendiente", index=True)
+    estado: Mapped[EstadoTarea] = mapped_column(
+        Enum(EstadoTarea, name="estado_tarea", values_callable=lambda x: [e.value for e in x]).with_variant(String(20), "sqlite"),
+        nullable=False,
+        default=EstadoTarea.PENDIENTE,
+        index=True,
+    )
     ts_planificada: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     ts_inicio: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     ts_fin: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

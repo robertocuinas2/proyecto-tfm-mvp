@@ -1,4 +1,5 @@
 from typing import Any
+from app.enums import EstadoTarea
 from app.models.tools4milk import TareaEjecucion, TareaCatalogo
 from app.repositories.tasks_repository import _map_estado_to_frontend
 
@@ -25,10 +26,10 @@ def serialize(ejecucion: TareaEjecucion, catalogo: TareaCatalogo | None) -> dict
         "observaciones": ejecucion.notas,
         "problemas_encontrados": None,
         "acciones_correctivas": None,
-        "checklist_completado": "true" if ejecucion.estado == "completada" else "false",
+        "checklist_completado": "true" if ejecucion.estado == EstadoTarea.COMPLETADA else "false",
         "checklist_datos": None,
-        "es_urgente": ejecucion.estado in {"vencida"},
+        "es_urgente": ejecucion.estado in {EstadoTarea.VENCIDA},
         "motivo_retraso": None,
-        "requiere_seguimiento": ejecucion.estado in {"vencida"},
+        "requiere_seguimiento": ejecucion.estado in {EstadoTarea.VENCIDA},
         "fecha_seguimiento": None,
     }

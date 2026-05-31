@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.enums import EstadoTarea
 from app.models.tools4milk import TareaEjecucion, TareaCatalogo
 
 
@@ -82,21 +83,26 @@ def update(db: Session, item: TareaEjecucion, data: dict) -> tuple[TareaEjecucio
     return (item, catalogo)
 
 
-def _map_estado(estado: str) -> str:
+def _map_estado(estado: str | EstadoTarea) -> EstadoTarea:
+    """Map frontend/API estado strings to EstadoTarea enum."""
+    if isinstance(estado, EstadoTarea):
+        return estado
     mapping = {
-        "programada": "pendiente",
-        "retrasada": "pendiente",
-        "ejecutada": "completada",
-        "cancelada": "cancelada",
-        "pendiente": "pendiente",
-        "en_curso": "en_curso",
-        "completada": "completada",
-        "vencida": "vencida",
+        "programada": EstadoTarea.PENDIENTE,
+        "retrasada": EstadoTarea.PENDIENTE,
+        "ejecutada": EstadoTarea.COMPLETADA,
+        "cancelada": EstadoTarea.CANCELADA,
+        "pendiente": EstadoTarea.PENDIENTE,
+        "en_curso": EstadoTarea.EN_CURSO,
+        "completada": EstadoTarea.COMPLETADA,
+        "vencida": EstadoTarea.VENCIDA,
     }
-    return mapping.get(estado, estado)
+    return mapping.get(estado, EstadoTarea.PENDIENTE)
 
 
-def _map_estado_to_frontend(estado: str) -> str:
+def _map_estado_to_frontend(estado: str | EstadoTarea) -> str:
+    """Map EstadoTarea enum to frontend estado string."""
+    estado_str = estado.value if isinstance(estado, EstadoTarea) else estado
     mapping = {
         "pendiente": "programada",
         "en_curso": "en_curso",
@@ -104,7 +110,7 @@ def _map_estado_to_frontend(estado: str) -> str:
         "vencida": "retrasada",
         "cancelada": "cancelada",
     }
-    return mapping.get(estado, estado)
+    return mapping.get(estado_str, estado_str)
 
 
 def _parse_dt(value: str | datetime | None) -> datetime | None:
