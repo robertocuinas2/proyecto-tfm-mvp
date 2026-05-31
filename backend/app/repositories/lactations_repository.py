@@ -4,7 +4,7 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.tools4milk import Lactacion
+from app.models.tools4milk import Animal, Lactacion
 
 
 def get_all(
@@ -54,13 +54,18 @@ def get_active_for_animal(db: Session, animal_id: str) -> Lactacion | None:
 
 
 def create(db: Session, data: dict) -> Lactacion:
+    animal_id = _resolve_animal_uuid(db, data["animal_id"])
+    numero = data.get("numero_lactacion") or data.get("numero", 1)
+    existing = db.scalar(select(Lactacion).where(Lactacion.animal_id == animal_id, Lactacion.numero == numero))
+    if existing is not None:
+        return update(db, existing, data)
     item = Lactacion(
         id=uuid.uuid4(),
-        animal_id=uuid.UUID(data["animal_id"]),
-        numero=data.get("numero_lactacion") or data.get("numero", 1),
+        animal_id=animal_id,
+        numero=numero,
         fecha_parto=_parse_date(data.get("fecha_inicio") or data.get("fecha_parto")),
         fecha_secado=_parse_date(data.get("fecha_fin") or data.get("fecha_secado")),
-        produccion_total_kg=data.get("produccion_total"),
+        produccion_total_kg=data.get("produccion_total") or _total_from_average(data.get("produccion_promedio")),
         notas=data.get("notas"),
     )
     db.add(item)
@@ -74,6 +79,12 @@ def update(db: Session, item: Lactacion, data: dict) -> Lactacion:
         item.fecha_secado = _parse_date(data.get("fecha_secado") or data.get("fecha_fin"))
     if "produccion_total" in data:
         item.produccion_total_kg = data["produccion_total"]
+    if "produccion_promedio" in data:
+        item.produccion_total_kg = _total_from_average(data["produccion_promedio"])
+    if data.get("activa") is False:
+        item.fecha_secado = date.today()
+    elif data.get("activa") is True:
+        item.fecha_secado = None
     if "notas" in data:
         item.notas = data["notas"]
     db.commit()
@@ -89,4 +100,23 @@ def _parse_date(value: str | date | None) -> date | None:
     try:
         return date.fromisoformat(str(value)[:10])
     except (ValueError, TypeError):
+        return None
+
+
+def _resolve_animal_uuid(db: Session, value: str) -> uuid.UUID:
+    try:
+        return uuid.UUID(value)
+    except (ValueError, AttributeError):
+        animal = db.scalar(select(Animal).where(Animal.crotal_oficial == value))
+        if animal is None:
+            raise ValueError("Animal no encontrado")
+        return animal.id
+
+
+def _total_from_average(value: float | int | str | None) -> float | None:
+    if value is None:
+        return None
+    try:
+        return round(float(value) * 305, 2)
+    except (TypeError, ValueError):
         return None

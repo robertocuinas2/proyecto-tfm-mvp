@@ -18,7 +18,7 @@ def serialize(l: Lactacion) -> dict[str, Any]:
         "fecha_inicio": l.fecha_parto.isoformat() if l.fecha_parto else None,
         "fecha_fin": l.fecha_secado.isoformat() if l.fecha_secado else None,
         "dias_transcurridos": dias,
-        "produccion_promedio": None,
+        "produccion_promedio": round(float(l.produccion_total_kg) / 305, 1) if l.produccion_total_kg else None,
         "produccion_total": float(l.produccion_total_kg) if l.produccion_total_kg else None,
         "grasa_promedio": None,
         "proteina_promedio": None,
@@ -39,7 +39,10 @@ def quality_summary(lactaciones: list[Lactacion]) -> dict[str, Any]:
         }
     return {
         "lactaciones_activas": len(lactaciones),
-        "produccion_promedio": None,
+        "produccion_promedio": round(
+            sum(float(l.produccion_total_kg or 0) / 305 for l in lactaciones) / len(lactaciones),
+            1,
+        ),
         "grasa_promedio": None,
         "proteina_promedio": None,
         "rcs_promedio": None,
