@@ -22,7 +22,7 @@ def serialize(a: Alerta) -> dict[str, Any]:
         "requiere_escalacion": a.nivel in {"alta"},
         "fecha_creacion": a.ts_generacion.isoformat() if a.ts_generacion else None,
         "fecha_revision": a.ts_resolucion.isoformat() if a.ts_resolucion else None,
-        "revisada": a.ts_resolucion is not None,
+        "revisada": a.ts_resolucion is not None or not a.activa,
         "notas_operario": None,
         "accion_tomada": None,
         "veterinario_responsable": None,

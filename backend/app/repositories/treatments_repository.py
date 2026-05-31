@@ -4,7 +4,7 @@ from datetime import date, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.tools4milk import TratamientoActivo
+from app.models.tools4milk import Animal, TratamientoActivo
 
 
 def get_all(
@@ -40,7 +40,7 @@ def create(db: Session, data: dict) -> TratamientoActivo:
 
     item = TratamientoActivo(
         id=uuid.uuid4(),
-        animal_id=uuid.UUID(data["animal_id"]),
+        animal_id=_resolve_animal_uuid(db, data["animal_id"]),
         farmaco=data.get("medicamento") or data.get("farmaco", "Desconocido"),
         dosis=data.get("dosis"),
         via_administracion=data.get("via_administracion"),
@@ -101,3 +101,13 @@ def _to_uuid(value: str | None) -> uuid.UUID | None:
         return uuid.UUID(value)
     except (ValueError, AttributeError):
         return None
+
+
+def _resolve_animal_uuid(db: Session, value: str) -> uuid.UUID:
+    try:
+        return uuid.UUID(value)
+    except (ValueError, AttributeError):
+        animal = db.scalar(select(Animal).where(Animal.crotal_oficial == value))
+        if animal is None:
+            raise ValueError("Animal no encontrado")
+        return animal.id

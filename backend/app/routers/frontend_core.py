@@ -79,7 +79,21 @@ def _resolve_catalogo_id(db: Session, payload: dict) -> uuid.UUID | None:
         except (ValueError, AttributeError):
             pass
     catalog = db.scalar(select(TareaCatalogo).where(TareaCatalogo.activa.is_(True)).limit(1))
-    return catalog.id if catalog else None
+    if catalog:
+        return catalog.id
+    catalog_payload = payload.get("tarea_catalogo") or {}
+    catalog = TareaCatalogo(
+        id=uuid.uuid4(),
+        codigo=str(payload.get("tarea_catalogo_id") or f"task-{uuid.uuid4().hex[:8]}")[:60],
+        nombre=str(catalog_payload.get("nombre") or "Tarea operativa")[:150],
+        descripcion=catalog_payload.get("descripcion"),
+        cualificacion_requerida=catalog_payload.get("categoria"),
+        duracion_estimada_min=catalog_payload.get("duracion_estimada_min"),
+        activa=True,
+    )
+    db.add(catalog)
+    db.flush()
+    return catalog.id
 
 
 def _estado_to_activa(estado: str | None) -> bool | None:
@@ -408,11 +422,11 @@ def generate_alerts(animal_id: str, db: DbSession, _user: ClinicalManager) -> di
 
 @router.get("/predictions/{animal_id}")
 def predictions(animal_id: str, db: DbSession) -> dict[str, Any]:
-    animal = animals_repository.get_by_id(db, animal_id)
+    animal = animals_repository.get_by_id(db, animal_id) or animals_repository.get_by_crotal(db, animal_id)
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal no encontrado")
 
-    lactation = lactations_repository.get_active_for_animal(db, animal_id)
+    lactation = lactations_repository.get_active_for_animal(db, str(animal.id))
     active_treatments = db.scalars(
         select(TratamientoActivo).where(TratamientoActivo.animal_id == animal.id, TratamientoActivo.activo.is_(True))
     ).all()

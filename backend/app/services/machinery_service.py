@@ -8,7 +8,7 @@ def serialize(m: Maquinaria) -> dict[str, Any]:
         "nombre": m.nombre,
         "tipo": m.tipo,
         "zona_id": str(m.zona_id) if m.zona_id else None,
-        "estado": "operativa" if m.activa else "baja",
+        "estado": m.estado if m.activa else "baja",
         "proxima_revision": None,
         "observaciones": m.notas,
     }

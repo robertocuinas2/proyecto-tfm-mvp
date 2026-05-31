@@ -42,6 +42,7 @@ def create(db: Session, data: dict) -> Maquinaria:
         modelo=data.get("modelo"),
         numero_serie=data.get("numero_serie"),
         activa=bool(data.get("activa", True)),
+        estado=data.get("estado", "operativa"),
         notas=data.get("notas") or data.get("observaciones"),
     )
     db.add(item)
@@ -51,14 +52,15 @@ def create(db: Session, data: dict) -> Maquinaria:
 
 
 def update(db: Session, item: Maquinaria, data: dict) -> Maquinaria:
-    allowed = {"nombre", "tipo", "marca", "modelo", "numero_serie", "activa", "notas"}
+    allowed = {"nombre", "tipo", "marca", "modelo", "numero_serie", "activa", "estado", "notas"}
     for key, value in data.items():
         if key == "zona_id":
             item.zona_id = _to_uuid(value)
         elif key == "observaciones":
             item.notas = value
         elif key == "estado":
-            item.activa = value in {"operativa", "revision_programada"}
+            item.estado = value
+            item.activa = value not in {"baja", "inactiva"}
         elif key in allowed:
             setattr(item, key, value)
     db.commit()

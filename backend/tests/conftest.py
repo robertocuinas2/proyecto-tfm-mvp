@@ -20,8 +20,9 @@ from app.main import app
 from app.database import Base, get_db
 from app.config import settings
 from app.models.usuario import Usuario
-from app.models.tools4milk import Animal, Lactacion
+from app.models.tools4milk import Animal, Empleado, Lactacion, Maquinaria, TareaCatalogo, TareaEjecucion, TratamientoActivo, Zona
 from app.security import hash_password
+from app.services.frontend_seed import ensure_frontend_seed_data
 import uuid
 
 # Crear base de datos de prueba en memoria
@@ -185,6 +186,7 @@ def ensure_test_user(username: str, email: str, role: str) -> None:
 def ensure_operational_seed() -> None:
     db = TestingSessionLocal()
     try:
+        ensure_frontend_seed_data(db)
         animal = db.execute(select(Animal).where(Animal.crotal_oficial == "TEST-0001")).scalar_one_or_none()
         if animal is None:
             animal = Animal(
@@ -201,6 +203,22 @@ def ensure_operational_seed() -> None:
             db.add(animal)
             db.flush()
 
+        frontend_animal = db.execute(select(Animal).where(Animal.crotal_oficial == "animal-001")).scalar_one_or_none()
+        if frontend_animal is None:
+            frontend_animal = Animal(
+                id=uuid.uuid4(),
+                crotal_oficial="animal-001",
+                nombre="Luna",
+                sexo="hembra",
+                fecha_nacimiento=date(2020, 4, 12),
+                raza="frisona",
+                estado="produccion",
+                estado_reproductivo="lactante",
+                fecha_entrada=date(2020, 4, 12),
+            )
+            db.add(frontend_animal)
+            db.flush()
+
         lactation = db.execute(select(Lactacion).where(Lactacion.animal_id == animal.id)).scalar_one_or_none()
         if lactation is None:
             db.add(
@@ -211,6 +229,88 @@ def ensure_operational_seed() -> None:
                     fecha_parto=date(2025, 1, 1),
                     fecha_secado=None,
                     produccion_total_kg=3500,
+                )
+            )
+        frontend_lactation = db.execute(select(Lactacion).where(Lactacion.animal_id == frontend_animal.id)).scalar_one_or_none()
+        if frontend_lactation is None:
+            db.add(
+                Lactacion(
+                    id=uuid.uuid4(),
+                    animal_id=frontend_animal.id,
+                    numero=3,
+                    fecha_parto=date(2025, 10, 2),
+                    fecha_secado=None,
+                    produccion_total_kg=8071,
+                )
+            )
+        if db.execute(select(Zona).limit(1)).scalar_one_or_none() is None:
+            db.add(
+                Zona(
+                    id=uuid.uuid4(),
+                    nombre="Sala de ordeno",
+                    codigo="ORD",
+                    descripcion="Produccion, calidad de leche y tanque.",
+                    tiene_pantalla_tv=True,
+                    tiene_tablet=True,
+                )
+            )
+        catalog = db.execute(select(TareaCatalogo).limit(1)).scalar_one_or_none()
+        if catalog is None:
+            catalog = TareaCatalogo(
+                id=uuid.uuid4(),
+                codigo="cat-ord-001",
+                nombre="Revisar tanque",
+                descripcion="Revision operativa diaria",
+                cualificacion_requerida="ordeno",
+                duracion_estimada_min=15,
+                activa=True,
+            )
+            db.add(catalog)
+            db.flush()
+        if db.execute(select(TareaEjecucion).limit(1)).scalar_one_or_none() is None:
+            db.add(
+                TareaEjecucion(
+                    id=uuid.uuid4(),
+                    catalogo_id=catalog.id,
+                    estado="pendiente",
+                    ts_planificada=utc_now().replace(tzinfo=None),
+                    creado_en=utc_now().replace(tzinfo=None),
+                )
+            )
+        if db.execute(select(TratamientoActivo).limit(1)).scalar_one_or_none() is None:
+            db.add(
+                TratamientoActivo(
+                    id=uuid.uuid4(),
+                    animal_id=frontend_animal.id,
+                    farmaco="Suplemento mineral",
+                    dosis="120 g/dia",
+                    dias_tratamiento=7,
+                    fecha_inicio=date(2026, 5, 20),
+                    fecha_fin_prevista=date(2026, 5, 27),
+                    activo=True,
+                    checkboxes=[],
+                )
+            )
+        if db.execute(select(Empleado).limit(1)).scalar_one_or_none() is None:
+            db.add(
+                Empleado(
+                    id=uuid.uuid4(),
+                    nombre="Roberto",
+                    apellidos="Castro",
+                    rol="admin",
+                    cualificaciones=[],
+                    activo=True,
+                    fecha_alta=date(2020, 1, 1),
+                )
+            )
+        if db.execute(select(Maquinaria).limit(1)).scalar_one_or_none() is None:
+            db.add(
+                Maquinaria(
+                    id=uuid.uuid4(),
+                    nombre="Robot de ordeno 1",
+                    tipo="ordeno",
+                    activa=True,
+                    estado="operativa",
                 )
             )
         db.commit()
