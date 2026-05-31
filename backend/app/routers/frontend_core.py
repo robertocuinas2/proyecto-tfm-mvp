@@ -340,8 +340,6 @@ def create_lactation(payload: dict[str, Any], db: DbSession, _user: QualityManag
 @router.get("/lactations/quality/summary")
 def quality_summary(db: DbSession) -> dict[str, Any]:
     items = lactations_repository.get_all_active(db)
-    if not items:
-        raise HTTPException(status_code=404, detail="No hay registros de lactacion")
     return lactations_service.quality_summary(items)
 
 

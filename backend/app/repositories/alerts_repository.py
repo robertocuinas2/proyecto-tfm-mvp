@@ -62,9 +62,15 @@ def create(db: Session, data: dict) -> Alerta:
 
 def resolve(db: Session, item: Alerta, data: dict) -> Alerta:
     estado = data.get("estado")
-    if estado and estado not in {"pendiente"}:
+    if estado == "revisada":
+        item.activa = False
+        item.ts_resolucion = None
+    elif estado and estado not in {"pendiente"}:
         item.activa = False
         item.ts_resolucion = datetime.now(tz=timezone.utc)
+    elif estado == "pendiente":
+        item.activa = True
+        item.ts_resolucion = None
     if "notas_operario" in data:
         pass  # No hay campo directo; se podría guardar en mensaje
     db.commit()

@@ -4,6 +4,7 @@ Configuración y fixtures para tests de Tools4Milk MVP
 
 import pytest
 import os
+from datetime import date
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
@@ -19,6 +20,7 @@ from app.main import app
 from app.database import Base, get_db
 from app.config import settings
 from app.models.usuario import Usuario
+from app.models.tools4milk import Animal, Lactacion
 from app.security import hash_password
 import uuid
 
@@ -59,6 +61,7 @@ def db():
 def client():
     """Proporciona un cliente TestClient para la API"""
     Base.metadata.create_all(bind=engine)
+    ensure_operational_seed()
     with TestClient(app) as test_client:
         yield test_client
     Base.metadata.drop_all(bind=engine)
@@ -174,6 +177,42 @@ def ensure_test_user(username: str, email: str, role: str) -> None:
             user.hashed_password = password_hash
             user.role = role
             user.activo = True
+        db.commit()
+    finally:
+        db.close()
+
+
+def ensure_operational_seed() -> None:
+    db = TestingSessionLocal()
+    try:
+        animal = db.execute(select(Animal).where(Animal.crotal_oficial == "TEST-0001")).scalar_one_or_none()
+        if animal is None:
+            animal = Animal(
+                id=uuid.uuid4(),
+                crotal_oficial="TEST-0001",
+                nombre="Vaca test",
+                sexo="hembra",
+                fecha_nacimiento=date(2021, 1, 1),
+                raza="frisona",
+                estado="lactante",
+                estado_reproductivo="lactante",
+                fecha_entrada=date(2021, 1, 1),
+            )
+            db.add(animal)
+            db.flush()
+
+        lactation = db.execute(select(Lactacion).where(Lactacion.animal_id == animal.id)).scalar_one_or_none()
+        if lactation is None:
+            db.add(
+                Lactacion(
+                    id=uuid.uuid4(),
+                    animal_id=animal.id,
+                    numero=1,
+                    fecha_parto=date(2025, 1, 1),
+                    fecha_secado=None,
+                    produccion_total_kg=3500,
+                )
+            )
         db.commit()
     finally:
         db.close()
