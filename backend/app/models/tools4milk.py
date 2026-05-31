@@ -85,6 +85,7 @@ class Maquinaria(Base):
     numero_serie: Mapped[str | None] = mapped_column(String(100), unique=True)
     fecha_instalacion: Mapped[date | None] = mapped_column(Date)
     activa: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    estado: Mapped[str] = mapped_column(String(40), nullable=False, default="operativa")
     notas: Mapped[str | None] = mapped_column(Text)
 
     zona: Mapped[Zona | None] = relationship("Zona", foreign_keys=[zona_id])
