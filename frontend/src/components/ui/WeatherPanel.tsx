@@ -114,7 +114,7 @@ export function WeatherPanel({ compact = false, dark = false }: WeatherPanelProp
 
         {noData ? (
           <p className={`mt-3 text-sm ${sub}`}>
-            Sin lecturas meteorológicas recientes. Usa el botón "Sincronizar AEMET" en Integration.
+            Sin lecturas meteorológicas recientes. Usa el botón &quot;Sincronizar AEMET&quot; en Integration.
           </p>
         ) : (
           <div className="mt-3 flex flex-wrap gap-4">

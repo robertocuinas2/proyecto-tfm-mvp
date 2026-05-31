@@ -14,10 +14,9 @@ import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { DonutStat, SparkArea } from "@/components/charts/MiniCharts";
 import { Pagination } from "@/components/common/Pagination";
-import { PageHeader } from "@/components/ui/page-header";
 import { api } from "@/lib/api";
 import { DEFAULT_PAGE_SIZE, getSkip } from "@/lib/pagination";
-import type { Animal, AnimalPrediction, PredictionTrend, RiskLevel } from "@/lib/types";
+import type { Animal, PredictionTrend, RiskLevel } from "@/lib/types";
 
 const trendIcon: Record<PredictionTrend, typeof TrendingUp> = {
   aumento: TrendingUp,

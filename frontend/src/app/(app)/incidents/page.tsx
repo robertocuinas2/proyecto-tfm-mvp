@@ -423,13 +423,16 @@ export default function IncidentsPage() {
     mutationFn: ({ id, estado }: { id: string; estado: IncidentStatus }) =>
       api.updateIncident(id, { estado }),
     onMutate: ({ id }) => setUpdatingId(id),
+    onError: (err: Error) => {
+      toast.error(err.message || "Error al actualizar la incidencia");
+    },
     onSettled: () => {
       setUpdatingId(null);
       queryClient.invalidateQueries({ queryKey: ["incidents"] });
     },
   });
 
-  const all = incidentsQuery.data ?? [];
+  const all = useMemo(() => incidentsQuery.data ?? [], [incidentsQuery.data]);
 
   // Client-side filtering
   const filtered = useMemo(() => {

@@ -16,6 +16,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    JSON,
     Numeric,
     PrimaryKeyConstraint,
     SmallInteger,
@@ -28,6 +29,10 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+
+POSTGRES_JSON = JSONB().with_variant(JSON(), "sqlite")
+POSTGRES_TEXT_ARRAY = ARRAY(Text).with_variant(JSON(), "sqlite")
 
 
 # ---------------------------------------------------------------------------
@@ -56,7 +61,7 @@ class Empleado(Base):
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
     apellidos: Mapped[str] = mapped_column(String(150), nullable=False)
     rol: Mapped[str] = mapped_column(String(40), nullable=False)
-    cualificaciones: Mapped[list[str] | None] = mapped_column(ARRAY(Text), default=list)
+    cualificaciones: Mapped[list[str] | None] = mapped_column(POSTGRES_TEXT_ARRAY, default=list)
     telefono: Mapped[str | None] = mapped_column(String(20))
     email: Mapped[str | None] = mapped_column(String(150))
     activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
@@ -144,7 +149,7 @@ class TratamientoActivo(Base):
     fecha_fin_prevista: Mapped[date] = mapped_column(Date, nullable=False)
     fecha_fin_real: Mapped[date | None] = mapped_column(Date)
     activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
-    checkboxes: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    checkboxes: Mapped[list] = mapped_column(POSTGRES_JSON, nullable=False, default=list)
     prescrito_por: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("empleados.id"))
     notas: Mapped[str | None] = mapped_column(Text)
 
@@ -196,7 +201,7 @@ class Incidencia(Base):
     ts_apertura: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     ts_cierre: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     foto_url: Mapped[str | None] = mapped_column(Text)
-    acciones: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    acciones: Mapped[list] = mapped_column(POSTGRES_JSON, nullable=False, default=list)
 
 
 # ---------------------------------------------------------------------------
@@ -369,8 +374,8 @@ class AuditLog(Base):
     tabla_afectada: Mapped[str] = mapped_column(String(100), nullable=False)
     operacion: Mapped[str] = mapped_column(String(6), nullable=False)
     registro_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
-    datos_anteriores: Mapped[dict | None] = mapped_column(JSONB)
-    datos_nuevos: Mapped[dict | None] = mapped_column(JSONB)
+    datos_anteriores: Mapped[dict | None] = mapped_column(POSTGRES_JSON)
+    datos_nuevos: Mapped[dict | None] = mapped_column(POSTGRES_JSON)
     usuario_bd: Mapped[str] = mapped_column(String(100), nullable=False)
     hash_sha256: Mapped[str] = mapped_column(Text, nullable=False)
 
@@ -444,7 +449,7 @@ class EventoReproductivo(Base):
     fecha: Mapped[date] = mapped_column(Date, nullable=False)
     hora: Mapped[time | None] = mapped_column(Time)
     empleado_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("empleados.id"))
-    detalles: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    detalles: Mapped[dict] = mapped_column(POSTGRES_JSON, nullable=False, default=dict)
     notas: Mapped[str | None] = mapped_column(Text)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
@@ -500,7 +505,7 @@ class BoxRecria(Base):
     fecha_entrada: Mapped[date | None] = mapped_column(Date)
     fecha_salida: Mapped[date | None] = mapped_column(Date)
     activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    alertas_box: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    alertas_box: Mapped[list] = mapped_column(POSTGRES_JSON, nullable=False, default=list)
     notas: Mapped[str | None] = mapped_column(Text)
 
 
@@ -515,9 +520,9 @@ class ResumenRelevo(Base):
     turno_saliente_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("turnos.id"), nullable=False)
     turno_entrante_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("turnos.id"), nullable=False)
     ts_generacion: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    incidencias_abiertas: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
-    tareas_pendientes: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
-    alertas_pendientes: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    incidencias_abiertas: Mapped[list] = mapped_column(POSTGRES_JSON, nullable=False, default=list)
+    tareas_pendientes: Mapped[list] = mapped_column(POSTGRES_JSON, nullable=False, default=list)
+    alertas_pendientes: Mapped[list] = mapped_column(POSTGRES_JSON, nullable=False, default=list)
     notas_saliente: Mapped[str | None] = mapped_column(Text)
     confirmado_por: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("empleados.id"))
     ts_confirmacion: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

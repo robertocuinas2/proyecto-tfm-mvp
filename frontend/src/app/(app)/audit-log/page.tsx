@@ -136,7 +136,7 @@ export default function AuditLogPage() {
     enabled: isAdmin,
   });
 
-  const registros = q.data?.registros ?? [];
+  const registros = useMemo(() => q.data?.registros ?? [], [q.data]);
 
   const stats = useMemo(() => ({
     total: registros.length,

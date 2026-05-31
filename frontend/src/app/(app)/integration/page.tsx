@@ -16,7 +16,7 @@ import { KpiCard } from "@/components/ui/kpi-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { PanelCard, SectionTitle } from "@/components/ui/panel-card";
 import { api } from "@/lib/api";
-import { API_BASE_URL, API_V1_URL } from "@/lib/config";
+import { API_BASE_URL, API_V1_URL, TOKEN_STORAGE_KEY } from "@/lib/config";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { usePermissions } from "@/lib/use-permissions";
 
@@ -94,7 +94,7 @@ export default function IntegrationPage() {
     queryKey: ["simulation-status"],
     queryFn: () => fetch(`${API_V1_URL}/simulation/status`, {
       headers: {
-        Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("auth-token") ?? "" : ""}`,
+        Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem(TOKEN_STORAGE_KEY) ?? "" : ""}`,
       },
     }).then((r) => r.ok ? r.json() : null),
     enabled: isAdmin,
@@ -249,7 +249,7 @@ export default function IntegrationPage() {
             <SectionTitle>Módulos frontend conectados</SectionTitle>
           </div>
           <p className="mb-4 text-xs text-app-dim">
-            Estado declarativo de los módulos del frontend. Solo los marcados como "Verificado" realizan comprobaciones activas.
+            Estado declarativo de los módulos del frontend. Solo los marcados como &quot;Verificado&quot; realizan comprobaciones activas.
           </p>
           <div className="grid gap-2 md:grid-cols-2">
             {FRONTEND_MODULES.map((mod) => (

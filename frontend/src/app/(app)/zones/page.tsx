@@ -194,9 +194,9 @@ export default function ZonesPage() {
   });
 
   const zones = zonesQ.data ?? [];
-  const allTasks = tasksQ.data ?? [];
-  const allIncidents = (incidentsQ.data ?? []) as Incident[];
-  const allMachinery = (machineryQ.data ?? []) as Machinery[];
+  const allTasks = useMemo(() => tasksQ.data ?? [], [tasksQ.data]);
+  const allIncidents = useMemo(() => (incidentsQ.data ?? []) as Incident[], [incidentsQ.data]);
+  const allMachinery = useMemo(() => (machineryQ.data ?? []) as Machinery[], [machineryQ.data]);
   const allAlerts = alertsQ.data?.alertas ?? [];
 
   // Grouped lookups (client-side)

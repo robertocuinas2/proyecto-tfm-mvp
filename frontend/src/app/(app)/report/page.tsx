@@ -100,10 +100,10 @@ export default function ReportPage() {
   const qualityQ = useQuery({ queryKey: ["quality-summary"], queryFn: api.qualitySummary, staleTime: 60_000 });
   const zonesQ = useQuery({ queryKey: ["zones"], queryFn: api.zones, staleTime: 60_000 });
 
-  const allTasks = tasksQ.data ?? [];
-  const allIncidents = (incidentsQ.data ?? []) as Incident[];
-  const allAlerts = alertsQ.data?.alertas ?? [];
-  const allOrders = ordersQ.data?.pedidos ?? [];
+  const allTasks = useMemo(() => tasksQ.data ?? [], [tasksQ.data]);
+  const allIncidents = useMemo(() => (incidentsQ.data ?? []) as Incident[], [incidentsQ.data]);
+  const allAlerts = useMemo(() => alertsQ.data?.alertas ?? [], [alertsQ.data]);
+  const allOrders = useMemo(() => ordersQ.data?.pedidos ?? [], [ordersQ.data]);
   const zones = zonesQ.data ?? [];
 
   // Period-filtered data

@@ -644,7 +644,7 @@ function TabletMode({ zoneId }: { zoneId: string }) {
 
 // ── Management view (light theme) ────────────────────────────────────────────
 
-function ManagementMode({ zoneId, zone }: { zoneId: string; zone: { id: string; nombre: string; codigo?: string; tipo?: string | null; descripcion?: string | null; activa?: boolean; tiene_pantalla_tv: boolean; tiene_tablet: boolean } | undefined }) {
+function ManagementMode({ zoneId }: { zoneId: string }) {
   const machineryQ = useQuery({
     queryKey: ["machinery-zone", zoneId],
     queryFn: () => api.machinery({ zona_id: zoneId, limit: 50 }),
@@ -909,7 +909,7 @@ export default function ZoneDetailPage({ params }: { params: Promise<{ id: strin
 
       {/* Content */}
       {viewMode === "management" ? (
-        <ManagementMode zoneId={id} zone={zone} />
+        <ManagementMode zoneId={id} />
       ) : viewMode === "tv" ? (
         <div className="px-6 py-6 lg:px-8">
           <TVMode zoneId={id} zoneName={zone?.nombre ?? "Zona"} />

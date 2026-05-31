@@ -14,11 +14,11 @@ import {
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { TV_REFETCH, TV_STALE } from "@/lib/tv-constants";
-import type { Employee, Task, Zone } from "@/lib/types";
+import type { Task, Zone } from "@/lib/types";
 
 type ViewMode = "zonas" | "lista";
 type ZoneStatus = "critica" | "atencion" | "operativa" | "inactiva";
@@ -303,12 +303,6 @@ export default function LeanFarmingPage() {
     staleTime: TV_STALE.SLOW,
   });
 
-  const employeesQuery = useQuery({
-    queryKey: ["employees-lookup"],
-    queryFn: () => api.employees(),
-    staleTime: TV_STALE.CATALOG,
-  });
-
   const completeMutation = useMutation({
     mutationFn: (id: string) => api.completeTask(id),
     onSuccess: () => {
@@ -357,12 +351,6 @@ export default function LeanFarmingPage() {
     const end = parseInt(s.hora_fin?.slice(0, 2) ?? "24");
     return currentHour >= start && currentHour < end;
   }) ?? todayShifts[0];
-
-  const employeeById = useMemo(() => {
-    const map = new Map<string, Employee>();
-    for (const e of employeesQuery.data ?? []) map.set(e.id, e);
-    return map;
-  }, [employeesQuery.data]);
 
   const currentAssignments = currentShift
     ? (assignmentsQuery.data?.asignaciones ?? []).filter((a) => a.turno_id === currentShift.id)

@@ -1,5 +1,7 @@
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL;
+
 export const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+  configuredApiUrl === undefined ? "http://localhost:8000" : configuredApiUrl
 ).replace(/\/$/, "");
 
 export const API_V1_URL = `${API_BASE_URL}/api/v1`;

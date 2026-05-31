@@ -1,7 +1,6 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AccessDenied } from "@/components/ui/access-denied";
 import { useToast } from "@/components/ui/toast";
 import { usePermissions } from "@/lib/use-permissions";
 import {
@@ -13,7 +12,7 @@ import {
   Tablet,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PanelCard } from "@/components/ui/panel-card";
 import { api } from "@/lib/api";
@@ -128,7 +127,7 @@ function ZoneRow({
 export default function SettingsPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
-  const { role, can: userCan } = usePermissions();
+  const { can: userCan } = usePermissions();
   const canEdit = userCan("manage_settings");
 
   const zonesQ = useQuery({
@@ -145,18 +144,10 @@ export default function SettingsPage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Local-only visual config
-  const [tvModules, setTvModules] = useState<Set<string>>(() => new Set(TV_MODULES.map(m => m.id)));
-  const [tvInterval, setTvInterval] = useState(30);
-  const [tabletActions, setTabletActions] = useState<Set<string>>(() => new Set(TABLET_ACTIONS.map(a => a.id)));
-  const [localConfigLoaded, setLocalConfigLoaded] = useState(false);
-
-  useEffect(() => {
-    const cfg = loadLocalConfig();
-    setTvModules(cfg.modules);
-    setTvInterval(cfg.interval);
-    setTabletActions(cfg.actions);
-    setLocalConfigLoaded(true);
-  }, []);
+  const [localConfig] = useState(loadLocalConfig);
+  const [tvModules, setTvModules] = useState<Set<string>>(localConfig.modules);
+  const [tvInterval, setTvInterval] = useState(localConfig.interval);
+  const [tabletActions, setTabletActions] = useState<Set<string>>(localConfig.actions);
 
   function handleZoneEdit(zone: Zone) {
     setEditingZone(zone);
@@ -317,7 +308,7 @@ export default function SettingsPage() {
             </PanelCard>
 
             {/* Visual config (local-only) */}
-            {localConfigLoaded && (
+            {(
               <div className="space-y-5">
                 <PanelCard>
                   <div className="mb-4 flex items-center justify-between gap-3">

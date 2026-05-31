@@ -22,18 +22,18 @@ type TvRefreshStatusProps = {
  * Re-renders every 10 s to keep the "X seconds ago" label current.
  */
 export function TvRefreshStatus({ queries, className = "" }: TvRefreshStatusProps) {
-  const [, setTick] = useState(0);
+  const [now, setNow] = useState(Date.now);
 
   // Tick every 10 s to update the "X s ago" label without hammering the DOM
   useEffect(() => {
-    const t = setInterval(() => setTick((n) => n + 1), 10_000);
+    const t = setInterval(() => setNow(Date.now()), 10_000);
     return () => clearInterval(t);
   }, []);
 
   const hasError = queries.some((q) => q.isError);
   const isFetching = queries.some((q) => q.isFetching || q.isLoading);
   const lastUpdate = Math.max(0, ...queries.map((q) => q.dataUpdatedAt));
-  const secondsAgo = lastUpdate > 0 ? Math.round((Date.now() - lastUpdate) / 1000) : null;
+  const secondsAgo = lastUpdate > 0 ? Math.round((now - lastUpdate) / 1000) : null;
 
   const dotClass = hasError
     ? "bg-state-critica animate-pulse"

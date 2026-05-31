@@ -146,7 +146,6 @@ function CreateOrderModal({ onClose }: { onClose: () => void }) {
   const [insumo, setInsumo] = useState("");
   const [cantidad, setCantidad] = useState("");
   const [unidad, setUnidad] = useState("");
-  const [descripcion, setDescripcion] = useState("");
   const [proveedor, setProveedor] = useState("");
   const [costeEstimado, setCosteEstimado] = useState("");
   const [notas, setNotas] = useState("");
@@ -265,7 +264,6 @@ function CreateOrderModal({ onClose }: { onClose: () => void }) {
                 insumo: insumo.trim(),
                 cantidad: Number(cantidad),
                 unidad: unidad.trim() || undefined,
-                descripcion: descripcion.trim() || undefined,
                 proveedor: proveedor.trim() || undefined,
                 coste_estimado: costeEstimado ? Number(costeEstimado) : undefined,
                 notas: notas.trim() || undefined,
@@ -391,7 +389,7 @@ function OrderCard({
 
           {order.estado === "recibido" && (
             <div className="rounded-[10px] bg-brand/8 px-3 py-2 text-xs font-bold text-brand">
-              Pedido recibido âœ"
+              Pedido recibido
             </div>
           )}
           {order.estado === "cancelado" && (
@@ -459,7 +457,7 @@ export default function OrdersPage() {
   const pageData = ordersQuery.data?.pedidos ?? [];
   const hasNext = pageData.length > pageSize;
   const pageItems = pageData.slice(0, pageSize);
-  const allItems = allOrdersQuery.data?.pedidos ?? [];
+  const allItems = useMemo(() => allOrdersQuery.data?.pedidos ?? [], [allOrdersQuery.data]);
 
   const stats = useMemo(() => {
     const count = (s: OrderStatus) => allItems.filter((o) => o.estado === s).length;

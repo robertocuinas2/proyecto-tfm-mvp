@@ -178,7 +178,7 @@ export default function ProfilePage() {
         {/* Unknown role warning */}
         {isUnknownRole && (
           <div className="rounded-[14px] border border-state-atencion/30 bg-state-atencion/5 px-4 py-3 text-sm text-state-atencion">
-            <strong>Rol no reconocido:</strong> "{role}" — se aplican permisos mínimos de operario.
+            <strong>Rol no reconocido:</strong> &quot;{role}&quot; — se aplican permisos mínimos de operario.
           </div>
         )}
 
@@ -264,7 +264,7 @@ export default function ProfilePage() {
 
           {/* Capabilities summary */}
           <PanelCard>
-            <SectionTitle className="mb-3">Capacidades del rol "{roleInfo.label}"</SectionTitle>
+            <SectionTitle className="mb-3">Capacidades del rol &quot;{roleInfo.label}&quot;</SectionTitle>
             <div className="space-y-4">
               {CAPABILITY_GROUPS.map((group) => {
                 const available = group.caps.filter((cap) => can(cap));
