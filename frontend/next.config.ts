@@ -15,11 +15,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Environment variables
-  env: {
-    NEXT_PUBLIC_API_URL:
-      process.env.NEXT_PUBLIC_API_URL === undefined ? 'http://localhost:8000' : process.env.NEXT_PUBLIC_API_URL,
-  },
+  // NOTE: NEXT_PUBLIC_* variables are injected at build time via Dockerfile ARG.
+  // Do not add them to the env section here; they are handled by the build process.
 }
 
 export default nextConfig

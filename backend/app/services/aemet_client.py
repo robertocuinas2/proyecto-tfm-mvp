@@ -14,12 +14,32 @@ ESTACION_ID = "villalba_lugo"
 
 
 class AemetClient:
+    """AEMET weather data client with offline fallback.
+    
+    This client attempts to fetch real weather forecast data from AEMET (Spanish National Meteorological Agency).
+    If no API key is configured or the API call fails, it falls back to generating synthetic weather data
+    to allow the application to function without external dependencies.
+    
+    Generated data: synthetic temperature, humidity, precipitation, and wind for demo/offline mode.
+    Real data: actual forecast from AEMET API when AEMET_API_KEY is configured.
+    """
     api_base_url = "https://opendata.aemet.es/opendata/api"
     location_name = "Villalba, Lugo"
     latitud = 42.6447
     longitud = -8.1278
 
     async def sincronizar_datos(self, db: Session) -> dict[str, object]:
+        """Synchronize weather data. Falls back to synthetic data if API key is missing or API fails.
+        
+        Returns:
+            dict with keys:
+            - status: "success" or "error"
+            - modo: "aemet_real", "generated", or "aemet_real" (error case)
+            - registros_insertados: count of new records
+            - registros_actualizados: count of updated records
+            - error: error message if status is "error"
+            - timestamp: ISO 8601 timestamp
+        """
         if not settings.aemet_api_key.strip():
             return self._upsert_records(db, self._generated_records(), mode="generated")
 

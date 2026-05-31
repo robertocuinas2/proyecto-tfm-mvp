@@ -125,6 +125,16 @@ def weather_historical(
 
 @router.post("/sync")
 async def weather_sync(db: Annotated[Session, Depends(get_db)]) -> dict[str, Any]:
+    """Synchronize weather data from AEMET or use fallback synthetic data.
+    
+    Behavior:
+    - If AEMET_API_KEY is set and valid: fetches real forecast from AEMET API.
+    - If AEMET_API_KEY is missing or empty: generates and stores synthetic data (fallback mode).
+    - If AEMET API call fails: returns error with details.
+    
+    Data is upserted into lecturas_meteorologia table.
+    Returns status, modo ("aemet_real" or "generated"), record counts, and timestamp.
+    """
     return await aemet_client.sincronizar_datos(db)
 
 
