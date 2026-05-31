@@ -17,7 +17,8 @@ const nextConfig: NextConfig = {
   },
   // Environment variables
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+    NEXT_PUBLIC_API_URL:
+      process.env.NEXT_PUBLIC_API_URL === undefined ? 'http://localhost:8000' : process.env.NEXT_PUBLIC_API_URL,
   },
 }
 

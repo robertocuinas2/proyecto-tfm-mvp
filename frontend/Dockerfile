@@ -9,9 +9,8 @@ FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-# docker-compose.yml overrides this with "" so the || fallback in config.ts
-# resolves to http://localhost:8000 — accessible via the exposed backend port.
-# For a hardened deployment without port 8000 exposed, pass the public URL here.
+# docker-compose.yml overrides this with "" so the frontend uses same-origin
+# requests through Nginx. For direct deployments, pass the public backend URL.
 ARG NEXT_PUBLIC_API_URL=http://localhost:8000
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_TELEMETRY_DISABLED=1
