@@ -80,10 +80,16 @@ export function LastHandoverCard({
               Incidencias comunicadas:
             </p>
             <ul className="mt-1 space-y-1 text-sm text-app-text">
-              {handover.incidencias_abiertas.map((incident: any, idx: number) => (
+              {handover.incidencias_abiertas.map((incident: unknown, idx: number) => (
                 <li key={idx} className="flex items-start gap-2">
                   <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-state-atencion" />
-                  <span>{typeof incident === "string" ? incident : incident.descripcion || "Incidencia"}</span>
+                  <span>
+                    {typeof incident === "string"
+                      ? incident
+                      : typeof incident === "object" && incident !== null && "descripcion" in incident
+                        ? (incident as Record<string, string>).descripcion || "Incidencia"
+                        : "Incidencia"}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -95,10 +101,16 @@ export function LastHandoverCard({
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-state-info">Tareas pendientes:</p>
             <ul className="mt-1 space-y-1 text-sm text-app-text">
-              {handover.tareas_pendientes.map((task: any, idx: number) => (
+              {handover.tareas_pendientes.map((task: unknown, idx: number) => (
                 <li key={idx} className="flex items-start gap-2">
                   <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-state-info" />
-                  <span>{typeof task === "string" ? task : task.nombre || "Tarea"}</span>
+                  <span>
+                    {typeof task === "string"
+                      ? task
+                      : typeof task === "object" && task !== null && "nombre" in task
+                        ? (task as Record<string, string>).nombre || "Tarea"
+                        : "Tarea"}
+                  </span>
                 </li>
               ))}
             </ul>

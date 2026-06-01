@@ -374,6 +374,18 @@ export const api = {
     return request<TaskCatalogItem[]>("/tareas-catalogo", {}, params);
   },
 
+  createTaskCatalog(body: Record<string, unknown>) {
+    return request<TaskCatalogItem>("/tareas-catalogo", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  updateTaskCatalog(catalogId: string, body: Record<string, unknown>) {
+    return request<TaskCatalogItem>(`/tareas-catalogo/${catalogId}`, { method: "PUT", body: JSON.stringify(body) });
+  },
+
+  deleteTaskCatalog(catalogId: string) {
+    return request<void>(`/tareas-catalogo/${catalogId}`, { method: "DELETE" });
+  },
+
   // ── Weather readings (labelled version of sensor data) ────────────────────
 
   weatherReadings(params?: QueryParams) {

@@ -88,6 +88,7 @@ export type Task = {
   tarea_catalogo_id: string;
   tarea_catalogo?: TareaCatalogo | null;
   zona_id?: string | null;
+  empleado_id?: string | null;
   fecha_programada: string;
   fecha_ejecucion?: string | null;
   estado: TaskStatus;

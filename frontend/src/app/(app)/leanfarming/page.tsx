@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertOctagon,
+  Calendar,
   CalendarClock,
   CheckCircle2,
   Clock,
@@ -11,10 +12,16 @@ import {
   ListTodo,
   RefreshCw,
   UserRound,
+  BarChart3,
+  BookOpen,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useToast } from "@/components/ui/toast";
+import { WeeklyPlanView } from "@/components/leanfarming/WeeklyPlanView";
+import { ZonePlanView } from "@/components/leanfarming/ZonePlanView";
+import { WorkloadView } from "@/components/leanfarming/WorkloadView";
+import { TaskCatalogView } from "@/components/leanfarming/TaskCatalogView";
 import { api } from "@/lib/api";
 import { TV_REFETCH, TV_STALE } from "@/lib/tv-constants";
 import { visualZoneSummaries } from "@/lib/visual-zones";
@@ -262,6 +269,7 @@ export default function LeanFarmingPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [view, setView] = useState<ViewMode>("zonas");
+  const [leanTab, setLeanTab] = useState<"weekly" | "zones" | "workload" | "catalog">("weekly");
 
   const zones = useQuery({
     queryKey: ["zones"],
@@ -296,6 +304,18 @@ export default function LeanFarmingPage() {
     staleTime: TV_STALE.SLOW,
   });
 
+  const employeesQuery = useQuery({
+    queryKey: ["employees"],
+    queryFn: () => api.employees(),
+    staleTime: TV_STALE.CATALOG,
+  });
+
+  const catalogQuery = useQuery({
+    queryKey: ["task-catalog"],
+    queryFn: () => api.taskCatalog(),
+    staleTime: TV_STALE.CATALOG,
+  });
+
   const completeMutation = useMutation({
     mutationFn: (id: string) => api.completeTask(id),
     onSuccess: () => {
@@ -307,6 +327,60 @@ export default function LeanFarmingPage() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks-all-lean"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+    },
+  });
+
+  const updateTaskMutation = useMutation({
+    mutationFn: (data: { id: string; updates: Partial<Task> }) =>
+      api.updateTask(data.id, data.updates),
+    onSuccess: () => {
+      toast.success("Tarea actualizada");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Error al actualizar la tarea");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks-all-lean"] });
+    },
+  });
+
+  const createCatalogMutation = useMutation({
+    mutationFn: (task: Record<string, unknown>) => api.createTaskCatalog(task),
+    onSuccess: () => {
+      toast.success("Tarea de catálogo creada");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Error al crear tarea");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["task-catalog"] });
+    },
+  });
+
+  const updateCatalogMutation = useMutation({
+    mutationFn: (data: { id: string; updates: Record<string, unknown> }) =>
+      api.updateTaskCatalog(data.id, data.updates),
+    onSuccess: () => {
+      toast.success("Tarea de catálogo actualizada");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Error al actualizar tarea");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["task-catalog"] });
+    },
+  });
+
+  const deleteCatalogMutation = useMutation({
+    mutationFn: (id: string) => api.deleteTaskCatalog(id),
+    onSuccess: () => {
+      toast.success("Tarea de catálogo eliminada");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Error al eliminar tarea");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["task-catalog"] });
     },
   });
 
@@ -456,29 +530,99 @@ export default function LeanFarmingPage() {
           ))}
         </div>
 
-        {tasksQuery.isLoading || zones.isLoading ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="h-52 animate-pulse rounded-[10px] bg-white" />
+        {/* Tabs for LeanFarming planning */}
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-2 border-b border-app-border pb-4">
+            {[
+              { key: "weekly", label: "Planificación semanal", Icon: Calendar },
+              { key: "zones", label: "Por zona", Icon: LayoutGrid },
+              { key: "workload", label: "Carga de trabajo", Icon: BarChart3 },
+              { key: "catalog", label: "Catálogo", Icon: BookOpen },
+            ].map(({ key, label, Icon }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setLeanTab(key as typeof leanTab)}
+                className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold transition rounded-t-[10px] border-b-2 ${
+                  leanTab === key
+                    ? "border-brand text-brand"
+                    : "border-transparent text-app-dim hover:text-app-text"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </button>
             ))}
           </div>
-        ) : view === "zonas" ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {zoneSummaries.map((summary) => (
-              <ZoneCard
-                key={summary.zone.id}
-                summary={summary}
-                onComplete={(id) => completeMutation.mutate(id)}
-                completing={completeMutation.isPending}
-              />
-            ))}
+
+          {/* Tab content */}
+          {tasksQuery.isLoading || zones.isLoading || employeesQuery.isLoading ? (
+            <div className="space-y-4">
+              <div className="h-64 animate-pulse rounded-[10px] bg-white" />
+              <div className="h-64 animate-pulse rounded-[10px] bg-white" />
+            </div>
+          ) : leanTab === "weekly" ? (
+            <WeeklyPlanView
+              tasks={tasks}
+              zones={zones.data ?? []}
+              shifts={shiftsQuery.data?.turnos ?? []}
+              employees={employeesQuery.data ?? []}
+              onTaskUpdate={(id, updates) => updateTaskMutation.mutate({ id, updates })}
+            />
+          ) : leanTab === "zones" ? (
+            <ZonePlanView
+              tasks={tasks}
+              zones={zones.data ?? []}
+              employees={employeesQuery.data ?? []}
+              onTaskUpdate={(id, updates) => updateTaskMutation.mutate({ id, updates })}
+            />
+          ) : leanTab === "workload" ? (
+            <WorkloadView
+              tasks={tasks}
+              zones={zones.data ?? []}
+              employees={employeesQuery.data ?? []}
+            />
+          ) : (
+            <TaskCatalogView
+              catalog={catalogQuery.data ?? []}
+              zones={zones.data ?? []}
+              onCreateTask={(task) => createCatalogMutation.mutate(task)}
+              onUpdateTask={(id, updates) => updateCatalogMutation.mutate({ id, updates })}
+              onDeleteTask={(id) => deleteCatalogMutation.mutate(id)}
+            />
+          )}
+        </div>
+
+        {/* Legacy view modes */}
+        {view === "zonas" && leanTab !== "weekly" && leanTab !== "zones" && leanTab !== "workload" && (
+          <div className="space-y-4 pt-8 border-t border-app-border">
+            <h2 className="font-heading text-lg font-bold text-app-text">
+              Vista por zona (Legacy)
+            </h2>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {zoneSummaries.map((summary) => (
+                <ZoneCard
+                  key={summary.zone.id}
+                  summary={summary}
+                  onComplete={(id) => completeMutation.mutate(id)}
+                  completing={completeMutation.isPending}
+                />
+              ))}
+            </div>
           </div>
-        ) : (
-          <GlobalTaskList
-            tasks={tasks}
-            onComplete={(id) => completeMutation.mutate(id)}
-            completing={completeMutation.isPending}
-          />
+        )}
+
+        {view === "lista" && (
+          <div className="space-y-4 pt-8 border-t border-app-border">
+            <h2 className="font-heading text-lg font-bold text-app-text">
+              Lista de tareas (Legacy)
+            </h2>
+            <GlobalTaskList
+              tasks={tasks}
+              onComplete={(id) => completeMutation.mutate(id)}
+              completing={completeMutation.isPending}
+            />
+          </div>
         )}
       </div>
     </div>

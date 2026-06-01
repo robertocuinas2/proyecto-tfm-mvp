@@ -136,8 +136,8 @@ export function ZoneTabletView({
   const startTaskMutation = useMutation({
     mutationFn: (taskId: string) =>
       api.updateTask(taskId, {
-        estado: "pausada" as any, // Using pausada as "en_curso" state
-      }),
+        estado: "pausada",
+      } as Parameters<typeof api.updateTask>[1]),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["zone-tasks"] });
     },
@@ -157,7 +157,7 @@ export function ZoneTabletView({
     mutationFn: (taskId: string) =>
       api.updateTask(taskId, {
         observaciones: noteText,
-      } as any),
+      } as Parameters<typeof api.updateTask>[1]),
     onSuccess: () => {
       setSelectedTaskForNote(null);
       setNoteText("");
