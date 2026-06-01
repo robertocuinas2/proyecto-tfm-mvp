@@ -4,6 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, ChevronLeft, Monitor, Pill, Plus, Tablet, Wrench, X } from "lucide-react";
 import Link from "next/link";
 import { use, useMemo, useState } from "react";
+import { LastHandoverCard } from "@/components/zone/LastHandoverCard";
+import { ZoneKanbanView } from "@/components/zone/ZoneKanbanView";
+import { ZoneTabletView } from "@/components/zone/ZoneTabletView";
 import { api } from "@/lib/api";
 import { TV_REFETCH, TV_STALE } from "@/lib/tv-constants";
 import type { Animal, BoxRecria, CreateIncidentPayload, Incident, IncidentPriority, Task, VisualZoneKey, Zone } from "@/lib/types";
@@ -206,6 +209,8 @@ export default function ZoneDetailPage({ params }: { params: Promise<{ id: strin
   const [showIncident, setShowIncident] = useState(false);
   const [showTreatment, setShowTreatment] = useState(false);
 
+  const [lastHandoverRead, setLastHandoverRead] = useState(false);
+
   const zonesQ = useQuery({ queryKey: ["zones"], queryFn: api.zones, staleTime: TV_STALE.CATALOG });
   const tasksQ = useQuery({ queryKey: ["zone-tasks", zoneKey], queryFn: () => api.tasks({ limit: 500 }), staleTime: TV_STALE.NORMAL, refetchInterval: TV_REFETCH.NORMAL });
   const incidentsQ = useQuery({ queryKey: ["zone-incidents", zoneKey], queryFn: () => api.incidents({ limit: 300 }), staleTime: TV_STALE.NORMAL, refetchInterval: TV_REFETCH.NORMAL });
@@ -214,6 +219,7 @@ export default function ZoneDetailPage({ params }: { params: Promise<{ id: strin
   const machineryQ = useQuery({ queryKey: ["machinery-all"], queryFn: () => api.machinery({ limit: 200 }), staleTime: TV_STALE.CATALOG });
   const boxesQ = useQuery({ queryKey: ["boxes-recria"], queryFn: () => api.boxesRecria(), staleTime: TV_STALE.CATALOG });
   const meQ = useQuery({ queryKey: ["me"], queryFn: api.me, staleTime: TV_STALE.CATALOG });
+  const handoversQ = useQuery({ queryKey: ["zone-handovers"], queryFn: () => api.shiftHandovers({ limit: 10 }), staleTime: TV_STALE.NORMAL });
 
   const zones = zonesQ.data ?? [];
   const groupIds = idsForCodes(zones, config.codes);
@@ -263,26 +269,43 @@ export default function ZoneDetailPage({ params }: { params: Promise<{ id: strin
       </div>
 
       <div className="space-y-5 px-6 py-6 lg:px-8">
-        <div className={`grid grid-cols-2 gap-4 xl:grid-cols-5 ${isTvMode ? "text-app-text" : ""}`}>
-          <Panel title="Tareas pendientes"><p className="font-heading text-4xl font-bold text-state-info">{pendingTasks.length}</p></Panel>
+        {!isTvMode && handoversQ.data?.resumenes?.[0] && (
+          <LastHandoverCard
+            handover={handoversQ.data.resumenes[0]}
+            onMarkAsRead={() => setLastHandoverRead(true)}
+          />
+        )}
+
+        {mode === "management" && (
+          <div className={`grid grid-cols-2 gap-4 xl:grid-cols-5 ${isTvMode ? "text-app-text" : ""}`}>
+            <Panel title="Tareas pendientes"><p className="font-heading text-4xl font-bold text-state-info">{pendingTasks.length}</p></Panel>
           <Panel title="Incidencias abiertas"><p className="font-heading text-4xl font-bold text-state-atencion">{openIncidents.length}</p></Panel>
           <Panel title="Tratamientos activos"><p className="font-heading text-4xl font-bold text-brand">{treatments.length}</p></Panel>
           <Panel title="Subzonas"><p className="font-heading text-4xl font-bold text-app-text">{config.subzones.length}</p></Panel>
           <Panel title="Maquinaria"><p className="font-heading text-4xl font-bold text-app-text">{machinery.length}</p></Panel>
-        </div>
-
-        {mode === "tablet" && (
-          <div className="grid gap-3 sm:grid-cols-3">
-            <button disabled={!canCreateIncidents} onClick={() => setShowIncident(true)} className="flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-[14px] border border-app-border bg-white font-bold text-state-atencion shadow-card disabled:opacity-40"><Plus className="h-7 w-7" /> Nueva incidencia</button>
-            <button disabled={!canManageTreatments} onClick={() => setShowTreatment(true)} className="flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-[14px] border border-app-border bg-white font-bold text-brand shadow-card disabled:opacity-40"><Pill className="h-7 w-7" /> Nuevo tratamiento</button>
-            <div className="flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-[14px] border border-app-border bg-white text-center text-sm font-semibold text-app-dim shadow-card">
-              Rol: {role ?? "sin sesion"} · {canCompleteTasks ? "puede completar tareas" : "consulta"}
             </div>
-          </div>
         )}
 
-        <div className="grid gap-5 xl:grid-cols-3">
-          {config.subzones.map((subzone) => {
+        {/* Mode: TV Kanban */}
+        {mode === "tv" && (
+          <ZoneKanbanView tasks={tasks} incidents={openIncidents} />
+        )}
+
+        {/* Mode: Tablet Operative */}
+        {mode === "tablet" && (
+          <ZoneTabletView
+            tasks={tasks}
+            zones={incidentZones}
+            zoneKey={zoneKey}
+            canStartTasks={canCompleteTasks}
+            onCreateIncident={() => setShowIncident(true)}
+            onShowTreatment={() => setShowTreatment(true)}
+          />
+        )}
+
+        {mode === "management" && (
+          <div className="grid gap-5 xl:grid-cols-3">
+            {config.subzones.map((subzone) => {
             const ids = idsForCodes(zones, subzone.codes);
             const subTasks = tasks.filter((t) => t.zona_id && ids.has(t.zona_id) && pendingTask(t));
             const subInc = incidents.filter((i) => i.zona_id && ids.has(i.zona_id) && openIncident(i));
@@ -297,8 +320,9 @@ export default function ZoneDetailPage({ params }: { params: Promise<{ id: strin
             );
           })}
         </div>
+        )}
 
-        {zoneKey === "recria" && (
+        {mode === "management" && zoneKey === "recria" && (
           <Panel title="Boxes de terneros" count={boxes.length}>
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {boxes.slice(0, 12).map((box) => {
@@ -314,9 +338,10 @@ export default function ZoneDetailPage({ params }: { params: Promise<{ id: strin
           </Panel>
         )}
 
-        <div className="grid gap-5 xl:grid-cols-3">
-          <Panel title="Tareas pendientes" count={pendingTasks.length}>
-            <TaskList tasks={pendingTasks} canComplete={mode === "tablet" && canCompleteTasks} />
+        {mode === "management" && (
+          <div className="grid gap-5 xl:grid-cols-3">
+            <Panel title="Tareas pendientes" count={pendingTasks.length}>
+            <TaskList tasks={pendingTasks} canComplete={false} />
           </Panel>
 
           <Panel title="Tratamientos activos" count={treatments.length}>
@@ -351,9 +376,10 @@ export default function ZoneDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             )}
           </Panel>
-        </div>
+            </div>
+          )}
 
-        {zoneKey === "nave" && (
+        {mode === "management" && zoneKey === "nave" && (
           <Panel title="Estado de maquinaria" count={machinery.length}>
             <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
               {machinery.map((m) => (
