@@ -1,3 +1,5 @@
+-- PostgreSQL migration
+-- Dialect: PostgreSQL
 -- Migracion: anadir zona_principal_id a tabla empleados.
 -- Permite asignar zona habitual a cada empleado para compatibilidad en LeanFarming.
 ALTER TABLE empleados
