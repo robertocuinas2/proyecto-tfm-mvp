@@ -85,10 +85,11 @@ COMMENT ON TABLE zonas IS '5 zonas con pantalla TV informativa y tablet interact
 -- Datos maestros de zonas
 INSERT INTO zonas (nombre, codigo, tiene_pantalla_tv, tiene_tablet, descripcion) VALUES
     ('Nave',        'sala_ordeno', TRUE,  TRUE,  'Sala de ordeño robótico VMS'),
-    ('Becerrero',   'becerrero',   TRUE,  TRUE,  'Cría de terneros y becerros'),
     ('Enfermería',  'enfermeria',  TRUE,  TRUE,  'Animales enfermos y en tratamiento'),
     ('Oficina',     'oficina',     TRUE,  TRUE,  'Gestión administrativa y técnica'),
-    ('General',     'general',     FALSE, FALSE, 'Área general sin pantalla asignada');
+    ('General',     'general',     FALSE, FALSE, 'Área general sin pantalla asignada'),
+    ('Boxes',       'boxes_terneros', TRUE, TRUE, 'Boxes de terneros'),
+    ('Recría',      'zona_recria', TRUE,  TRUE,  'Zona de recría de terneras y novillas');
 
 -- Maquinaria
 CREATE TABLE maquinaria (

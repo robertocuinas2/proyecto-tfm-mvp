@@ -9,9 +9,9 @@ export const VISUAL_ZONE_GROUPS: Record<VisualZoneKey, {
   recria: {
     title: "Recria",
     description: "Boxes de terneros y zona de recria.",
-    codes: ["boxes_terneros", "zona_recria", "recria", "becerrero"],
+    codes: ["boxes_terneros", "zona_recria", "recria"],
     subzones: [
-      { key: "boxes", label: "Boxes de terneros", codes: ["boxes_terneros", "becerrero"], description: "Animales provisionales por numero de box." },
+      { key: "boxes", label: "Boxes de terneros", codes: ["boxes_terneros"], description: "Animales provisionales por numero de box." },
       { key: "zona_recria", label: "Zona de recria", codes: ["zona_recria", "recria"], description: "Terneras y novillas con ficha completa." },
     ],
   },

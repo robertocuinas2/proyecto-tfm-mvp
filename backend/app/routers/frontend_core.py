@@ -130,10 +130,13 @@ def dashboard_summary(db: DbSession) -> dict[str, Any]:
 
 def _animals_by_zone(db: "Session") -> list[dict[str, Any]]:
     from app.models.tools4milk import Zona
+    # Only show animals for these zones
+    VALID_ZONE_NAMES = {"Boxes", "Enfermería", "Nave", "Recría"}
     rows = (
         db.execute(
             select(Zona.id, Zona.nombre, func.count(Animal.id).label("total"))
             .outerjoin(Animal, (Animal.zona_id == Zona.id) & (Animal.estado != EstadoAnimal.BAJA))
+            .where(Zona.nombre.in_(VALID_ZONE_NAMES))
             .group_by(Zona.id, Zona.nombre)
             .order_by(Zona.nombre)
         ).all()

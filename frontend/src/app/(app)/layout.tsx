@@ -51,7 +51,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     label: "Operativa",
     items: [
       { href: "/leanfarming", label: "LeanFarming", Icon: ListTodo },
-      { href: "/tasks", label: "Tareas", Icon: ClipboardList },
       { href: "/incidents", label: "Incidencias", Icon: AlertOctagon },
       { href: "/shifts", label: "Turnos", Icon: CalendarClock },
       { href: "/quality", label: "Calidad", Icon: Droplets },
