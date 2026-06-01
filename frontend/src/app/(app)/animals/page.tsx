@@ -29,7 +29,9 @@ const estadoLabels: Record<Animal["estado"], string> = {
 
 function EstadoBadge({ estado }: { estado: Animal["estado"] }) {
   return (
-    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${estadoStyles[estado]}`}>
+    <span
+      className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${estadoStyles[estado]}`}
+    >
       {estadoLabels[estado]}
     </span>
   );
@@ -39,7 +41,9 @@ function AnimalCard({ animal }: { animal: Animal }) {
   const nacimiento = new Date(animal.fecha_nacimiento);
   const ageYears = Math.max(
     0,
-    Math.floor((Date.now() - nacimiento.getTime()) / (365.25 * 24 * 3600 * 1000)),
+    Math.floor(
+      (Date.now() - nacimiento.getTime()) / (365.25 * 24 * 3600 * 1000),
+    ),
   );
 
   return (
@@ -50,7 +54,9 @@ function AnimalCard({ animal }: { animal: Animal }) {
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-sm font-bold text-brand">{animal.crotal_oficial}</span>
+            <span className="font-mono text-sm font-bold text-brand">
+              {animal.crotal_oficial}
+            </span>
             <EstadoBadge estado={animal.estado} />
           </div>
           <h2 className="mt-2 font-heading text-base font-bold text-app-text">
@@ -58,8 +64,12 @@ function AnimalCard({ animal }: { animal: Animal }) {
           </h2>
           <div className="mt-1 flex flex-wrap gap-3 text-xs text-app-dim">
             {animal.raza && <span>{animal.raza}</span>}
-            <span>{ageYears} anio{ageYears !== 1 ? "s" : ""}</span>
-            {animal.estado_reproductivo && <span className="capitalize">{animal.estado_reproductivo}</span>}
+            <span>
+              {ageYears} anio{ageYears !== 1 ? "s" : ""}
+            </span>
+            {animal.estado_reproductivo && (
+              <span className="capitalize">{animal.estado_reproductivo}</span>
+            )}
           </div>
         </div>
         <div className="shrink-0 text-right text-xs text-app-dim">
@@ -114,13 +124,18 @@ export default function AnimalsPage() {
     );
   };
   const globalFiltered = allAnimals
-    .filter((animal) => estadoFilter === "todos" || animal.estado === estadoFilter)
+    .filter(
+      (animal) => estadoFilter === "todos" || animal.estado === estadoFilter,
+    )
     .filter(matchesSearch);
-  const filtered = debouncedSearch ? globalFiltered : pageItems.filter(matchesSearch);
+  const filtered = debouncedSearch
+    ? globalFiltered
+    : pageItems.filter(matchesSearch);
 
   const counts: Record<EstadoFilter, number> = {
     todos: allAnimals.length,
-    produccion: allAnimals.filter((animal) => animal.estado === "produccion").length,
+    produccion: allAnimals.filter((animal) => animal.estado === "produccion")
+      .length,
     recria: allAnimals.filter((animal) => animal.estado === "recria").length,
     crianza: allAnimals.filter((animal) => animal.estado === "crianza").length,
     baja: allAnimals.filter((animal) => animal.estado === "baja").length,
@@ -136,7 +151,17 @@ export default function AnimalsPage() {
 
   return (
     <div className="min-h-full">
-      <PageHeader eyebrow="Censo productivo" title="Animales" EyebrowIcon={VenusAndMars}>
+      <PageHeader
+        eyebrow="Censo productivo"
+        title="Animales"
+        EyebrowIcon={VenusAndMars}
+      >
+        <Link
+          href="/animals/new"
+          className="rounded-lg border border-tv-border bg-tv-surface px-4 py-2 text-sm font-bold text-white hover:bg-tv-surface2 transition"
+        >
+          + Nuevo Animal
+        </Link>
         <span className="rounded-full border border-app-border bg-white px-3 py-1.5 text-sm font-bold text-app-text">
           {counts.todos || pageItems.length} animales
         </span>
@@ -146,11 +171,16 @@ export default function AnimalsPage() {
         {!allAnimalsQuery.isLoading && (
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
             {estadoTabs.map(({ key, label }) => (
-              <div key={key} className="rounded-[10px] border border-app-border bg-white p-4 shadow-card">
+              <div
+                key={key}
+                className="rounded-[10px] border border-app-border bg-white p-4 shadow-card"
+              >
                 <div className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-app-dim">
                   {label}
                 </div>
-                <div className="mt-2 font-heading text-3xl font-bold text-app-text">{counts[key]}</div>
+                <div className="mt-2 font-heading text-3xl font-bold text-app-text">
+                  {counts[key]}
+                </div>
               </div>
             ))}
           </div>
@@ -198,7 +228,10 @@ export default function AnimalsPage() {
         {animalsQuery.isLoading && (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="h-28 animate-pulse rounded-[10px] bg-app-surface2" />
+              <div
+                key={index}
+                className="h-28 animate-pulse rounded-[10px] bg-app-surface2"
+              />
             ))}
           </div>
         )}
@@ -209,15 +242,24 @@ export default function AnimalsPage() {
           </div>
         )}
 
-        {!animalsQuery.isLoading && !allAnimalsQuery.isLoading && filtered.length === 0 && (
-          <div className="rounded-[10px] border border-app-border bg-white py-16 text-center shadow-card">
-            <Beef className="mx-auto h-12 w-12 text-app-dim" strokeWidth={1.5} />
-            <p className="mt-3 font-heading text-lg font-bold text-app-text">Sin resultados</p>
-            <p className="mt-1 text-sm text-app-dim">
-              {search ? `No hay animales que coincidan con "${search}"` : "No hay animales en este estado."}
-            </p>
-          </div>
-        )}
+        {!animalsQuery.isLoading &&
+          !allAnimalsQuery.isLoading &&
+          filtered.length === 0 && (
+            <div className="rounded-[10px] border border-app-border bg-white py-16 text-center shadow-card">
+              <Beef
+                className="mx-auto h-12 w-12 text-app-dim"
+                strokeWidth={1.5}
+              />
+              <p className="mt-3 font-heading text-lg font-bold text-app-text">
+                Sin resultados
+              </p>
+              <p className="mt-1 text-sm text-app-dim">
+                {search
+                  ? `No hay animales que coincidan con "${search}"`
+                  : "No hay animales en este estado."}
+              </p>
+            </div>
+          )}
 
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((animal) => (
@@ -225,16 +267,18 @@ export default function AnimalsPage() {
           ))}
         </div>
 
-        {!animalsQuery.isLoading && pageItems.length > 0 && !debouncedSearch && (
-          <Pagination
-            page={page}
-            pageSize={pageSize}
-            currentCount={pageItems.length}
-            hasNext={hasNext}
-            isLoading={animalsQuery.isFetching}
-            onPageChange={setPage}
-          />
-        )}
+        {!animalsQuery.isLoading &&
+          pageItems.length > 0 &&
+          !debouncedSearch && (
+            <Pagination
+              page={page}
+              pageSize={pageSize}
+              currentCount={pageItems.length}
+              hasNext={hasNext}
+              isLoading={animalsQuery.isFetching}
+              onPageChange={setPage}
+            />
+          )}
       </div>
     </div>
   );
