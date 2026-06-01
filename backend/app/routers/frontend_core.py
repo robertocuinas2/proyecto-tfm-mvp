@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.enums import EstadoTarea, EstadoAnimal
 from app.models import Usuario
+from app.models.tools4milk import TareaCatalogo
 from app.models.tools4milk import Alerta, Animal, BoxRecria, TareaEjecucion, TareaCatalogo, TratamientoActivo
 from app.repositories import (
     alerts_repository,
@@ -291,6 +292,87 @@ def task_catalog(
         }
         for item in items
     ]
+
+
+@router.post("/tareas-catalogo", status_code=201)
+def create_task_catalog(payload: dict[str, Any], db: DbSession) -> dict[str, Any]:
+    """Create a new task catalog item."""
+    item = TareaCatalogo(
+        id=uuid.uuid4(),
+        codigo=payload.get("codigo", f"TASK-{uuid.uuid4().hex[:8].upper()}"),
+        nombre=payload.get("nombre"),
+        descripcion=payload.get("descripcion"),
+        cualificacion_requerida=payload.get("rol_requerido") or payload.get("cualificacion_requerida"),
+        duracion_estimada_min=payload.get("duracion_estimada"),
+        activa=payload.get("activa", True),
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {
+        "id": str(item.id),
+        "codigo": item.codigo,
+        "nombre": item.nombre,
+        "descripcion": item.descripcion,
+        "cualificacion_requerida": item.cualificacion_requerida,
+        "duracion_estimada_min": item.duracion_estimada_min,
+        "activa": item.activa,
+    }
+
+
+@router.put("/tareas-catalogo/{catalog_id}")
+def update_task_catalog(catalog_id: str, payload: dict[str, Any], db: DbSession) -> dict[str, Any]:
+    """Update a task catalog item."""
+    try:
+        uid = uuid.UUID(catalog_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=400, detail="ID inválido")
+
+    item = db.get(TareaCatalogo, uid)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Tarea de catálogo no encontrada")
+
+    if "nombre" in payload:
+        item.nombre = payload["nombre"]
+    if "descripcion" in payload:
+        item.descripcion = payload["descripcion"]
+    if "rol_requerido" in payload:
+        item.cualificacion_requerida = payload["rol_requerido"]
+    if "cualificacion_requerida" in payload:
+        item.cualificacion_requerida = payload["cualificacion_requerida"]
+    if "duracion_estimada" in payload:
+        item.duracion_estimada_min = payload["duracion_estimada"]
+    if "activa" in payload:
+        item.activa = payload["activa"]
+
+    db.commit()
+    db.refresh(item)
+    return {
+        "id": str(item.id),
+        "codigo": item.codigo,
+        "nombre": item.nombre,
+        "descripcion": item.descripcion,
+        "cualificacion_requerida": item.cualificacion_requerida,
+        "duracion_estimada_min": item.duracion_estimada_min,
+        "activa": item.activa,
+    }
+
+
+@router.delete("/tareas-catalogo/{catalog_id}", status_code=204)
+def delete_task_catalog(catalog_id: str, db: DbSession) -> None:
+    """Delete or deactivate a task catalog item."""
+    try:
+        uid = uuid.UUID(catalog_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=400, detail="ID inválido")
+
+    item = db.get(TareaCatalogo, uid)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Tarea de catálogo no encontrada")
+
+    # Soft delete: marcar como inactiva en lugar de eliminar
+    item.activa = False
+    db.commit()
 
 
 @router.get(
