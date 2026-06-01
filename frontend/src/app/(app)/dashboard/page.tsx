@@ -206,6 +206,27 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Animals by zone */}
+        {s?.animales.por_zona && s.animales.por_zona.some((z) => z.total > 0) && (
+          <PanelCard>
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Beef className="h-4 w-4 text-brand" />
+                <h2 className="font-heading text-sm font-bold text-app-text">Animales por zona</h2>
+              </div>
+              <span className="text-xs text-app-dim">{s.animales.activos} activos en total</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {s.animales.por_zona.filter((z) => z.total > 0).map((z) => (
+                <div key={z.zona_id} className="flex items-center gap-2 rounded-[10px] border border-app-border bg-app-bg px-3 py-2">
+                  <span className="font-heading text-base font-bold text-app-text">{z.total}</span>
+                  <span className="text-xs text-app-dim">{z.nombre}</span>
+                </div>
+              ))}
+            </div>
+          </PanelCard>
+        )}
+
         {/* Charts row */}
         <div className="grid gap-5 xl:grid-cols-[1.3fr_0.7fr]">
           <PanelCard>

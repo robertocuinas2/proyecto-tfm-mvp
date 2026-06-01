@@ -120,11 +120,25 @@ def dashboard_summary(db: DbSession) -> dict[str, Any]:
         },
         "animales": {
             "activos": db.scalar(select(func.count()).select_from(Animal).where(Animal.estado != EstadoAnimal.BAJA)) or 0,
+            "por_zona": _animals_by_zone(db),
         },
         "tratamientos": {
             "activos": db.scalar(select(func.count()).select_from(TratamientoActivo).where(TratamientoActivo.activo.is_(True))) or 0,
         },
     }
+
+
+def _animals_by_zone(db: "Session") -> list[dict[str, Any]]:
+    from app.models.tools4milk import Zona
+    rows = (
+        db.execute(
+            select(Zona.id, Zona.nombre, func.count(Animal.id).label("total"))
+            .outerjoin(Animal, (Animal.zona_id == Zona.id) & (Animal.estado != EstadoAnimal.BAJA))
+            .group_by(Zona.id, Zona.nombre)
+            .order_by(Zona.nombre)
+        ).all()
+    )
+    return [{"zona_id": str(r.id), "nombre": r.nombre, "total": r.total} for r in rows]
 
 
 @router.get(
@@ -435,6 +449,14 @@ def update_task(task_id: str, payload: dict[str, Any], db: DbSession, _user: Tas
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
     ejecucion, catalogo = tasks_repository.update(db, row[0], payload)
     return tasks_service.serialize(ejecucion, catalogo)
+
+
+@router.delete("/tasks/{task_id}", status_code=204)
+def delete_task(task_id: str, db: DbSession, _user: TaskManager) -> None:
+    row = tasks_repository.get_by_id(db, task_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    tasks_repository.update(db, row[0], {"estado": "cancelada"})
 
 
 @router.get("/lactations")

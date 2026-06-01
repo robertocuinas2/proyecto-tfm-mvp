@@ -188,6 +188,10 @@ export const api = {
     return request<Task>(`/tasks/${taskId}`, { method: "PUT", body: JSON.stringify(body) });
   },
 
+  deleteTask(taskId: string) {
+    return request<void>(`/tasks/${taskId}`, { method: "DELETE" });
+  },
+
   animals(params?: QueryParams) {
     return request<Animal[]>("/animals", {}, params);
   },

@@ -383,6 +383,7 @@ export type DashboardSummary = {
   };
   animales: {
     activos: number;
+    por_zona?: { zona_id: string; nombre: string; total: number }[];
   };
   tratamientos: {
     activos: number;

@@ -14,6 +14,7 @@ def serialize(a: Animal) -> dict[str, Any]:
         "estado_reproductivo": a.estado_reproductivo,
         "fecha_entrada": a.fecha_entrada.isoformat() if a.fecha_entrada else None,
         "fecha_baja": a.fecha_baja.isoformat() if a.fecha_baja else None,
+        "zona_id": str(a.zona_id) if getattr(a, "zona_id", None) else None,
         "motivo_baja": a.motivo_baja,
         "notas": a.notas,
     }

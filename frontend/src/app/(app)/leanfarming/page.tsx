@@ -574,7 +574,7 @@ export default function LeanFarmingPage() {
               tasks={tasks}
               zones={zones.data ?? []}
               employees={employeesQuery.data ?? []}
-              onTaskUpdate={(id, updates) => updateTaskMutation.mutate({ id, updates })}
+              catalog={catalogQuery.data ?? []}
             />
           ) : leanTab === "workload" ? (
             <WorkloadView

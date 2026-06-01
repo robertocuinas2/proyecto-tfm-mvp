@@ -20,9 +20,9 @@ def serialize(l: Lactacion) -> dict[str, Any]:
         "dias_transcurridos": dias,
         "produccion_promedio": round(float(l.produccion_total_kg) / 305, 1) if l.produccion_total_kg else None,
         "produccion_total": float(l.produccion_total_kg) if l.produccion_total_kg else None,
-        "grasa_promedio": None,
-        "proteina_promedio": None,
-        "rcs_promedio": None,
+        "grasa_promedio": float(l.grasa_promedio) if l.grasa_promedio is not None else None,
+        "proteina_promedio": float(l.proteina_promedio) if l.proteina_promedio is not None else None,
+        "rcs_promedio": l.rcs_promedio,
         "activa": activa,
     }
 
@@ -43,8 +43,8 @@ def quality_summary(lactaciones: list[Lactacion]) -> dict[str, Any]:
             sum(float(l.produccion_total_kg or 0) / 305 for l in lactaciones) / len(lactaciones),
             1,
         ),
-        "grasa_promedio": None,
-        "proteina_promedio": None,
-        "rcs_promedio": None,
+        "grasa_promedio": round(sum(float(l.grasa_promedio) for l in lactaciones if l.grasa_promedio) / max(1, sum(1 for l in lactaciones if l.grasa_promedio)), 2) or None,
+        "proteina_promedio": round(sum(float(l.proteina_promedio) for l in lactaciones if l.proteina_promedio) / max(1, sum(1 for l in lactaciones if l.proteina_promedio)), 2) or None,
+        "rcs_promedio": round(sum(l.rcs_promedio for l in lactaciones if l.rcs_promedio) / max(1, sum(1 for l in lactaciones if l.rcs_promedio))) if any(l.rcs_promedio for l in lactaciones) else None,
         "animales_en_control": len({str(l.animal_id) for l in lactaciones}),
     }

@@ -28,11 +28,13 @@ function markHandoverAsRead(handoverId: string) {
 export function LastHandoverCard({
   handover,
   onMarkAsRead,
+  readOnly = false,
 }: {
   handover: ShiftHandover;
   onMarkAsRead: () => void;
+  readOnly?: boolean;
 }) {
-  const isRead = getHandoverMarkedAsRead(handover.id);
+  const isRead = !readOnly && getHandoverMarkedAsRead(handover.id);
 
   if (isRead) return null;
 
@@ -53,14 +55,16 @@ export function LastHandoverCard({
           </div>
           <p className="mt-1 text-xs text-app-dim">Generado: {formatDate(handover.ts_generacion)}</p>
         </div>
-        <button
-          type="button"
-          onClick={handleMarkAsRead}
-          className="ml-auto flex shrink-0 items-center gap-2 rounded-[10px] bg-state-ok px-4 py-2 text-sm font-bold text-white transition hover:bg-state-ok/90"
-        >
-          <Check className="h-4 w-4" />
-          OK, visto
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={handleMarkAsRead}
+            className="ml-auto flex shrink-0 items-center gap-2 rounded-[10px] bg-state-ok px-4 py-2 text-sm font-bold text-white transition hover:bg-state-ok/90"
+          >
+            <Check className="h-4 w-4" />
+            OK, visto
+          </button>
+        )}
       </div>
 
       {/* Content */}

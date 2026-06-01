@@ -115,6 +115,7 @@ class Animal(Base):
     )
     estado_reproductivo: Mapped[str | None] = mapped_column(String(40), index=True)
     madre_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("animales.id"))
+    zona_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("zonas.id", ondelete="SET NULL"), index=True)
     fecha_entrada: Mapped[date] = mapped_column(Date, nullable=False)
     fecha_baja: Mapped[date | None] = mapped_column(Date)
     motivo_baja: Mapped[str | None] = mapped_column(String(200))
@@ -135,6 +136,9 @@ class Lactacion(Base):
     fecha_parto: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     fecha_secado: Mapped[date | None] = mapped_column(Date)
     produccion_total_kg: Mapped[Decimal | None] = mapped_column(Numeric(8, 2))
+    grasa_promedio: Mapped[Decimal | None] = mapped_column(Numeric(5, 3))
+    proteina_promedio: Mapped[Decimal | None] = mapped_column(Numeric(5, 3))
+    rcs_promedio: Mapped[int | None] = mapped_column(Integer)
     notas: Mapped[str | None] = mapped_column(Text)
 
     animal: Mapped[Animal] = relationship("Animal", foreign_keys=[animal_id])
