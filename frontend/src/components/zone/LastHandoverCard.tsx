@@ -34,7 +34,8 @@ export function LastHandoverCard({
   onMarkAsRead: () => void;
   readOnly?: boolean;
 }) {
-  const isRead = !readOnly && getHandoverMarkedAsRead(handover.id);
+  // Check localStorage regardless of readOnly — all modes should hide after Tablet validation
+  const isRead = getHandoverMarkedAsRead(handover.id);
 
   if (isRead) return null;
 

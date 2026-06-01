@@ -249,18 +249,18 @@ export default function ZoneDetailPage({ params }: { params: Promise<{ id: strin
       {showIncident && <CreateIncidentModal zones={incidentZones} onClose={() => setShowIncident(false)} />}
       {showTreatment && <TreatmentModal animals={animals.filter((a) => groupAnimalIds.has(a.id))} onClose={() => setShowTreatment(false)} />}
 
-      <div className={`border-b px-6 py-4 lg:px-8 ${isTvMode ? "border-tv-border" : "border-app-border bg-white"}`}>
-        <div className="flex flex-wrap items-center gap-4">
-          <Link href="/zones" className={`flex items-center gap-1 text-sm ${isTvMode ? "text-tv-dim hover:text-tv-text" : "text-app-dim hover:text-app-text"}`}>
+      <div className={`border-b px-4 py-3 lg:px-8 lg:py-4 ${isTvMode ? "border-tv-border" : "border-app-border bg-white"}`}>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link href="/zones" className={`flex shrink-0 items-center gap-1 text-sm ${isTvMode ? "text-tv-dim hover:text-tv-text" : "text-app-dim hover:text-app-text"}`}>
             <ChevronLeft className="h-4 w-4" /> Zonas
           </Link>
-          <div>
-            <h1 className={`font-heading text-2xl font-bold ${isTvMode ? "text-tv-text" : "text-app-text"}`}>{config.title}</h1>
-            <p className={`text-sm ${isTvMode ? "text-tv-dim" : "text-app-dim"}`}>{config.description}</p>
+          <div className="min-w-0 flex-1">
+            <h1 className={`truncate font-heading text-xl font-bold lg:text-2xl ${isTvMode ? "text-tv-text" : "text-app-text"}`}>{config.title}</h1>
+            <p className={`hidden truncate text-sm sm:block ${isTvMode ? "text-tv-dim" : "text-app-dim"}`}>{config.description}</p>
           </div>
-          <div className="ml-auto flex overflow-hidden rounded-[10px] border border-app-border bg-white">
-            {[{ key: "management", label: "Gestion" }, { key: "tv", label: "TV" }, { key: "tablet", label: "Tablet" }].map((item) => (
-              <button key={item.key} type="button" onClick={() => setMode(item.key as typeof mode)} className={`px-3 py-2 text-xs font-bold ${mode === item.key ? "bg-brand/10 text-brand" : "text-app-dim"}`}>
+          <div className="flex shrink-0 overflow-hidden rounded-[10px] border border-app-border bg-white">
+            {[{ key: "management", label: "Gestión" }, { key: "tv", label: "TV" }, { key: "tablet", label: "Tablet" }].map((item) => (
+              <button key={item.key} type="button" onClick={() => setMode(item.key as typeof mode)} className={`px-3 py-2 text-xs font-bold transition ${mode === item.key ? "bg-brand/10 text-brand" : "text-app-dim hover:bg-app-bg"}`}>
                 {item.label}
               </button>
             ))}
@@ -279,13 +279,13 @@ export default function ZoneDetailPage({ params }: { params: Promise<{ id: strin
         )}
 
         {mode === "management" && (
-          <div className={`grid grid-cols-2 gap-4 xl:grid-cols-5 ${isTvMode ? "text-app-text" : ""}`}>
-            <Panel title="Tareas pendientes"><p className="font-heading text-4xl font-bold text-state-info">{pendingTasks.length}</p></Panel>
-          <Panel title="Incidencias abiertas"><p className="font-heading text-4xl font-bold text-state-atencion">{openIncidents.length}</p></Panel>
-          <Panel title="Tratamientos activos"><p className="font-heading text-4xl font-bold text-brand">{treatments.length}</p></Panel>
-          <Panel title="Subzonas"><p className="font-heading text-4xl font-bold text-app-text">{config.subzones.length}</p></Panel>
-          <Panel title="Maquinaria"><p className="font-heading text-4xl font-bold text-app-text">{machinery.length}</p></Panel>
-            </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <Panel title="Tareas pendientes"><p className="font-heading text-3xl font-bold text-state-info">{pendingTasks.length}</p></Panel>
+            <Panel title="Incidencias abiertas"><p className="font-heading text-3xl font-bold text-state-atencion">{openIncidents.length}</p></Panel>
+            <Panel title="Tratamientos activos"><p className="font-heading text-3xl font-bold text-brand">{treatments.length}</p></Panel>
+            <Panel title="Subzonas"><p className="font-heading text-3xl font-bold text-app-text">{config.subzones.length}</p></Panel>
+            <Panel title="Maquinaria"><p className="font-heading text-3xl font-bold text-app-text">{machinery.length}</p></Panel>
+          </div>
         )}
 
         {/* Mode: TV Kanban */}
