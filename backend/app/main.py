@@ -96,7 +96,7 @@ def seed_demo_user() -> None:
 
     with engine.begin() as connection:
         for username, email, role in demo_users:
-            password_hash = hash_password("testpass123")
+            password_hash = hash_password(settings.initial_demo_password)
             values = {
                 "username": username,
                 "email": email,

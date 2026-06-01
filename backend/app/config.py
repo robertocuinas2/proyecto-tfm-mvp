@@ -26,6 +26,8 @@ class Settings(BaseSettings):
 
     app_url: str = "http://localhost:8000"
 
+    initial_demo_password: str = "testpass123"
+
     cors_origins: list[str] | str = [
         "http://localhost",
         "http://localhost:80",
