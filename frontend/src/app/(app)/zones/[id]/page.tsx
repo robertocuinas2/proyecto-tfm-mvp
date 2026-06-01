@@ -269,12 +269,12 @@ export default function ZoneDetailPage({ params }: { params: Promise<{ id: strin
       </div>
 
       <div className="space-y-5 px-6 py-6 lg:px-8">
-        {/* Handover: in management mode with confirm button; in TV mode read-only */}
+        {/* Handover: only Tablet can confirm; Management and TV are read-only */}
         {handoversQ.data?.resumenes?.[0] && (
           <LastHandoverCard
             handover={handoversQ.data.resumenes[0]}
             onMarkAsRead={() => setLastHandoverRead(true)}
-            readOnly={isTvMode}
+            readOnly={mode !== "tablet"}
           />
         )}
 

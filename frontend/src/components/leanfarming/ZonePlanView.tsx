@@ -93,7 +93,7 @@ function TaskFormModal({
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["lf-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks-all-lean"] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       onClose();
     },
@@ -260,7 +260,7 @@ function TaskRow({
   const deleteMutation = useMutation({
     mutationFn: () => api.deleteTask(task.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["lf-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks-all-lean"] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
@@ -476,6 +476,7 @@ export function ZonePlanView({ tasks, zones, employees, catalog }: ZonePlanViewP
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((t) => {
+      if (t.estado === "cancelada") return false;
       if (selectedZone !== "all" && t.zona_id !== selectedZone) return false;
       if (!t.fecha_programada) return false;
       const d = t.fecha_programada.slice(0, 10);
