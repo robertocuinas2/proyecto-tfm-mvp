@@ -8,7 +8,7 @@ const toneMap: Record<TvTone, { value: string; icon: string; bg: string; border:
   ok:       { value: "text-state-ok",  icon: "text-state-ok",  bg: "bg-state-ok/10",  border: "border-state-ok/30" },
   info:     { value: "text-state-info", icon: "text-state-info", bg: "bg-state-info/10", border: "border-state-info/30" },
   accent:   { value: "text-tv-accent", icon: "text-tv-accent", bg: "bg-tv-accent/10", border: "border-tv-accent/20" },
-  neutral:  { value: "text-white",     icon: "text-tv-dim",   bg: "bg-tv-surface",    border: "border-tv-border" },
+  neutral:  { value: "text-tv-text",    icon: "text-tv-dim",   bg: "bg-tv-surface",    border: "border-tv-border" },
 };
 
 type TvKpiCardProps = {

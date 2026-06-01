@@ -136,7 +136,7 @@ export function OperationalAssistant() {
                 <Bot className="h-5 w-5" />
               </span>
               <div>
-                <div className="font-heading text-sm font-bold text-white">Asistente operativo</div>
+                <div className="font-heading text-sm font-bold text-tv-text">Asistente operativo</div>
                 <div className="text-[11px] font-semibold text-tv-dim">Texto y voz con confirmacion</div>
               </div>
             </div>
@@ -156,7 +156,7 @@ export function OperationalAssistant() {
                 key={message.id}
                 className={`rounded-lg px-3 py-2 text-sm ${
                   message.role === "user"
-                    ? "ml-8 bg-tv-accent/15 text-white"
+                    ? "ml-8 bg-tv-accent/15 text-tv-text"
                     : "mr-8 bg-tv-surface2 text-tv-dim"
                 }`}
               >
@@ -195,7 +195,7 @@ export function OperationalAssistant() {
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 placeholder="Dicta o escribe una accion"
-                className="h-10 min-w-0 flex-1 rounded-lg border border-tv-border bg-tv-bg px-3 text-sm text-white outline-none placeholder:text-tv-dim focus:border-tv-accent"
+                className="h-10 min-w-0 flex-1 rounded-lg border border-tv-border bg-tv-surface px-3 text-sm text-tv-text outline-none placeholder:text-tv-dim focus:border-tv-accent"
               />
               <button
                 type="button"
@@ -222,7 +222,7 @@ export function OperationalAssistant() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="ml-auto flex h-12 items-center gap-2 rounded-full border border-tv-accent/35 bg-tv-surface px-4 text-sm font-bold text-white shadow-2xl transition hover:bg-tv-surface2"
+          className="ml-auto flex h-12 items-center gap-2 rounded-full border border-tv-border bg-tv-surface px-4 text-sm font-bold text-tv-text shadow-panel transition hover:bg-tv-surface2"
         >
           <Bot className="h-5 w-5 text-tv-accent" />
           Asistente
