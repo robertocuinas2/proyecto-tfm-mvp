@@ -8,6 +8,6 @@ def serialize(e: Empleado) -> dict[str, Any]:
         "nombre": e.nombre,
         "apellidos": e.apellidos,
         "role": e.rol,
-        "zona_principal_id": None,
+        "zona_principal_id": str(e.zona_principal_id) if getattr(e, "zona_principal_id", None) else None,
         "activo": e.activo,
     }

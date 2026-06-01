@@ -17,6 +17,7 @@ def serialize(ejecucion: TareaEjecucion, catalogo: TareaCatalogo | None) -> dict
             "zona_aplicable": None,
         } if catalogo or ejecucion.catalogo_id else None,
         "zona_id": str(ejecucion.zona_id) if ejecucion.zona_id else None,
+        "empleado_id": str(ejecucion.empleado_id) if ejecucion.empleado_id else None,
         "fecha_programada": ejecucion.ts_planificada.isoformat() if ejecucion.ts_planificada else None,
         "fecha_ejecucion": ejecucion.ts_inicio.isoformat() if ejecucion.ts_inicio else None,
         "estado": estado_frontend,
