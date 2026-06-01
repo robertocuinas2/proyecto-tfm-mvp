@@ -4,6 +4,7 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.enums import TipoTurno
 from app.models.tools4milk import AsignacionTurno, Turno
 
 
@@ -15,14 +16,17 @@ def get_all_turnos(
     db: Session,
     skip: int = 0,
     limit: int = 50,
-    fecha: date | None = None,
+    fecha=None,
     tipo_turno: str | None = None,
 ) -> list[Turno]:
     stmt = select(Turno).order_by(Turno.fecha.desc(), Turno.hora_inicio)
     if fecha:
-        stmt = stmt.where(Turno.fecha == fecha)
+        stmt = stmt.where(Turno.fecha == _parse_date(fecha))
     if tipo_turno:
-        stmt = stmt.where(Turno.tipo_turno == tipo_turno)
+        try:
+            stmt = stmt.where(Turno.tipo_turno == TipoTurno(tipo_turno))
+        except ValueError:
+            pass
     return list(db.scalars(stmt.offset(skip).limit(limit)).all())
 
 
@@ -35,10 +39,12 @@ def get_turno_by_id(db: Session, turno_id: str) -> Turno | None:
 
 
 def create_turno(db: Session, data: dict) -> Turno:
+    raw = data["tipo_turno"]
+    tipo = TipoTurno(raw) if raw in (e.value for e in TipoTurno) else TipoTurno.MANANA
     item = Turno(
         id=uuid.uuid4(),
         fecha=_parse_date(data["fecha"]),
-        tipo_turno=data["tipo_turno"],
+        tipo_turno=tipo,
         hora_inicio=data["hora_inicio"],
         hora_fin=data["hora_fin"],
         notas=data.get("notas"),

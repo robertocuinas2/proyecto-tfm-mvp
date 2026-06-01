@@ -30,7 +30,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
-from app.enums import EstadoTarea, EstadoAnimal, NivelAlerta
+from app.enums import EstadoTarea, EstadoAnimal, NivelAlerta, TipoTurno
 
 
 POSTGRES_JSON = JSONB().with_variant(JSON(), "sqlite")
@@ -343,7 +343,10 @@ class Turno(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     fecha: Mapped[date] = mapped_column(Date, nullable=False)
-    tipo_turno: Mapped[str] = mapped_column(String(20), nullable=False)
+    tipo_turno: Mapped[TipoTurno] = mapped_column(
+        Enum(TipoTurno, name="tipo_turno", values_callable=lambda x: [e.value for e in x]).with_variant(String(20), "sqlite"),
+        nullable=False,
+    )
     hora_inicio: Mapped[time] = mapped_column(Time, nullable=False)
     hora_fin: Mapped[time] = mapped_column(Time, nullable=False)
     notas: Mapped[str | None] = mapped_column(Text)

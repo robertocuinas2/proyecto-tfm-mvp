@@ -45,3 +45,9 @@ class NivelAlerta(str, Enum):
     BAJA = "baja"
     MEDIA = "media"
     ALTA = "alta"
+
+
+class TipoTurno(str, Enum):
+    """Tipos de turno (turnos.tipo_turno)."""
+    MANANA = "manana"
+    TARDE = "tarde"

@@ -84,9 +84,7 @@ function OrigenBadge({ origen }: { origen: UnifiedIncidentOrigen }) {
   return null;
 }
 
-const PAGE_SIZE = 15;
-
-// â"€â"€ Helpers â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// ── Helpers â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function formatDate(iso?: string | null) {
   if (!iso) return "\u2014";
@@ -402,25 +400,19 @@ function UnifiedCard({
 
 // â"€â"€ Main page â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
-type FilterEstado = UnifiedEstado | "todas";
 type FilterPrioridad = "baja" | "media" | "alta" | "critica" | "todas";
 
 export default function IncidentsPage() {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const toast = useToast();
-  const [estadoFilter, setEstadoFilter] = useState<FilterEstado>("todas");
   const [prioridadFilter, setPrioridadFilter] = useState<FilterPrioridad>("todas");
-  const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(() => searchParams.get("new") === "1");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const incidentsQuery = useQuery({
-    queryKey: ["incidents", estadoFilter],
-    queryFn: () => api.incidents({
-      limit: 200,
-      ...(estadoFilter !== "todas" ? { estado: estadoFilter } : {}),
-    }),
+    queryKey: ["incidents"],
+    queryFn: () => api.incidents({ limit: 200 }),
     staleTime: 30_000,
     refetchInterval: 60_000,
   });
@@ -501,14 +493,6 @@ export default function IncidentsPage() {
   const isLoading = incidentsQuery.isLoading || alertsQuery.isLoading;
   const isError = incidentsQuery.isError || alertsQuery.isError;
 
-  const filtered = useMemo(() => {
-    return all.filter((i) => {
-      if (estadoFilter !== "todas" && i.estado !== estadoFilter) return false;
-      if (prioridadFilter !== "todas" && i.severidad !== prioridadFilter) return false;
-      return true;
-    });
-  }, [all, estadoFilter, prioridadFilter]);
-
   const stats = useMemo(() => ({
     total: all.length,
     abiertas: all.filter((i) => i.estado === "abierta").length,
@@ -517,24 +501,6 @@ export default function IncidentsPage() {
     criticas: all.filter((i) => i.severidad === "critica").length,
     altas: all.filter((i) => i.severidad === "alta").length,
   }), [all]);
-
-  // Client-side pagination
-  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-
-  function resetFilters() {
-    setEstadoFilter("todas");
-    setPrioridadFilter("todas");
-    setPage(1);
-  }
-
-  const estadoTabs: { key: FilterEstado; label: string }[] = [
-    { key: "todas", label: "Todas" },
-    { key: "abierta", label: "Abiertas" },
-    { key: "en_gestion", label: "En gestion" },
-    { key: "resuelta", label: "Resueltas" },
-    { key: "cerrada", label: "Cerradas" },
-  ];
 
   return (
     <div className="min-h-full">
@@ -549,7 +515,7 @@ export default function IncidentsPage() {
         <div className="flex items-center gap-3">
           {incidentsQuery.isSuccess && alertsQuery.isSuccess && (
             <span className="rounded-full border border-app-border bg-white px-3 py-1.5 text-sm font-bold text-app-text">
-              {filtered.length} registros
+              {all.length} registros
             </span>
           )}
           <button
@@ -576,57 +542,42 @@ export default function IncidentsPage() {
           </div>
         )}
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-2">
-          <div className="flex flex-wrap gap-1">
-            {estadoTabs.map(({ key, label }) => {
-              const count = key === "todas" ? filtered.length : all.filter((i) => i.estado === key).length;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => { setEstadoFilter(key); setPage(1); }}
-                  className={`inline-flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-sm font-semibold transition ${
-                    estadoFilter === key
-                      ? "bg-app-bg text-brand"
-                      : "bg-white text-app-dim hover:bg-app-bg"
-                  }`}
-                >
-                  {label}
-                  <span className="rounded-full bg-app-bg/60 px-1.5 text-[11px] font-bold">{count}</span>
-                </button>
-              );
-            })}
-          </div>
-
+        {/* Filters — solo prioridad, el Kanban separa por estado */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-extrabold uppercase tracking-[0.14em] text-app-dim">Prioridad:</span>
           <select
             value={prioridadFilter}
-            onChange={(e) => { setPrioridadFilter(e.target.value as FilterPrioridad); setPage(1); }}
+            onChange={(e) => setPrioridadFilter(e.target.value as FilterPrioridad)}
             className="rounded-[10px] border border-app-border bg-white px-3 py-2 text-sm font-semibold text-app-text outline-none"
           >
-            <option value="todas">Todas las prioridades</option>
-            <option value="critica">Critica</option>
+            <option value="todas">Todas</option>
+            <option value="critica">Crítica</option>
             <option value="alta">Alta</option>
             <option value="media">Media</option>
             <option value="baja">Baja</option>
           </select>
 
-          {(estadoFilter !== "todas" || prioridadFilter !== "todas") && (
+          {prioridadFilter !== "todas" && (
             <button
               type="button"
-              onClick={resetFilters}
+              onClick={() => setPrioridadFilter("todas")}
               className="rounded-[10px] border border-app-border bg-white px-3 py-2 text-sm font-semibold text-app-dim transition hover:text-app-text"
             >
-              Limpiar filtros
+              Quitar filtro
             </button>
           )}
         </div>
 
         {/* Loading */}
         {isLoading && (
-          <div className="space-y-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-20 animate-pulse rounded-[10px] bg-app-bg" />
+          <div className="grid gap-4 xl:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="space-y-3">
+                <div className="h-8 animate-pulse rounded-[10px] bg-app-bg" />
+                {Array.from({ length: 3 }).map((_, j) => (
+                  <div key={j} className="h-24 animate-pulse rounded-[10px] bg-app-bg" />
+                ))}
+              </div>
             ))}
           </div>
         )}
@@ -638,61 +589,81 @@ export default function IncidentsPage() {
           </div>
         )}
 
-        {/* Empty */}
-        {!isLoading && !isError && filtered.length === 0 && (
-          <div className="rounded-[10px] border border-app-border bg-white py-16 text-center">
-            <Siren className="mx-auto h-12 w-12 text-app-dim" strokeWidth={1.5} />
-            <p className="mt-3 font-heading text-lg font-bold text-app-text">Sin registros</p>
-            <p className="mt-1 text-sm text-app-dim">
-              {estadoFilter !== "todas" || prioridadFilter !== "todas"
-                ? "Prueba a cambiar los filtros"
-                : "No hay incidencias registradas"}
-            </p>
+        {/* Kanban */}
+        {!isLoading && !isError && (
+          <div className="grid gap-4 xl:grid-cols-3">
+            {(
+              [
+                {
+                  key: "abiertas",
+                  label: "Abiertas",
+                  items: all.filter(
+                    (i) =>
+                      i.estado === "abierta" &&
+                      (prioridadFilter === "todas" || i.severidad === prioridadFilter),
+                  ),
+                  headerCls: "border-state-critica/30 bg-state-critica/5",
+                  dotCls: "bg-state-critica",
+                  countCls: "bg-state-critica/15 text-state-critica",
+                },
+                {
+                  key: "en_gestion",
+                  label: "En gestión",
+                  items: all.filter(
+                    (i) =>
+                      i.estado === "en_gestion" &&
+                      (prioridadFilter === "todas" || i.severidad === prioridadFilter),
+                  ),
+                  headerCls: "border-state-atencion/30 bg-state-atencion/5",
+                  dotCls: "bg-state-atencion",
+                  countCls: "bg-state-atencion/15 text-state-atencion",
+                },
+                {
+                  key: "resueltas",
+                  label: "Resueltas",
+                  items: all.filter(
+                    (i) =>
+                      (i.estado === "resuelta" || i.estado === "cerrada") &&
+                      (prioridadFilter === "todas" || i.severidad === prioridadFilter),
+                  ),
+                  headerCls: "border-state-ok/30 bg-state-ok/5",
+                  dotCls: "bg-state-ok",
+                  countCls: "bg-state-ok/15 text-state-ok",
+                },
+              ] as const
+            ).map((col) => (
+              <div key={col.key} className="flex flex-col gap-3">
+                {/* Column header */}
+                <div className={`flex items-center justify-between rounded-[10px] border px-4 py-3 ${col.headerCls}`}>
+                  <div className="flex items-center gap-2">
+                    <span className={`h-2.5 w-2.5 rounded-full ${col.dotCls}`} />
+                    <span className="font-heading text-sm font-bold text-app-text">{col.label}</span>
+                  </div>
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${col.countCls}`}>
+                    {col.items.length}
+                  </span>
+                </div>
+
+                {/* Cards */}
+                {col.items.length === 0 ? (
+                  <div className="rounded-[10px] border border-dashed border-app-border bg-app-bg py-10 text-center text-sm text-app-dim">
+                    Sin incidencias
+                  </div>
+                ) : (
+                  col.items.map((item) => (
+                    <UnifiedCard
+                      key={item.id}
+                      item={item}
+                      onStatusChange={(item, estado) => updateMutation.mutate({ item, estado })}
+                      updatingId={updatingId}
+                      animalLookup={animalLookup}
+                      zoneLookup={zoneLookup}
+                    />
+                  ))
+                )}
+              </div>
+            ))}
           </div>
-        )}
-
-        {/* List */}
-        <div className="space-y-3">
-          {pageItems.map((item) => (
-            <UnifiedCard
-              key={item.id}
-              item={item}
-              onStatusChange={(item, estado) => updateMutation.mutate({ item, estado })}
-              updatingId={updatingId}
-              animalLookup={animalLookup}
-              zoneLookup={zoneLookup}
-            />
-          ))}
-        </div>
-
-        {/* Pagination */}
-        {filtered.length > PAGE_SIZE && (
-          <nav className="flex items-center justify-between rounded-[10px] border border-app-border bg-white px-4 py-3 text-sm text-app-dim">
-            <span>
-              Mostrando <strong className="text-app-text">{(page - 1) * PAGE_SIZE + 1}</strong>-
-              <strong className="text-app-text">{Math.min(page * PAGE_SIZE, filtered.length)}</strong> de{" "}
-              <strong className="text-app-text">{filtered.length}</strong>
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={page === 1}
-                onClick={() => setPage((p) => p - 1)}
-                className="rounded-[10px] border border-app-border bg-app-bg px-3 py-2 font-bold text-app-text transition hover:border-brand/60 disabled:opacity-40"
-              >
-                Anterior
-              </button>
-              <span className="rounded-[10px] bg-app-bg px-3 py-2 font-heading font-bold text-app-text">{page} / {totalPages}</span>
-              <button
-                type="button"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-                className="rounded-[10px] border border-app-border bg-app-bg px-3 py-2 font-bold text-app-text transition hover:border-brand/60 disabled:opacity-40"
-              >
-                Siguiente
-              </button>
-            </div>
-          </nav>
         )}
       </div>
     </div>

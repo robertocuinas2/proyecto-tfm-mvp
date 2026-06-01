@@ -31,10 +31,21 @@ def list_turnos(
 
 @router.post("/turnos")
 def create_turno(body: dict, db: DbDep, current_user: UserDep) -> dict[str, Any]:
+    from sqlalchemy.exc import IntegrityError
     for required in ("fecha", "tipo_turno", "hora_inicio", "hora_fin"):
         if not body.get(required):
             raise HTTPException(status_code=422, detail=f"El campo '{required}' es obligatorio")
-    item = shifts_repository.create_turno(db, body)
+    try:
+        item = shifts_repository.create_turno(db, body)
+    except IntegrityError:
+        db.rollback()
+        # Return existing shift if already created for this date+tipo
+        existing = shifts_repository.get_all_turnos(
+            db, fecha=body["fecha"], tipo_turno=body["tipo_turno"]
+        )
+        if existing:
+            return shifts_service.serialize_turno(existing[0])
+        raise HTTPException(status_code=409, detail="Turno duplicado")
     return shifts_service.serialize_turno(item)
 
 

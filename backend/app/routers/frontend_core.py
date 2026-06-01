@@ -130,8 +130,8 @@ def dashboard_summary(db: DbSession) -> dict[str, Any]:
 
 def _animals_by_zone(db: "Session") -> list[dict[str, Any]]:
     from app.models.tools4milk import Zona
-    # Only show animals for these zones
-    VALID_ZONE_NAMES = {"Boxes", "Enfermería", "Nave", "Recría"}
+    # Only show animals for these operational zones (exact names as stored in DB)
+    VALID_ZONE_NAMES = {"Boxes de terneros", "Enfermería", "Nave", "Zona de recria"}
     rows = (
         db.execute(
             select(Zona.id, Zona.nombre, func.count(Animal.id).label("total"))
