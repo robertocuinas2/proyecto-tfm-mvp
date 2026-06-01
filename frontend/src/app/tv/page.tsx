@@ -301,7 +301,7 @@ export default function TvGlobalPage() {
                 >
                   <div className="flex items-center gap-2">
                     <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${s.dot}`} />
-                    <span className="font-heading text-sm font-bold text-white">{visualZone.name}</span>
+                    <span className="font-heading text-sm font-bold text-tv-text">{visualZone.name}</span>
                   </div>
                   <span className={`text-[10px] font-extrabold uppercase ${s.text}`}>{s.label}</span>
                   <div className="flex flex-wrap gap-2 text-[10px] text-tv-dim">
@@ -362,7 +362,7 @@ export default function TvGlobalPage() {
                       </span>
                       <span className="text-xs capitalize text-tv-dim">{inc.tipo.replace(/_/g, " ")}</span>
                     </div>
-                    <p className="mt-1 text-sm font-semibold leading-snug text-white">
+                    <p className="mt-1 text-sm font-semibold leading-snug text-tv-text">
                       {inc.descripcion}
                     </p>
                   </div>
@@ -397,7 +397,7 @@ export default function TvGlobalPage() {
                       </span>
                       <span className="text-xs capitalize text-tv-dim">{inc.tipo.replace(/_/g, " ")}</span>
                     </div>
-                    <p className="mt-1 text-sm font-semibold leading-snug text-white">{inc.descripcion}</p>
+                    <p className="mt-1 text-sm font-semibold leading-snug text-tv-text">{inc.descripcion}</p>
                   </div>
                 ))}
               </div>
@@ -437,7 +437,7 @@ export default function TvGlobalPage() {
                         </span>
                       )}
                     </div>
-                    <p className="mt-1 text-sm font-semibold text-white">
+                    <p className="mt-1 text-sm font-semibold text-tv-text">
                       {task.tarea_catalogo?.nombre ?? "Tarea"}
                     </p>
                     <p className="text-xs text-tv-dim">
@@ -460,7 +460,7 @@ export default function TvGlobalPage() {
                 <UserRound className="h-5 w-5 text-tv-accent" />
                 <div>
                   <div className="text-xs font-extrabold uppercase tracking-[0.14em] text-tv-dim">Turno actual</div>
-                  <div className="font-heading text-base font-bold text-white">
+                  <div className="font-heading text-base font-bold text-tv-text">
                     {currentShift.tipo_turno === "manana" ? "Mañana" : "Tarde"} ·{" "}
                     {currentShift.hora_inicio?.slice(0, 5)} – {currentShift.hora_fin?.slice(0, 5)}
                   </div>
@@ -472,7 +472,7 @@ export default function TvGlobalPage() {
                     const emp = employeeById.get(a.empleado_id);
                     return (
                       <div key={a.id} className="rounded-xl bg-tv-surface2 px-3 py-2">
-                        <span className="text-sm font-semibold text-white">
+                        <span className="text-sm font-semibold text-tv-text">
                           {employeeName(emp, a.empleado_id)}
                         </span>
                         {emp?.role && (

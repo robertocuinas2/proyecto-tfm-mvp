@@ -18,7 +18,7 @@ export function TvPanel({ title, count, Icon, iconTone = "text-tv-dim", children
           <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-tv-dim">{title}</h2>
         </div>
         {count !== undefined && (
-          <span className="rounded-full bg-tv-surface2 px-2.5 py-0.5 text-sm font-bold text-white">
+          <span className="rounded-full bg-tv-surface2 px-2.5 py-0.5 text-sm font-bold text-tv-text">
             {count}
           </span>
         )}

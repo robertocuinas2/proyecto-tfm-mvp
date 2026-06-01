@@ -46,15 +46,15 @@ export function TvShell({
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-tv-bg font-body text-white">
+    <div className="flex min-h-screen flex-col bg-tv-bg font-body text-tv-text">
       {/* ── TV Header ── */}
       <header className="flex shrink-0 items-center justify-between border-b border-tv-border bg-tv-surface px-8 py-4">
         <div className="flex items-center gap-4">
           <div className="t4m-logo grid h-9 w-9 shrink-0 place-items-center rounded-[10px]">
-            <Milk className="h-4.5 w-4.5 text-white" strokeWidth={2.4} />
+            <Milk className="h-4.5 w-4.5 text-tv-text" strokeWidth={2.4} />
           </div>
           <div>
-            <div className="font-heading text-lg font-bold leading-tight text-white">{title}</div>
+            <div className="font-heading text-lg font-bold leading-tight text-tv-text">{title}</div>
             {subtitle && <div className="text-xs text-tv-dim">{subtitle}</div>}
           </div>
         </div>
@@ -72,7 +72,7 @@ export function TvShell({
           {backHref && (
             <Link
               href={backHref}
-              className="rounded-[10px] border border-tv-border bg-tv-surface2 px-3 py-2 text-xs font-semibold text-tv-dim transition hover:text-white"
+              className="rounded-[10px] border border-tv-border bg-tv-surface2 px-3 py-2 text-xs font-semibold text-tv-text transition hover:bg-tv-border"
             >
               ← {backLabel}
             </Link>

@@ -245,17 +245,17 @@ export default function ZoneDetailPage({ params }: { params: Promise<{ id: strin
   const isTvMode = mode === "tv";
 
   return (
-    <div className={`min-h-full ${isTvMode ? "bg-tv-bg text-white" : "bg-app-bg"}`}>
+    <div className={`min-h-full ${isTvMode ? "bg-tv-bg text-tv-text" : "bg-app-bg"}`}>
       {showIncident && <CreateIncidentModal zones={incidentZones} onClose={() => setShowIncident(false)} />}
       {showTreatment && <TreatmentModal animals={animals.filter((a) => groupAnimalIds.has(a.id))} onClose={() => setShowTreatment(false)} />}
 
       <div className={`border-b px-6 py-4 lg:px-8 ${isTvMode ? "border-tv-border" : "border-app-border bg-white"}`}>
         <div className="flex flex-wrap items-center gap-4">
-          <Link href="/zones" className={`flex items-center gap-1 text-sm ${isTvMode ? "text-tv-dim hover:text-white" : "text-app-dim hover:text-app-text"}`}>
+          <Link href="/zones" className={`flex items-center gap-1 text-sm ${isTvMode ? "text-tv-dim hover:text-tv-text" : "text-app-dim hover:text-app-text"}`}>
             <ChevronLeft className="h-4 w-4" /> Zonas
           </Link>
           <div>
-            <h1 className={`font-heading text-2xl font-bold ${isTvMode ? "text-white" : "text-app-text"}`}>{config.title}</h1>
+            <h1 className={`font-heading text-2xl font-bold ${isTvMode ? "text-tv-text" : "text-app-text"}`}>{config.title}</h1>
             <p className={`text-sm ${isTvMode ? "text-tv-dim" : "text-app-dim"}`}>{config.description}</p>
           </div>
           <div className="ml-auto flex overflow-hidden rounded-[10px] border border-app-border bg-white">

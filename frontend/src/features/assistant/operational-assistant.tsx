@@ -143,7 +143,7 @@ export function OperationalAssistant() {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="grid h-8 w-8 place-items-center rounded-lg text-tv-dim transition hover:bg-tv-surface2 hover:text-white"
+              className="grid h-8 w-8 place-items-center rounded-lg text-tv-dim transition hover:bg-tv-surface2 hover:text-tv-text"
               aria-label="Cerrar asistente"
             >
               <X className="h-4 w-4" />

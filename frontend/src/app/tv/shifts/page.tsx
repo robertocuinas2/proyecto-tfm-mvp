@@ -92,7 +92,7 @@ function ShiftCard({
           <div className={`font-heading text-3xl font-bold ${colorClass}`}>
             {shiftTypeLabel[shift.tipo_turno]}
           </div>
-          <div className="mt-1 font-mono text-lg text-white">
+          <div className="mt-1 font-mono text-lg text-tv-text">
             {shift.hora_inicio?.slice(0, 5)} – {shift.hora_fin?.slice(0, 5)}
           </div>
         </div>
@@ -114,7 +114,7 @@ function ShiftCard({
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                   <UserRound className="h-4 w-4 shrink-0 text-tv-dim" />
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-white">
+                    <p className="truncate text-sm font-semibold text-tv-text">
                       {empName(emp, a.empleado_id)}
                     </p>
                     {emp?.role && (
@@ -256,7 +256,7 @@ export default function TvShiftsPage() {
         ) : shifts.length === 0 ? (
           <div className="rounded-2xl border border-tv-border bg-tv-surface py-12 text-center">
             <CalendarClock className="mx-auto h-12 w-12 text-tv-dim" strokeWidth={1.5} />
-            <p className="mt-3 font-heading text-xl font-bold text-white">Sin turnos registrados hoy</p>
+            <p className="mt-3 font-heading text-xl font-bold text-tv-text">Sin turnos registrados hoy</p>
             <p className="mt-1 text-sm text-tv-dim">Accede a Gestión → Turnos para crearlos</p>
           </div>
         ) : (
@@ -319,7 +319,7 @@ export default function TvShiftsPage() {
                     }`}
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-white">
+                      <p className="text-sm font-semibold text-tv-text">
                         {task.tarea_catalogo?.nombre ?? "Tarea"}
                       </p>
                       <div className="flex items-center gap-2 text-xs text-tv-dim">
@@ -370,7 +370,7 @@ export default function TvShiftsPage() {
                         {inc.tipo.replace(/_/g, " ")}
                       </span>
                     </div>
-                    <p className="mt-1 text-sm font-semibold text-white">{inc.descripcion}</p>
+                    <p className="mt-1 text-sm font-semibold text-tv-text">{inc.descripcion}</p>
                   </div>
                 ))}
               </div>
@@ -396,7 +396,7 @@ export default function TvShiftsPage() {
                     className="rounded-xl border border-l-4 border-tv-border border-l-state-critica bg-tv-surface2 px-4 py-3"
                   >
                     <p className="text-xs capitalize text-tv-dim">{inc.tipo.replace(/_/g, " ")}</p>
-                    <p className="mt-0.5 text-sm font-semibold text-white">{inc.descripcion}</p>
+                    <p className="mt-0.5 text-sm font-semibold text-tv-text">{inc.descripcion}</p>
                   </div>
                 ))}
               </div>
