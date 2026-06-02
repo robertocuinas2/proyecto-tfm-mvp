@@ -6,13 +6,21 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from app.config import settings
 
 
-if settings.database_url.startswith("sqlite"):
+database_url = settings.database_url
+
+# Railway/Postgres suele proporcionar la URL como postgresql://...
+# SQLAlchemy interpreta eso usando psycopg2 por defecto.
+# Como el proyecto usa psycopg v3, forzamos el driver correcto.
+if database_url.startswith("postgresql://"):
+    database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+
+if database_url.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
 else:
     connect_args = {"connect_timeout": 10}
 
 engine = create_engine(
-    settings.database_url,
+    database_url,
     echo=settings.database_echo,
     connect_args=connect_args,
 )
