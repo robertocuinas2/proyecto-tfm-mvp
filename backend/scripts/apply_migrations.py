@@ -105,7 +105,9 @@ def apply_migrations(dry_run: bool = False) -> None:
                         continue
                 # exec_driver_sql evita el parseo de bind params de SQLAlchemy, necesario
                 # para sentencias con casts (::tipo), asignaciones plpgsql (:=) y bloques $$.
-                connection.exec_driver_sql(statement)
+                # Las migraciones no llevan parámetros, así que escapamos los '%' literales
+                # (p. ej. '5%') a '%%' para que psycopg no los trate como placeholders.
+                connection.exec_driver_sql(statement.replace("%", "%%"))
 
             connection.execute(
                 text("INSERT INTO schema_migrations (version) VALUES (:version)"),

@@ -37,16 +37,16 @@ def dashboard_summary(db: DbSession) -> dict[str, Any]:
 
 
 def _animals_by_zone(db: Session) -> list[dict[str, Any]]:
-    # Solo zonas operativas que albergan animales (nombres canónicos de init.sql /
-    # migración baseline). Excluye Oficina y General.
-    VALID_ZONE_NAMES = {"Boxes", "Enfermería", "Nave", "Recría"}
+    # Zonas con al menos un animal activo. Es naming-agnóstico: funciona con cualquier
+    # convención de nombres de zona presente en la base de datos (p. ej. "Nave",
+    # "Boxes de terneros", "Zona de recria") y excluye de forma natural las zonas sin
+    # animales (Oficina, General, Silos, etc.) al usar un INNER JOIN.
     rows = (
         db.execute(
             select(Zona.id, Zona.nombre, func.count(Animal.id).label("total"))
-            .outerjoin(Animal, (Animal.zona_id == Zona.id) & (Animal.estado != EstadoAnimal.BAJA))
-            .where(Zona.nombre.in_(VALID_ZONE_NAMES))
+            .join(Animal, (Animal.zona_id == Zona.id) & (Animal.estado != EstadoAnimal.BAJA))
             .group_by(Zona.id, Zona.nombre)
-            .order_by(Zona.nombre)
+            .order_by(func.count(Animal.id).desc(), Zona.nombre)
         ).all()
     )
     return [{"zona_id": str(r.id), "nombre": r.nombre, "total": r.total} for r in rows]
