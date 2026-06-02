@@ -5,8 +5,9 @@ calidad, tareas, alertas, incidencias, turnos, relevos, pedidos, recría y
 meteorología) con datos coherentes y NO etiquetados como "demo".
 
 Características:
-- Idempotente: cada bloque solo siembra si su tabla está vacía. Re-ejecutarlo no
-  duplica filas y NO toca datos reales existentes.
+- NO idempotente: siembra SIEMPRE en todas las tablas, independientemente de si
+  ya contienen datos. Permite rellenar completamente la BD aunque algunas tablas
+  tengan datos parciales. Útil para testing y demostración.
 - Standalone y manual: NO se ejecuta en el arranque ni en el Dockerfile. Lo lanza
   deliberadamente quien administra la base de datos.
 - Sin dependencias extra (no usa Faker): nombres y valores curados.
@@ -14,12 +15,13 @@ Características:
   que ya crea la migración baseline.
 
 Uso:
-    python scripts/seed_realistic_data.py            # siembra lo que falte
+    python scripts/seed_realistic_data.py            # siembra en todas las tablas
     python scripts/seed_realistic_data.py --status   # solo muestra recuentos
     python scripts/seed_realistic_data.py --weather-days 14
 
 NO ejecutar contra producción sin querer poblarla: respeta DATABASE_URL.
 """
+
 
 from __future__ import annotations
 
@@ -81,9 +83,8 @@ def zonas_por_nombre(db) -> dict[str, Zona]:
 
 
 def seed_empleados(db) -> None:
-    if _count(db, Empleado) > 0:
-        print("SKIP empleados (ya hay datos)")
-        return
+    # Siembra siempre, sin verificar si ya hay datos.
+
     zonas = zonas_por_nombre(db)
     nave = zonas.get("Nave")
     enf = zonas.get("Enfermería")
@@ -114,9 +115,8 @@ def seed_empleados(db) -> None:
 
 
 def seed_animales(db, today: date) -> None:
-    if _count(db, Animal) > 0:
-        print("SKIP animales (ya hay datos)")
-        return
+    # Siembra siempre, sin verificar si ya hay datos.
+
     zonas = zonas_por_nombre(db)
     nave = zonas.get("Nave")
     enf = zonas.get("Enfermería")
@@ -225,9 +225,8 @@ def seed_animales(db, today: date) -> None:
 
 
 def seed_lactaciones(db, today: date) -> None:
-    if _count(db, Lactacion) > 0:
-        print("SKIP lactaciones (ya hay datos)")
-        return
+    # Siembra siempre, sin verificar si ya hay datos.
+
     vacas = db.scalars(select(Animal).where(Animal.estado == "produccion")).all()
     n = 0
     for animal in vacas:
@@ -253,9 +252,8 @@ def seed_lactaciones(db, today: date) -> None:
 
 
 def seed_tratamientos(db, today: date) -> None:
-    if _count(db, TratamientoActivo) > 0:
-        print("SKIP tratamientos (ya hay datos)")
-        return
+    # Siembra siempre, sin verificar si ya hay datos.
+
     vet = db.scalar(select(Empleado).where(Empleado.rol == "veterinario"))
     enfermos = db.scalars(select(Animal).where(Animal.estado == "produccion").limit(3)).all()
     farmacos = [
@@ -285,9 +283,8 @@ def seed_tratamientos(db, today: date) -> None:
 
 
 def seed_eventos_sanitarios(db, today: date) -> None:
-    if _count(db, EventoSanitario) > 0:
-        print("SKIP eventos_sanitarios (ya hay datos)")
-        return
+    # Siembra siempre, sin verificar si ya hay datos.
+
     vet = db.scalar(select(Empleado).where(Empleado.rol == "veterinario"))
     animales = db.scalars(select(Animal).where(Animal.estado == "produccion").limit(5)).all()
     patologias = ["mastitis", "cojera", "metritis", "cetosis", "otra"]
@@ -310,9 +307,8 @@ def seed_eventos_sanitarios(db, today: date) -> None:
 
 
 def seed_incidencias(db, today: date) -> None:
-    if _count(db, Incidencia) > 0:
-        print("SKIP incidencias (ya hay datos)")
-        return
+    # Siembra siempre, sin verificar si ya hay datos.
+
     zonas = zonas_por_nombre(db)
     empleados = db.scalars(select(Empleado)).all()
     plantillas = [
@@ -347,9 +343,8 @@ def seed_incidencias(db, today: date) -> None:
 
 
 def seed_alertas(db) -> None:
-    if _count(db, Alerta) > 0:
-        print("SKIP alertas (ya hay datos)")
-        return
+    # Siembra siempre, sin verificar si ya hay datos.
+
     zonas = zonas_por_nombre(db)
     animales = db.scalars(select(Animal).where(Animal.estado == "produccion").limit(5)).all()
     plantillas = [
@@ -381,9 +376,8 @@ def seed_alertas(db) -> None:
 
 
 def seed_tareas(db) -> None:
-    if _count(db, TareaEjecucion) > 0:
-        print("SKIP tareas_ejecuciones (ya hay datos)")
-        return
+    # Siembra siempre, sin verificar si ya hay datos.
+
     catalogo = db.scalars(select(TareaCatalogo)).all()
     if not catalogo:
         print("SKIP tareas_ejecuciones (no hay tareas_catalogo; aplica las migraciones)")
@@ -416,9 +410,8 @@ def seed_tareas(db) -> None:
 
 
 def seed_turnos(db, today: date) -> None:
-    if _count(db, Turno) > 0:
-        print("SKIP turnos (ya hay datos)")
-        return
+    # Siembra siempre, sin verificar si ya hay datos.
+
     empleados = db.scalars(select(Empleado)).all()
     zonas = zonas_por_nombre(db)
     turnos: list[Turno] = []
@@ -447,9 +440,8 @@ def seed_turnos(db, today: date) -> None:
 
 
 def seed_relevos(db) -> None:
-    if _count(db, ResumenRelevo) > 0:
-        print("SKIP resumenes_relevo (ya hay datos)")
-        return
+    # Siembra siempre, sin verificar si ya hay datos.
+
     turnos = db.scalars(select(Turno).order_by(Turno.fecha, Turno.hora_inicio)).all()
     if len(turnos) < 2:
         print("SKIP resumenes_relevo (faltan turnos)")
@@ -472,9 +464,8 @@ def seed_relevos(db) -> None:
 
 
 def seed_pedidos(db) -> None:
-    if _count(db, Pedido) > 0:
-        print("SKIP pedidos (ya hay datos)")
-        return
+    # Siembra siempre, sin verificar si ya hay datos.
+
     emp = db.scalar(select(Empleado))
     plantillas = [
         ("Pienso de arranque terneros", Decimal("500"), "kg", "solicitado", "Nutrega"),
@@ -501,9 +492,8 @@ def seed_pedidos(db) -> None:
 
 
 def seed_boxes(db, today: date) -> None:
-    if _count(db, BoxRecria) > 0:
-        print("SKIP boxes_recria (ya hay datos)")
-        return
+    # Siembra siempre, sin verificar si ya hay datos.
+
     terneros = db.scalars(
         select(Animal).where(Animal.estado == "recria").order_by(Animal.fecha_nacimiento.desc()).limit(6)
     ).all()
@@ -524,9 +514,8 @@ def seed_boxes(db, today: date) -> None:
 
 
 def seed_meteo(db, dias: int) -> None:
-    if _count(db, LecturaMeteo) > 0:
-        print("SKIP lecturas_meteorologia (ya hay datos)")
-        return
+    # Siembra siempre, sin verificar si ya hay datos.
+
     base = utc_now().replace(hour=12, minute=0, second=0, microsecond=0)
     for i in range(dias):
         db.add(
@@ -559,9 +548,10 @@ def print_status(db) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Población de datos realistas Tools4Milk (idempotente).")
+    parser = argparse.ArgumentParser(description="Población de datos realistas Tools4Milk (siembra siempre todas las tablas).")
     parser.add_argument("--status", action="store_true", help="Solo mostrar recuentos, no sembrar.")
     parser.add_argument("--weather-days", type=int, default=14, help="Días de lecturas meteorológicas a generar.")
+
     args = parser.parse_args()
 
     db = SessionLocal()
