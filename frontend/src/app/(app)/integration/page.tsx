@@ -16,7 +16,7 @@ import { KpiCard } from "@/components/ui/kpi-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { PanelCard, SectionTitle } from "@/components/ui/panel-card";
 import { api } from "@/lib/api";
-import { API_BASE_URL, API_V1_URL, TOKEN_STORAGE_KEY } from "@/lib/config";
+import { API_BASE_URL, API_V1_URL } from "@/lib/config";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { usePermissions } from "@/lib/use-permissions";
 
@@ -89,26 +89,9 @@ export default function IntegrationPage() {
     retry: 1,
   });
 
-  // Simulation status — admin only, may be disabled
-  const simulationQ = useQuery({
-    queryKey: ["simulation-status"],
-    queryFn: () => fetch(`${API_V1_URL}/simulation/status`, {
-      headers: {
-        Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem(TOKEN_STORAGE_KEY) ?? "" : ""}`,
-      },
-    }).then((r) => r.ok ? r.json() : null),
-    enabled: isAdmin,
-    staleTime: 60_000,
-    retry: 0,
-  });
-
   const backendOnline = healthQ.isSuccess && healthQ.data.status === "ok";
   const dbOnline = healthQ.isSuccess && healthQ.data.database === "ok";
   const weatherOk = weatherQ.isSuccess;
-  const simStatus: StatusType = !isAdmin ? "unknown"
-    : simulationQ.isLoading ? "loading"
-    : simulationQ.isError || !simulationQ.data ? "error"
-    : "ok";
 
   const systemOk = backendOnline && dbOnline;
 
@@ -212,18 +195,6 @@ export default function IntegrationPage() {
                   )}
                 </>
               )}
-
-              <div className="mt-3 border-t border-app-border pt-3">
-                <InfoLine
-                  label="Simulación de datos"
-                  value={<StatusBadge status={simStatus} />}
-                />
-                {!isAdmin && (
-                  <p className="mt-2 text-xs text-app-dim">
-                    El estado de simulación requiere rol administrador.
-                  </p>
-                )}
-              </div>
             </div>
           </PanelCard>
         </div>

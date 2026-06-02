@@ -57,7 +57,6 @@ export type Capability =
   | "view_integration"
   | "manage_settings"
   | "view_settings"
-  | "run_simulation"
   // Management page access
   | "view_management"
   // Alerts
@@ -80,7 +79,6 @@ const ALL_CAPABILITIES: Capability[] = [
   "manage_users", "manage_employees",
   "view_audit_log", "view_integration", "manage_settings", "view_settings",
   "view_management",
-  "run_simulation",
   "view_alerts", "resolve_alert",
   "manage_machinery",
 ];

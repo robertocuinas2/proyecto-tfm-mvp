@@ -17,13 +17,6 @@ class Settings(BaseSettings):
     aemet_municipio_id: str = "27065"
     aemet_estacion_id: str = ""
 
-    enable_simulation: bool = True
-    simulation_max_tasks: int = 80
-    simulation_max_alerts: int = 40
-    simulation_max_incidents: int = 60
-
-    enable_assistant: bool = False
-
     app_url: str = "http://localhost:8000"
 
     initial_demo_password: str = "testpass123"

@@ -22,7 +22,6 @@ from app.config import settings
 from app.models.usuario import Usuario
 from app.models.tools4milk import Animal, Empleado, Lactacion, Maquinaria, TareaCatalogo, TareaEjecucion, TratamientoActivo, Zona
 from app.security import hash_password
-from app.services.frontend_seed import ensure_frontend_seed_data
 import uuid
 
 # Crear base de datos de prueba en memoria
@@ -186,7 +185,6 @@ def ensure_test_user(username: str, email: str, role: str) -> None:
 def ensure_operational_seed() -> None:
     db = TestingSessionLocal()
     try:
-        ensure_frontend_seed_data(db)
         animal = db.execute(select(Animal).where(Animal.crotal_oficial == "TEST-0001")).scalar_one_or_none()
         if animal is None:
             animal = Animal(

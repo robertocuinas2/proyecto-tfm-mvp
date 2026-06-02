@@ -5,8 +5,6 @@ import type {
   AlertsResponse,
   Animal,
   AnimalPrediction,
-  AssistantRequest,
-  AssistantResponse,
   AuditLogResponse,
   AuthResponse,
   BoxRecria,
@@ -103,13 +101,6 @@ export const api = {
 
   me() {
     return request<AuthResponse["user"]>("/auth/me");
-  },
-
-  assistantMessage(payload: AssistantRequest) {
-    return request<AssistantResponse>("/assistant/message", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
   },
 
   dashboardSummary() {

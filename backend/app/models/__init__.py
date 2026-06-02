@@ -1,15 +1,4 @@
 from app.models.datos_metereologicos import DatosMetereologicos
-from app.models.frontend_core import (
-    CoreAlert,
-    CoreAnimal,
-    CoreEmployee,
-    CoreIncident,
-    CoreLactation,
-    CoreMachinery,
-    CoreTask,
-    CoreTreatment,
-    CoreZone,
-)
 from app.models.tools4milk import (
     Alerta,
     AlertaUmbral,
@@ -40,18 +29,8 @@ from app.models.tools4milk import (
 from app.models.usuario import Usuario
 
 __all__ = [
-    # Legacy core_* (durante migración)
-    "CoreAlert",
-    "CoreAnimal",
-    "CoreEmployee",
-    "CoreIncident",
-    "CoreLactation",
-    "CoreMachinery",
-    "CoreTask",
-    "CoreTreatment",
-    "CoreZone",
     "DatosMetereologicos",
-    # Nuevos modelos tools4milk
+    # Modelos tools4milk
     "Alerta",
     "AlertaUmbral",
     "Animal",

@@ -56,7 +56,7 @@ const CAPABILITY_GROUPS: { label: string; caps: Capability[] }[] = [
     label: "Administración del sistema",
     caps: [
       "manage_employees", "manage_settings", "view_audit_log",
-      "view_integration", "manage_users", "run_simulation",
+      "view_integration", "manage_users",
     ],
   },
 ];
@@ -93,7 +93,6 @@ const CAP_LABELS: Partial<Record<Capability, string>> = {
   view_audit_log: "Ver audit log",
   view_integration: "Ver integración API",
   manage_users: "Gestionar usuarios",
-  run_simulation: "Ejecutar simulación",
 };
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {

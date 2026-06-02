@@ -10,7 +10,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/sql:/sql
       # init.sql solo se ejecuta la primera vez que se crea el volumen.
       # Para resetear: docker-compose down -v && docker-compose up -d db
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql

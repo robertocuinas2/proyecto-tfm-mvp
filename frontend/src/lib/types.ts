@@ -456,21 +456,6 @@ export type HealthResponse = {
   environment: string;
 };
 
-export type AssistantRequest = {
-  message: string;
-  confirmed?: boolean;
-  draft?: Record<string, unknown> | null;
-};
-
-export type AssistantResponse = {
-  reply: string;
-  action?: string | null;
-  requires_confirmation: boolean;
-  missing_fields: string[];
-  draft?: Record<string, unknown> | null;
-  result?: Record<string, unknown> | null;
-};
-
 // ── Unified Incidents+Alerts view type ──────────────────────────────────────
 
 export type UnifiedIncidentOrigen = "incidencia" | "alerta";

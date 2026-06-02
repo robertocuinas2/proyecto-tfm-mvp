@@ -48,18 +48,3 @@ class AlertsResponse(BaseModel):
     estadisticas: dict[str, Any] | None = None
     skip: int = 0
     limit: int = 50
-
-
-class AssistantMessageRequest(BaseModel):
-    message: str = Field(..., min_length=1, max_length=1000)
-    confirmed: bool = False
-    draft: dict[str, Any] | None = None
-
-
-class AssistantResponse(BaseModel):
-    reply: str
-    action: str | None = None
-    requires_confirmation: bool = False
-    missing_fields: list[str] = Field(default_factory=list)
-    draft: dict[str, Any] | None = None
-    result: dict[str, Any] | None = None

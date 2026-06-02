@@ -13,7 +13,7 @@ from sqlalchemy import inspect, text
 from app.config import settings
 from app.database import Base, engine
 from app.openapi import install_openapi
-from app.routers import assistant, audit, auth, frontend_core, handovers, health, orders, shifts, simulation, weather
+from app.routers import audit, auth, frontend_core, handovers, health, orders, shifts, weather
 from app.security import hash_password
 from app.time_utils import utc_now
 
@@ -181,9 +181,7 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_tags=[
         {"name": "Auth", "description": "Autenticacion JWT y sesion de usuario."},
-        {"name": "Assistant", "description": "Asistente operativo interno con confirmacion previa."},
         {"name": "Frontend Core", "description": "Endpoints usados por TV y tablet."},
-        {"name": "Simulation", "description": "Actividad operativa simulada para prototipos y demos."},
         {"name": "Weather", "description": "Datos meteorologicos y sincronizacion AEMET."},
     ],
     lifespan=lifespan,
@@ -214,10 +212,8 @@ def health_check() -> dict[str, str]:
 
 app.include_router(health.router)
 app.include_router(auth.router)
-app.include_router(assistant.router)
 app.include_router(frontend_core.router)
 app.include_router(weather.router)
-app.include_router(simulation.router)
 app.include_router(audit.router)
 app.include_router(orders.router)
 app.include_router(shifts.router)

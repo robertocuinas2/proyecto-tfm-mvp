@@ -23,7 +23,6 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { OperationalAssistant } from "@/features/assistant/operational-assistant";
 import type { Capability } from "@/lib/role-capabilities";
 import { roleDisplayName } from "@/lib/role-capabilities";
 import { useActiveWorkerStore } from "@/lib/active-worker-store";
@@ -211,8 +210,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <main className="min-w-0 flex-1 overflow-auto">
         {children}
       </main>
-
-      <OperationalAssistant />
     </div>
   );
 }
