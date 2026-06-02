@@ -21,6 +21,8 @@ class Settings(BaseSettings):
 
     initial_demo_password: str = "testpass123"
 
+    admin_secret: str = ""
+
     cors_origins: list[str] | str = [
         "http://localhost",
         "http://localhost:80",
