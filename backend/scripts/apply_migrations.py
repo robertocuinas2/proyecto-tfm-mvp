@@ -58,8 +58,18 @@ def load_migrations() -> list[Path]:
     return sorted(path for path in MIGRATIONS_DIR.glob("*.sql") if path.name[0].isdigit())
 
 
+def _engine_url() -> str:
+    # Railway/Postgres entrega la URL como postgresql://...; SQLAlchemy usaria psycopg2
+    # por defecto, pero el proyecto usa psycopg v3. Forzamos el driver correcto (igual
+    # que app/database.py) para que las migraciones funcionen en Railway.
+    url = settings.database_url
+    if url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+    return url
+
+
 def apply_migrations(dry_run: bool = False) -> None:
-    engine = create_engine(settings.database_url)
+    engine = create_engine(_engine_url())
     migrations = load_migrations()
     if not migrations:
         print("No migrations found.")
@@ -93,7 +103,9 @@ def apply_migrations(dry_run: bool = False) -> None:
                     statement = sqlite_compatible_statement(statement, connection)
                     if statement is None:
                         continue
-                connection.execute(text(statement))
+                # exec_driver_sql evita el parseo de bind params de SQLAlchemy, necesario
+                # para sentencias con casts (::tipo), asignaciones plpgsql (:=) y bloques $$.
+                connection.exec_driver_sql(statement)
 
             connection.execute(
                 text("INSERT INTO schema_migrations (version) VALUES (:version)"),
