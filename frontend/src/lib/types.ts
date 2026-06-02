@@ -422,6 +422,8 @@ export type WeatherData = {
   temperatura_actual?: number | null;
   temperatura?: number | null;
   humedad?: number | null;
+  precipitacion_mm?: number | null;
+  prob_precipitacion_pct?: number | null;
   descripcion?: string | null;
   impacto_productivo?: string | null;
   fecha?: string | null;
@@ -435,6 +437,7 @@ export type WeatherForecastDay = {
   temperatura_minima: number | null;
   humedad: number | null;
   precipitacion: number | null;
+  prob_precipitacion_pct: number | null;
   viento: number | null;
   descripcion: string | null;
   fuente: string;

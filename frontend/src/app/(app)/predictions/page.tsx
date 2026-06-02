@@ -37,16 +37,17 @@ const riskStyle: Record<RiskLevel, string> = {
   critico: "border-state-critica bg-state-critica/20 text-state-critica",
 };
 
-function ConfidenceBadge({ value }: { value: number }) {
-  const pct = Math.round(value > 1 ? value : value * 100);
-  const color =
-    pct >= 75
-      ? "bg-state-ok/10 text-state-ok"
-      : pct >= 55
-        ? "bg-state-atencion/10 text-state-atencion"
-        : "bg-state-critica/10 text-state-critica";
-
-  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${color}`}>{pct}% conf.</span>;
+// Etiqueta honesta: las estimaciones son heurísticas aritméticas, no un modelo de ML.
+// Por eso NO se muestra un "% de confianza" que pudiera sugerir un modelo predictivo entrenado.
+function HeuristicTag() {
+  return (
+    <span
+      className="rounded-full bg-app-bg px-2 py-0.5 text-[10px] font-bold text-app-dim"
+      title="Estimación heurística aritmética, no un modelo de machine learning"
+    >
+      heurístico
+    </span>
+  );
 }
 
 function MetricBox({
@@ -146,9 +147,7 @@ function PredictionCard({
               <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-app-dim">
                 Produccion prevista
               </span>
-              {prediction.confianza_integrada != null && (
-                <ConfidenceBadge value={prediction.confianza_integrada} />
-              )}
+              <HeuristicTag />
             </div>
             <div className="flex items-end justify-between gap-4">
               <div>
@@ -181,8 +180,8 @@ function PredictionCard({
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            <MetricBox label="Grasa" value={comp?.grasa ? `${comp.grasa.prediccion.toFixed(2)}%` : "-"} />
-            <MetricBox label="Proteina" value={comp?.proteina ? `${comp.proteina.prediccion.toFixed(2)}%` : "-"} />
+            <MetricBox label="Grasa" value={comp?.grasa && comp.grasa.prediccion > 0 ? `${comp.grasa.prediccion.toFixed(2)}%` : "n/d"} />
+            <MetricBox label="Proteina" value={comp?.proteina && comp.proteina.prediccion > 0 ? `${comp.proteina.prediccion.toFixed(2)}%` : "n/d"} />
             <MetricBox
               label="Riesgo"
               value={riskLevel}
@@ -332,7 +331,9 @@ export default function PredictionsPage() {
         </div>
 
         <div className="rounded-[10px] border border-state-info/30 bg-state-info/5 px-4 py-3 text-xs font-semibold text-state-info">
-          Horizonte orientativo de 7 dias. Las recomendaciones no sustituyen criterio veterinario.
+          Estimaciones calculadas mediante heurísticas aritméticas (no modelos de machine learning).
+          La composición de leche (grasa/proteína) aún no se calcula y se muestra como «n/d».
+          Horizonte orientativo de 7 días; las recomendaciones no sustituyen el criterio veterinario.
         </div>
 
         {stats.loaded > 0 && (

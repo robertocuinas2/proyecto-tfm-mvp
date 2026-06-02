@@ -19,7 +19,7 @@ import { Pagination } from "@/components/common/Pagination";
 import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
-import { hasPermission, roleLabel, type Permission } from "@/lib/permissions";
+import { can, roleDisplayName, type Capability } from "@/lib/role-capabilities";
 import type { Animal, Employee, EmployeeRol, Lactation, Machinery, Treatment, UserRole, Zone } from "@/lib/types";
 import { displayZoneName, visualZoneOptions } from "@/lib/visual-zones";
 import { useAppStore } from "@/store/app-store";
@@ -167,15 +167,15 @@ const blankMachinery = (): MachineryForm => ({
 const sections: {
   id: SectionId;
   label: string;
-  permission: Permission;
+  permission: Capability;
   Icon: typeof Beef;
 }[] = [
-  { id: "animals", label: "Animales", permission: "manageAnimals", Icon: Beef },
-  { id: "zones", label: "Zonas", permission: "manageZones", Icon: MapPin },
-  { id: "lactations", label: "Lactaciones", permission: "manageQuality", Icon: Milk },
-  { id: "treatments", label: "Tratamientos", permission: "manageClinical", Icon: Stethoscope },
-  { id: "employees", label: "Empleados", permission: "manageEmployees", Icon: UserRoundCog },
-  { id: "machinery", label: "Maquinaria", permission: "manageOperations", Icon: Factory },
+  { id: "animals", label: "Animales", permission: "manage_animals", Icon: Beef },
+  { id: "zones", label: "Zonas", permission: "manage_zones", Icon: MapPin },
+  { id: "lactations", label: "Lactaciones", permission: "manage_lactations", Icon: Milk },
+  { id: "treatments", label: "Tratamientos", permission: "manage_treatments", Icon: Stethoscope },
+  { id: "employees", label: "Empleados", permission: "manage_employees", Icon: UserRoundCog },
+  { id: "machinery", label: "Maquinaria", permission: "manage_machinery", Icon: Factory },
 ];
 
 function TextField({
@@ -272,12 +272,12 @@ function ToggleField({
   );
 }
 
-function PermissionNotice({ role, permission }: { role: UserRole | undefined; permission: Permission }) {
-  if (hasPermission(role, permission)) return null;
+function PermissionNotice({ role, permission }: { role: UserRole | undefined; permission: Capability }) {
+  if (can(role, permission)) return null;
   return (
     <div className="flex items-start gap-2 rounded-[10px] border border-state-atencion/30 bg-state-atencion/10 px-3 py-3 text-sm font-semibold text-state-atencion">
       <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
-      <span>Tu rol actual ({roleLabel(role)}) puede consultar estos datos, pero no modificarlos.</span>
+      <span>Tu rol actual ({roleDisplayName(role)}) puede consultar estos datos, pero no modificarlos.</span>
     </div>
   );
 }
@@ -569,7 +569,7 @@ export default function ManagementPage() {
   });
 
   const active = sections.find((item) => item.id === section) ?? sections[0];
-  const canEditActive = hasPermission(role, active.permission);
+  const canEditActive = can(role, active.permission);
 
   // Record counts for section tabs
   const sectionCounts: Record<SectionId, number | null> = {
@@ -586,7 +586,7 @@ export default function ManagementPage() {
       <PageHeader eyebrow="Operación de datos" title="Gestión" EyebrowIcon={Wrench}>
         <div className="flex items-center gap-2">
           <span className="rounded-full border border-app-border bg-white px-3 py-1.5 text-sm font-bold text-app-text">
-            Rol: {roleLabel(role)}
+            Rol: {roleDisplayName(role)}
           </span>
         </div>
       </PageHeader>
@@ -595,7 +595,7 @@ export default function ManagementPage() {
         <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
           {sections.map(({ id, label, Icon, permission }) => {
             const selected = section === id;
-            const allowed = hasPermission(role, permission);
+            const allowed = can(role, permission);
             const count = sectionCounts[id];
             return (
               <button

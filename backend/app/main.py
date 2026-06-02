@@ -13,7 +13,26 @@ from sqlalchemy import inspect, text
 from app.config import settings
 from app.database import Base, engine
 from app.openapi import install_openapi
-from app.routers import audit, auth, frontend_core, handovers, health, orders, shifts, weather
+from app.routers import (
+    alerts,
+    animals,
+    audit,
+    auth,
+    dashboard,
+    employees,
+    handovers,
+    health,
+    incidents,
+    lactations,
+    machinery,
+    orders,
+    predictions,
+    shifts,
+    tasks,
+    treatments,
+    weather,
+    zones,
+)
 from app.security import hash_password
 from app.time_utils import utc_now
 
@@ -212,7 +231,18 @@ def health_check() -> dict[str, str]:
 
 app.include_router(health.router)
 app.include_router(auth.router)
-app.include_router(frontend_core.router)
+# Routers de dominio (antes el monolítico frontend_core.py), todos bajo /api/v1.
+app.include_router(dashboard.router)
+app.include_router(animals.router)
+app.include_router(zones.router)
+app.include_router(tasks.router)
+app.include_router(lactations.router)
+app.include_router(alerts.router)
+app.include_router(predictions.router)
+app.include_router(incidents.router)
+app.include_router(treatments.router)
+app.include_router(employees.router)
+app.include_router(machinery.router)
 app.include_router(weather.router)
 app.include_router(audit.router)
 app.include_router(orders.router)

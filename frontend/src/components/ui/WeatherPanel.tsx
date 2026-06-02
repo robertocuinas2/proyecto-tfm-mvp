@@ -157,11 +157,15 @@ export function WeatherPanel({ compact = false, dark = false }: WeatherPanelProp
                 <p className={`mt-1 font-heading text-base font-bold ${value}`}>
                   {formatTemp(day.temperatura_media)}
                 </p>
-                {day.precipitacion != null && day.precipitacion > 0 && (
+                {day.prob_precipitacion_pct != null && day.prob_precipitacion_pct > 0 ? (
+                  <p className="mt-0.5 text-[10px] text-state-info">
+                    <Droplets className="mr-0.5 inline h-2.5 w-2.5" />{day.prob_precipitacion_pct.toFixed(0)}% lluvia
+                  </p>
+                ) : day.precipitacion != null && day.precipitacion > 0 ? (
                   <p className="mt-0.5 text-[10px] text-state-info">
                     <Droplets className="mr-0.5 inline h-2.5 w-2.5" />{day.precipitacion.toFixed(0)} mm
                   </p>
-                )}
+                ) : null}
                 {day.viento != null && (
                   <p className={`mt-0.5 text-[10px] ${sub}`}>
                     <Wind className="mr-0.5 inline h-2.5 w-2.5" />{day.viento.toFixed(0)}

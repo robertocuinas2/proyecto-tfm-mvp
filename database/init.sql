@@ -453,6 +453,7 @@ CREATE TABLE lecturas_meteorologia (
     temperatura_c         NUMERIC(4,1),
     humedad_relativa      NUMERIC(4,1),
     precipitacion_mm      NUMERIC(5,1),
+    prob_precipitacion_pct NUMERIC(5,1),
     viento_km_h           NUMERIC(5,1),
     direccion_viento      SMALLINT,
     radiacion_wm2         NUMERIC(6,1),

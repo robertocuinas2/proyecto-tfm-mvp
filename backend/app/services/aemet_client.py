@@ -65,7 +65,8 @@ class AemetClient:
                 "estacion_id": ESTACION_ID,
                 "temperatura_c": 14 + index,
                 "humedad_relativa": 70 - index,
-                "precipitacion_mm": 0 if index % 2 else 1.2,
+                "precipitacion_mm": None,
+                "prob_precipitacion_pct": 10 if index % 2 else 40,
                 "viento_km_h": 5 + index,
             }
             for index in range(7)
@@ -103,7 +104,8 @@ class AemetClient:
             self._to_float(day.get("humedadRelativa", {}).get("maxima")),
             self._to_float(day.get("humedadRelativa", {}).get("minima")),
         )
-        precipitacion_mm = self._max_period_value(day.get("probPrecipitacion", []))
+        # AEMET municipio/diaria devuelve PROBABILIDAD de precipitación (%), no mm.
+        prob_precipitacion_pct = self._max_period_value(day.get("probPrecipitacion", []))
         viento_km_h = self._first_wind_speed(day.get("viento", []))
 
         return {
@@ -111,7 +113,8 @@ class AemetClient:
             "estacion_id": ESTACION_ID,
             "temperatura_c": temperatura_c,
             "humedad_relativa": humedad,
-            "precipitacion_mm": precipitacion_mm,
+            "precipitacion_mm": None,
+            "prob_precipitacion_pct": prob_precipitacion_pct,
             "viento_km_h": viento_km_h,
         }
 

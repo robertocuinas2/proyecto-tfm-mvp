@@ -415,7 +415,10 @@ class LecturaMeteo(Base):
     estacion_id: Mapped[str] = mapped_column(String(20), primary_key=True, nullable=False)
     temperatura_c: Mapped[Decimal | None] = mapped_column(Numeric(4, 1))
     humedad_relativa: Mapped[Decimal | None] = mapped_column(Numeric(4, 1))
+    # Precipitación acumulada real en mm (normalmente null en la predicción AEMET municipal).
     precipitacion_mm: Mapped[Decimal | None] = mapped_column(Numeric(5, 1))
+    # Probabilidad de precipitación en % (lo que devuelve la predicción diaria de AEMET).
+    prob_precipitacion_pct: Mapped[Decimal | None] = mapped_column(Numeric(5, 1))
     viento_km_h: Mapped[Decimal | None] = mapped_column(Numeric(5, 1))
     direccion_viento: Mapped[int | None] = mapped_column(SmallInteger)
     radiacion_wm2: Mapped[Decimal | None] = mapped_column(Numeric(6, 1))
