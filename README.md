@@ -93,19 +93,14 @@ El backend se implementó como una aplicación monolítica en Python utilizando 
 
 Router	Prefijo API	Responsabilidad
 auth	/api/v1/auth	Autenticación JWT, login y refresco de tokens
-assistant	/api/v1/assistant	Asistente operativo interno con confirmación previa de acciones (desactivado por defecto)
 frontend_core	/api/v1	CRUD de animales, alertas, tareas, lactaciones, predicciones, calidad, incidencias, empleados, maquinaria y zonas
 weather	/api/v1/weather	Consulta y sincronización de datos meteorológicos (AEMET)
-simulation	/api/v1/simulation	Generación de datos operativos simulados para demostraciones
-audit	/api/v1/audit	Registro de auditoría de operaciones
-orders	/api/v1/orders	Gestión de pedidos de insumos
-shifts	/api/v1/shifts	Planificación de turnos y asignaciones
-handovers	/api/v1/handovers	Relevos entre turnos con resúmenes estructurados
-health	/health	Comprobación de estado del servicio
-
-El router assistant implementa un asistente operativo con un mecanismo de confirmación previa de acciones. En el estado actual del desarrollo, esta funcionalidad se encuentra desactivada por defecto mediante el parámetro de configuración enable_assistant (con valor False); cuando está desactivada, el endpoint responde con un error HTTP 403. Se trata, por tanto, de un módulo experimental no expuesto en la versión operativa del prototipo.
-
-Las dependencias del backend se gestionan mediante un archivo requirements.txt que incluye: SQLAlchemy 2.0.50 como ORM, psycopg 3.x como driver PostgreSQL nativo, Pydantic 2.10+ para validación de esquemas, httpx para peticiones HTTP asíncronas (integración AEMET), Faker para generación de datos de demostración, python-aemet 0.4.1 como wrapper de la API de AEMET, bcrypt 4.0.1 y passlib para el hashing de contraseñas, python-jose para la firma y verificación de tokens JWT, y pytest como framework de testing.
+audit	/api/v1/audit-log	Registro de auditoría de operaciones (solo administradores)
+orders	/api/v1/pedidos	Gestión de pedidos de insumos
+shifts	/api/v1/turnos, /api/v1/asignaciones-turno	Planificación de turnos y asignaciones
+handovers	/api/v1/resumenes-relevo	Relevos entre turnos con resúmenes estructurados
+health	/health, /api/v1/health	Comprobación de estado del servicio
+Las dependencias del backend se gestionan mediante un archivo requirements.txt que incluye: SQLAlchemy 2.0.50 como ORM, psycopg 3.x como driver PostgreSQL nativo, Pydantic 2.10+ para validación de esquemas, httpx para peticiones HTTP asíncronas (integración AEMET), bcrypt 4.0.1 y passlib para el hashing de contraseñas, python-jose para la firma y verificación de tokens JWT, y pytest como framework de testing.
 
 Cabe destacar que el proyecto no incluye dependencias de aprendizaje automático (scikit-learn, XGBoost, TensorFlow u otras). Las predicciones se implementan mediante heurísticas aritméticas basadas en datos de lactación y estado sanitario del animal, como se detalla en la sección 4.6.
 Insertar diseño de estructura
@@ -138,10 +133,10 @@ Es relevante señalar que, aunque el archivo init.sql contiene referencias comen
 
 Las contraseñas se almacenan hasheadas mediante bcrypt a través de la biblioteca passlib. Los tokens de acceso se generan con python-jose utilizando el algoritmo HS256, incluyendo claims estándar (sub, exp, iat) y un identificador único de token (jti) generado con UUID4. El middleware de autenticación (get_current_user) extrae el token del header Authorization (esquema Bearer), lo verifica contra la clave secreta del servidor y recupera el usuario correspondiente de la base de datos. Los usuarios inactivos son rechazados incluso con un token válido.
 
-El control de acceso basado en roles (RBAC) se implementa en dos capas: en el backend, la función require_roles genera dependencias FastAPI que restringen endpoints a conjuntos de roles permitidos, y el router frontend_core aplica get_current_user a todos sus endpoints. En el frontend, el módulo role-capabilities.ts define 34 capacidades granulares asignadas a cada rol:
+El control de acceso basado en roles (RBAC) se implementa en dos capas: en el backend, la función require_roles genera dependencias FastAPI que restringen endpoints a conjuntos de roles permitidos, y el router frontend_core aplica get_current_user a todos sus endpoints. En el frontend, el módulo role-capabilities.ts define 33 capacidades granulares asignadas a cada rol:
 
 Rol	Descripción	Capacidades principales
-admin	Administrador del sistema	Acceso completo a todas las funcionalidades (34 capacidades)
+admin	Administrador del sistema	Acceso completo a todas las funcionalidades (33 capacidades)
 veterinario	Personal clínico	Gestión de animales, tratamientos, lactaciones, calidad, alertas, predicciones e incidencias
 operario	Personal de campo	Tareas, incidencias, alertas (solo lectura), relevos, maquinaria y vista de animales
 alimentacion	Responsable de nutrición	Animales, lactaciones, calidad, tareas, pedidos, incidencias y maquinaria
@@ -160,19 +155,13 @@ El sistema buscar integrar datos meteorológicos reales procedentes de la Agenci
 
 4.	Realiza un upsert en la tabla lecturas_meteorologia, insertando registros nuevos o actualizando los existentes para evitar duplicados.
 
-La integración requiere una API key válida de AEMET configurada como variable de entorno (AEMET_API_KEY). En ausencia de esta clave, el sistema omite la sincronización y devuelve un estado "skipped" sin generar error. Las peticiones HTTP se realizan mediante httpx con un timeout de 20 segundos.
+La integración requiere una API key válida de AEMET configurada como variable de entorno (AEMET_API_KEY). En ausencia de esta clave, el cliente genera datos meteorológicos sintéticos de respaldo (modo "generated") para que la aplicación pueda funcionar sin la dependencia externa; con una clave válida obtiene la predicción real de AEMET (modo "aemet_real"). Las peticiones HTTP se realizan mediante httpx con un timeout de 20 segundos.
 
 
 
-2.8.	Servicio de simulación de datos operativos
-
-Para facilitar la demostración y validación del sistema sin depender de datos reales de producción, se implementó un servicio de simulación (app/services/simulation_service.py) que genera datos operativos ficticios mediante la biblioteca Faker. Este servicio crea registros de tareas, alertas, incidencias, actualizaciones de lactación y estados de maquinaria, respetando las restricciones del esquema relacional y las reglas de negocio definidas en los modelos.
-
-La simulación se activa bajo demanda a través del endpoint /api/v1/simulation y está controlada por el parámetro de configuración enable_simulation. Su uso está restringido a usuarios con permisos de administración (capacidad run_simulation). Este mecanismo permite poblar el sistema con datos coherentes para pruebas funcionales, demostraciones y validación de flujos de interfaz de usuario sin comprometer la integridad de datos reales.
 
 
-
-2.9.	Herramientas de desarrollo y testing
+2.8.	Herramientas de desarrollo y testing
 El desarrollo se realizó con las siguientes herramientas y prácticas: control de versiones con Git, contenedorización completa con Docker y Docker Compose, linting frontend con ESLint y verificación de tipos con TypeScript (tsc --noEmit). El backend incluye pytest como framework de testing con soporte asíncrono (pytest-asyncio). La validación de configuración en producción se realiza automáticamente al arrancar la aplicación, verificando que la clave secreta tenga una longitud mínima de 32 caracteres y que los orígenes CORS estén explícitamente configurados.
  
 3.	Resultados
@@ -422,19 +411,16 @@ Existen dos vistas TV implementadas: una vista general (tv) y una vista específ
 
 
 
-3.13.	Servicio de simulación de datos operativos
-El servicio de simulación genera datos operativos ficticios mediante la biblioteca Faker. Crea registros de tareas, alertas, incidencias, actualizaciones de lactación y estados de maquinaria, respetando las restricciones del esquema relacional. La simulación se activa bajo demanda a través del endpoint /api/v1/simulation y está controlada por el parámetro enable_simulation. Su uso está restringido a usuarios con permisos de administración (capacidad run_simulation).
-
-3.14.	Módulos de administración y configuración
+3.13.	Módulos de administración y configuración
 El sistema incluye varios módulos administrativos accesibles según el rol del usuario:
 Gestión de usuarios y empleados: Administración de empleados (alta, edición, cualificaciones, estado) y, para administradores, gestión de cuentas de usuario. Diferencia entre empleados (personal operativo) y usuarios (cuentas de acceso).
 Gestión de zonas: Creación y edición de zonas de la explotación, configurando si disponen de pantalla TV o tablet.
 Registro de auditoría: Listado cronológico de todas las operaciones registradas en el audit_log, incluyendo tabla afectada, tipo de operación (INSERT, UPDATE, DELETE), datos anteriores y nuevos (JSONB) y hash SHA-256 para garantizar la integridad del registro.
-Integración: Panel de estado de las integraciones externas, incluyendo la conexión con AEMET y el estado del servicio de simulación.
+Integración: Panel de estado de las integraciones externas, incluyendo la conexión con AEMET.
 Configuración: Parámetros generales del sistema.
 Perfil de usuario: Visualización y edición del perfil del usuario autenticado.
 Informe operativo: Generación de informes agregados del estado de la explotación, consolidando datos de producción, alertas, tareas e incidencias.
  
-3.15.	Datos meteorológicos en la interfaz
+3.14.	Datos meteorológicos en la interfaz
 Los datos meteorológicos sincronizados desde AEMET se exponen en la interfaz a través de los endpoints GET /api/v1/weather/current y GET /api/v1/weather/forecast, que consultan las últimas lecturas almacenadas en la tabla lecturas_meteorologia. La información meteorológica se integra como contexto operativo, permitiendo al personal de la explotación correlacionar visualmente condiciones ambientales (temperatura, humedad, probabilidad de precipitación, viento) con eventos productivos o sanitarios.
  

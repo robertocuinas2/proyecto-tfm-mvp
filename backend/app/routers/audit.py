@@ -8,12 +8,13 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Usuario
 from app.models.tools4milk import AuditLog
-from app.security import get_current_user
+from app.security import require_roles
 
 router = APIRouter(prefix="/api/v1", tags=["audit"])
 
 DbDep = Annotated[Session, Depends(get_db)]
-UserDep = Annotated[Usuario, Depends(get_current_user)]
+# El registro de auditoría es exclusivo de administradores.
+UserDep = Annotated[Usuario, Depends(require_roles("admin"))]
 
 
 @router.get("/audit-log")
