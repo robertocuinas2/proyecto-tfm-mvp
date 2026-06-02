@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, X } from "lucide-react";
+import { Check } from "lucide-react";
 import type { ShiftHandover } from "@/lib/types";
 
 function formatDate(iso?: string | null) {

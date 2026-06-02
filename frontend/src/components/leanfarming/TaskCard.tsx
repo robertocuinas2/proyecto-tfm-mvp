@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertOctagon, Clock, User } from "lucide-react";
+import { AlertOctagon, User } from "lucide-react";
 import type { Task, Employee } from "@/lib/types";
 
 interface TaskCardProps {

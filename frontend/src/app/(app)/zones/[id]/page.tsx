@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, ChevronLeft, Monitor, Pill, Plus, Tablet, Wrench, X } from "lucide-react";
+import { CheckCircle2, ChevronLeft, Monitor, Tablet, Wrench, X } from "lucide-react";
 import Link from "next/link";
 import { use, useMemo, useState } from "react";
 import { LastHandoverCard } from "@/components/zone/LastHandoverCard";

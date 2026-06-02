@@ -29,7 +29,6 @@ interface TasksGrid {
 export function WeeklyPlanView({
   tasks,
   zones,
-  shifts,
   employees,
   onTaskUpdate,
 }: WeeklyPlanViewProps) {

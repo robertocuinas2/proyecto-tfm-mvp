@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.enums import EstadoTarea, EstadoAnimal
 from app.models import Usuario
-from app.models.tools4milk import TareaCatalogo
 from app.models.tools4milk import Alerta, Animal, BoxRecria, TareaEjecucion, TareaCatalogo, TratamientoActivo
 from app.repositories import (
     alerts_repository,

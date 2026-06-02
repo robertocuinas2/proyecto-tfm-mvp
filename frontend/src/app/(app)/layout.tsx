@@ -8,7 +8,6 @@ import {
   Beef,
   BrainCircuit,
   CalendarClock,
-  ClipboardList,
   Droplets,
   LayoutDashboard,
   ListTodo,

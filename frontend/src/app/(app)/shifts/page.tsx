@@ -15,7 +15,7 @@ import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
-import { displayZoneName, visualZoneOptions } from "@/lib/visual-zones";
+import { visualZoneOptions } from "@/lib/visual-zones";
 import type {
   CreateShiftAssignmentPayload,
   CreateShiftPayload,

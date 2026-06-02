@@ -8,7 +8,6 @@ import {
   ChevronUp,
   Loader2,
   Plus,
-  Siren,
   X,
 } from "lucide-react";
 import { useMemo, useState } from "react";

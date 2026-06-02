@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Play, CheckCircle2, MessageSquare, AlertOctagon } from "lucide-react";
 import { useState } from "react";
 import { api } from "@/lib/api";
-import type { Task, Zone, CreateIncidentPayload, IncidentPriority } from "@/lib/types";
+import type { Task, Zone } from "@/lib/types";
 
 function formatTime(iso?: string | null) {
   if (!iso) return "—";
