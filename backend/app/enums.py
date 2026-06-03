@@ -40,6 +40,16 @@ class EstadoIncidencia(str, Enum):
     CERRADA = "cerrada"
 
 
+class TipoIncidencia(str, Enum):
+    """Tipos de incidencia (incidencias.tipo)."""
+    AVERIA_MAQUINARIA = "averia_maquinaria"
+    INFRAESTRUCTURA = "infraestructura"
+    SANIDAD_ANIMAL = "sanidad_animal"
+    CALIDAD_LECHE = "calidad_leche"
+    ALIMENTACION = "alimentacion"
+    PEDIDOS = "pedidos"
+
+
 class NivelAlerta(str, Enum):
     """Niveles de alerta (alertas.nivel)."""
     BAJA = "baja"
