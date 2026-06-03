@@ -116,8 +116,15 @@ CREATE TABLE IF NOT EXISTS tareas_recurrentes (
     CONSTRAINT chk_fechas_recurrente CHECK (fecha_fin IS NULL OR fecha_fin >= fecha_inicio)
 );
 
-INSERT INTO tareas_recurrentes (catalogo_id, frecuencia_expr, descripcion_frecuencia, notas) SELECT id, '0 22 * * 1,4', 'Lunes y jueves a las 22:00', 'Lavado robots 1-2 (lun/jue)' FROM tareas_catalogo WHERE codigo = 'lavado_robot' AND NOT EXISTS (SELECT 1 FROM tareas_recurrentes);
-INSERT INTO tareas_recurrentes (catalogo_id, frecuencia_expr, descripcion_frecuencia, notas) SELECT id, '0 22 * * 2,5', 'Martes y viernes a las 22:00', 'Lavado robots 3 (mar/vie)' FROM tareas_catalogo WHERE codigo = 'lavado_robot' AND (SELECT COUNT(*) FROM tareas_recurrentes) < 1;
+ALTER TABLE tareas_recurrentes ALTER COLUMN activa SET DEFAULT TRUE;
+ALTER TABLE tareas_recurrentes ALTER COLUMN fecha_inicio SET DEFAULT CURRENT_DATE;
+UPDATE tareas_recurrentes SET activa = TRUE WHERE activa IS NULL;
+UPDATE tareas_recurrentes SET fecha_inicio = CURRENT_DATE WHERE fecha_inicio IS NULL;
+
+INSERT INTO tareas_recurrentes (catalogo_id, frecuencia_expr, descripcion_frecuencia, activa, fecha_inicio, notas) SELECT id, '0 22 * * 1,4', 'Lunes y jueves a las 22:00', TRUE, CURRENT_DATE, 'Lavado robots 1-2 (lun/jue)' FROM tareas_catalogo WHERE codigo = 'lavado_robot' AND NOT EXISTS (SELECT 1 FROM tareas_recurrentes tr WHERE tr.catalogo_id = tareas_catalogo.id AND tr.frecuencia_expr = '0 22 * * 1,4' AND tr.notas = 'Lavado robots 1-2 (lun/jue)');
+INSERT INTO tareas_recurrentes (catalogo_id, frecuencia_expr, descripcion_frecuencia, activa, fecha_inicio, notas) SELECT id, '0 22 * * 2,5', 'Martes y viernes a las 22:00', TRUE, CURRENT_DATE, 'Lavado robots 3 (mar/vie)' FROM tareas_catalogo WHERE codigo = 'lavado_robot' AND NOT EXISTS (SELECT 1 FROM tareas_recurrentes tr WHERE tr.catalogo_id = tareas_catalogo.id AND tr.frecuencia_expr = '0 22 * * 2,5' AND tr.notas = 'Lavado robots 3 (mar/vie)');
+INSERT INTO tareas_recurrentes (catalogo_id, frecuencia_expr, descripcion_frecuencia, activa, fecha_inicio, notas) SELECT id, 'cada_N_dias:30', 'Cada 30 dias', TRUE, CURRENT_DATE, 'Desinfectante camas patio lactacion' FROM tareas_catalogo WHERE codigo = 'desinfeccion_camas' AND NOT EXISTS (SELECT 1 FROM tareas_recurrentes tr WHERE tr.catalogo_id = tareas_catalogo.id AND tr.frecuencia_expr = 'cada_N_dias:30' AND tr.notas IN ('Desinfectante camas patio lactacion', 'Desinfectante camas patio lactaciÃ³n'));
+INSERT INTO tareas_recurrentes (catalogo_id, frecuencia_expr, descripcion_frecuencia, activa, fecha_inicio, notas) SELECT id, '0 10 * * 1,3,5', 'Lunes, miercoles y viernes a las 10:00', TRUE, CURRENT_DATE, 'Bebederos L/X/V' FROM tareas_catalogo WHERE codigo = 'limpieza_bebederos' AND NOT EXISTS (SELECT 1 FROM tareas_recurrentes tr WHERE tr.catalogo_id = tareas_catalogo.id AND tr.frecuencia_expr = '0 10 * * 1,3,5' AND tr.notas = 'Bebederos L/X/V');
 INSERT INTO tareas_recurrentes (catalogo_id, frecuencia_expr, descripcion_frecuencia, notas) SELECT id, 'cada_N_dias:30', 'Cada 30 días', 'Desinfectante camas patio lactación' FROM tareas_catalogo WHERE codigo = 'desinfeccion_camas' AND (SELECT COUNT(*) FROM tareas_recurrentes) < 2;
 INSERT INTO tareas_recurrentes (catalogo_id, frecuencia_expr, descripcion_frecuencia, notas) SELECT id, '0 10 * * 1,3,5', 'Lunes, miércoles y viernes a las 10:00', 'Bebederos L/X/V' FROM tareas_catalogo WHERE codigo = 'limpieza_bebederos' AND (SELECT COUNT(*) FROM tareas_recurrentes) < 3;
 
