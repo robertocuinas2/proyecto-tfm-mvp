@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.enums import TipoIncidencia
 from app.models.tools4milk import Animal, Incidencia
 
 
@@ -65,7 +66,7 @@ def get_by_id(db: Session, incident_id: str) -> Incidencia | None:
 def create(db: Session, data: dict) -> Incidencia:
     item = Incidencia(
         id=uuid.uuid4(),
-        tipo=data.get("tipo", "infraestructura"),
+        tipo=data.get("tipo", TipoIncidencia.INFRAESTRUCTURA.value),
         subtipo=data.get("subtipo"),
         severidad=data.get("prioridad") or data.get("severidad", "media"),
         estado="abierta",

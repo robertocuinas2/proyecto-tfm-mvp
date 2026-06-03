@@ -30,7 +30,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
-from app.enums import EstadoTarea, EstadoAnimal, NivelAlerta, TipoTurno
+from app.enums import EstadoTarea, EstadoAnimal, NivelAlerta, TipoTurno, TipoIncidencia
 
 
 POSTGRES_JSON = JSONB().with_variant(JSON(), "sqlite")
@@ -200,7 +200,12 @@ class Incidencia(Base):
     __tablename__ = "incidencias"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tipo: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    tipo: Mapped[TipoIncidencia] = mapped_column(
+        Enum(TipoIncidencia, name="tipo_incidencia", values_callable=lambda x: [e.value for e in x]).with_variant(String(50), "sqlite"),
+        nullable=False,
+        default=TipoIncidencia.INFRAESTRUCTURA,
+        index=True,
+    )
     subtipo: Mapped[str | None] = mapped_column(String(80))
     severidad: Mapped[str] = mapped_column(String(20), nullable=False, default="media")
     estado: Mapped[str] = mapped_column(String(20), nullable=False, default="abierta", index=True)
