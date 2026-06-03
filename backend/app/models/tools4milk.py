@@ -30,7 +30,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
-from app.enums import EstadoTarea, EstadoAnimal, NivelAlerta, TipoTurno, TipoIncidencia
+from app.enums import EstadoTarea, EstadoAnimal, EstadoIncidencia, NivelAlerta, NivelSeveridad, TipoTurno, TipoIncidencia
 
 
 POSTGRES_JSON = JSONB().with_variant(JSON(), "sqlite")
@@ -207,8 +207,17 @@ class Incidencia(Base):
         index=True,
     )
     subtipo: Mapped[str | None] = mapped_column(String(80))
-    severidad: Mapped[str] = mapped_column(String(20), nullable=False, default="media")
-    estado: Mapped[str] = mapped_column(String(20), nullable=False, default="abierta", index=True)
+    severidad: Mapped[NivelSeveridad] = mapped_column(
+        Enum(NivelSeveridad, name="nivel_severidad", values_callable=lambda x: [e.value for e in x]).with_variant(String(20), "sqlite"),
+        nullable=False,
+        default=NivelSeveridad.MEDIA,
+    )
+    estado: Mapped[EstadoIncidencia] = mapped_column(
+        Enum(EstadoIncidencia, name="estado_incidencia", values_callable=lambda x: [e.value for e in x]).with_variant(String(20), "sqlite"),
+        nullable=False,
+        default=EstadoIncidencia.ABIERTA,
+        index=True,
+    )
     titulo: Mapped[str] = mapped_column(String(200), nullable=False)
     descripcion: Mapped[str | None] = mapped_column(Text)
     zona_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("zonas.id"), index=True)

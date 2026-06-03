@@ -50,6 +50,13 @@ class TipoIncidencia(str, Enum):
     PEDIDOS = "pedidos"
 
 
+class NivelSeveridad(str, Enum):
+    """Niveles de severidad de incidencias (incidencias.severidad)."""
+    BAJA = "baja"
+    MEDIA = "media"
+    ALTA = "alta"
+
+
 class NivelAlerta(str, Enum):
     """Niveles de alerta (alertas.nivel)."""
     BAJA = "baja"
