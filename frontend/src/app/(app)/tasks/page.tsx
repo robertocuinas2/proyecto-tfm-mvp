@@ -1,7 +1,15 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertOctagon, CheckCircle2, ClipboardList, Clock, MapPin, TimerReset } from "lucide-react";
+import {
+  AlertOctagon,
+  CheckCircle2,
+  ClipboardList,
+  Clock,
+  MapPin,
+  TimerReset,
+} from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { Pagination } from "@/components/common/Pagination";
 import { PageHeader } from "@/components/ui/page-header";
@@ -11,10 +19,21 @@ import type { Task, TaskStatus } from "@/lib/types";
 
 type FilterTab = "programada" | "retrasada" | "ejecutada";
 
-const tabConfig: Record<FilterTab, { label: string; color: string; Icon: typeof Clock }> = {
+const tabConfig: Record<
+  FilterTab,
+  { label: string; color: string; Icon: typeof Clock }
+> = {
   programada: { label: "Programadas", color: "text-state-info", Icon: Clock },
-  retrasada: { label: "Retrasadas", color: "text-state-critica", Icon: AlertOctagon },
-  ejecutada: { label: "Ejecutadas", color: "text-state-ok", Icon: CheckCircle2 },
+  retrasada: {
+    label: "Retrasadas",
+    color: "text-state-critica",
+    Icon: AlertOctagon,
+  },
+  ejecutada: {
+    label: "Ejecutadas",
+    color: "text-state-ok",
+    Icon: CheckCircle2,
+  },
 };
 
 const statusStyles: Record<TaskStatus, string> = {
@@ -27,7 +46,9 @@ const statusStyles: Record<TaskStatus, string> = {
 
 function StatusBadge({ estado }: { estado: TaskStatus }) {
   return (
-    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${statusStyles[estado]}`}>
+    <span
+      className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${statusStyles[estado]}`}
+    >
       {estado}
     </span>
   );
@@ -46,7 +67,8 @@ function TaskCard({
   const categoria = task.tarea_catalogo?.categoria;
   const zona = task.tarea_catalogo?.zona_aplicable;
   const fecha = new Date(task.fecha_programada);
-  const canComplete = task.estado === "programada" || task.estado === "retrasada";
+  const canComplete =
+    task.estado === "programada" || task.estado === "retrasada";
 
   return (
     <div className="rounded-[10px] border border-app-border bg-white px-4 py-4 shadow-card transition hover:border-brand/20 hover:bg-app-bg">
@@ -59,18 +81,32 @@ function TaskCard({
                 Urgente
               </span>
             )}
-            {categoria && <span className="text-xs font-semibold capitalize text-app-dim">{categoria}</span>}
+            {categoria && (
+              <span className="text-xs font-semibold capitalize text-app-dim">
+                {categoria}
+              </span>
+            )}
           </div>
-          <h2 className="mt-2 font-heading text-base font-bold text-app-text">{nombre}</h2>
+          <h2 className="mt-2 font-heading text-base font-bold text-app-text">
+            {nombre}
+          </h2>
           <div className="mt-1 flex flex-wrap gap-3 text-xs text-app-dim">
             <span>
-              {fecha.toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}{" "}
-              {fecha.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+              {fecha.toLocaleDateString("es-ES", {
+                day: "2-digit",
+                month: "short",
+              })}{" "}
+              {fecha.toLocaleTimeString("es-ES", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </span>
             {zona && <span className="capitalize">Zona: {zona}</span>}
             {task.ejecutado_por && <span>Por: {task.ejecutado_por}</span>}
           </div>
-          {task.observaciones && <p className="mt-2 text-xs text-app-dim">{task.observaciones}</p>}
+          {task.observaciones && (
+            <p className="mt-2 text-xs text-app-dim">{task.observaciones}</p>
+          )}
         </div>
 
         {canComplete ? (
@@ -130,37 +166,64 @@ export default function TasksPage() {
 
   return (
     <div className="min-h-full">
-      <PageHeader eyebrow="Plan diario" title="Tareas" EyebrowIcon={ClipboardList}>
-        <span className="rounded-full border border-app-border bg-white px-3 py-1.5 text-sm font-bold text-app-text">
-          {list.length} en pagina
-        </span>
+      <PageHeader
+        eyebrow="Plan diario"
+        title="Tareas"
+        EyebrowIcon={ClipboardList}
+      >
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="rounded-full border border-app-border bg-white px-3 py-1.5 text-sm font-bold text-app-text">
+            {list.length} en pagina
+          </span>
+          <Link
+            href="/tasks/new"
+            className="rounded-[10px] border border-app-border bg-brand px-4 py-2 text-sm font-bold text-white transition hover:bg-brand/90"
+          >
+            Añadir tarea
+          </Link>
+          <Link
+            href="/task-catalog/new"
+            className="rounded-[10px] border border-app-border bg-white px-4 py-2 text-sm font-bold text-app-text transition hover:bg-app-bg"
+          >
+            Nuevo catálogo
+          </Link>
+        </div>
       </PageHeader>
 
       <div className="space-y-5 px-6 py-6 lg:px-8">
         <div className="flex flex-wrap items-end gap-3">
           <div className="grid min-w-0 flex-1 grid-cols-3 gap-3">
-            {(Object.entries(tabConfig) as [FilterTab, (typeof tabConfig)[FilterTab]][]).map(
-              ([key, { label, color, Icon }]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => {
-                    setTab(key);
-                    setPage(1);
-                  }}
-                  className={`rounded-[10px] border px-4 py-3 text-left transition ${
-                    tab === key
-                      ? "border-brand/25 bg-brand/10"
-                      : "border-app-border bg-white hover:bg-app-bg"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon className={`h-4 w-4 ${tab === key ? color : "text-app-dim"}`} />
-                    <span className={`text-sm font-bold ${tab === key ? "text-brand" : "text-app-dim"}`}>{label}</span>
-                  </div>
-                </button>
-              ),
-            )}
+            {(
+              Object.entries(tabConfig) as [
+                FilterTab,
+                (typeof tabConfig)[FilterTab],
+              ][]
+            ).map(([key, { label, color, Icon }]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => {
+                  setTab(key);
+                  setPage(1);
+                }}
+                className={`rounded-[10px] border px-4 py-3 text-left transition ${
+                  tab === key
+                    ? "border-brand/25 bg-brand/10"
+                    : "border-app-border bg-white hover:bg-app-bg"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Icon
+                    className={`h-4 w-4 ${tab === key ? color : "text-app-dim"}`}
+                  />
+                  <span
+                    className={`text-sm font-bold ${tab === key ? "text-brand" : "text-app-dim"}`}
+                  >
+                    {label}
+                  </span>
+                </div>
+              </button>
+            ))}
           </div>
 
           {/* Filtro por zona */}
@@ -168,13 +231,18 @@ export default function TasksPage() {
             <MapPin className="h-4 w-4 shrink-0 text-app-dim" />
             <select
               value={zoneFilter}
-              onChange={(e) => { setZoneFilter(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setZoneFilter(e.target.value);
+                setPage(1);
+              }}
               className="bg-transparent text-sm font-semibold text-app-text outline-none"
               aria-label="Filtrar por zona"
             >
               <option value="">Todas las zonas</option>
               {(zonesQuery.data ?? []).map((z) => (
-                <option key={z.id} value={z.id}>{z.nombre}</option>
+                <option key={z.id} value={z.id}>
+                  {z.nombre}
+                </option>
               ))}
             </select>
           </div>
@@ -183,7 +251,10 @@ export default function TasksPage() {
         {tasksQuery.isLoading && (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="h-24 animate-pulse rounded-[10px] bg-app-surface2" />
+              <div
+                key={index}
+                className="h-24 animate-pulse rounded-[10px] bg-app-surface2"
+              />
             ))}
           </div>
         )}
@@ -196,7 +267,10 @@ export default function TasksPage() {
 
         {!tasksQuery.isLoading && list.length === 0 && (
           <div className="rounded-[10px] border border-app-border bg-white py-16 text-center shadow-card">
-            <TimerReset className="mx-auto h-12 w-12 text-app-dim" strokeWidth={1.5} />
+            <TimerReset
+              className="mx-auto h-12 w-12 text-app-dim"
+              strokeWidth={1.5}
+            />
             <p className="mt-3 font-heading text-lg font-bold text-app-text">
               No hay tareas {tabConfig[tab].label.toLowerCase()}
             </p>

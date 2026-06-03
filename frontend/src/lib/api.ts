@@ -30,6 +30,7 @@ import type {
   ShiftHandoversResponse,
   ShiftsResponse,
   Task,
+  TaskCatalogItem,
   Treatment,
   WeatherData,
   Zone,
@@ -153,6 +154,14 @@ export const api = {
 
   createTask(body: Partial<Task>) {
     return request<Task>("/tasks", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  taskCatalog(params?: QueryParams) {
+    return request<TaskCatalogItem[]>("/tasks/catalog", {}, params);
+  },
+
+  createTaskCatalog(body: Partial<TaskCatalogItem>) {
+    return request<TaskCatalogItem>("/tasks/catalog", { method: "POST", body: JSON.stringify(body) });
   },
 
   completeTask(taskId: string, body?: Partial<Task>) {

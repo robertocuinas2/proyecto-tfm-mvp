@@ -19,12 +19,27 @@ import { Pagination } from "@/components/common/Pagination";
 import { PageHeader } from "@/components/ui/page-header";
 import { api } from "@/lib/api";
 import { hasPermission, roleLabel, type Permission } from "@/lib/permissions";
-import type { Animal, Employee, EmployeeRol, Lactation, Machinery, Treatment, UserRole, Zone } from "@/lib/types";
+import type {
+  Animal,
+  Employee,
+  EmployeeRol,
+  Lactation,
+  Machinery,
+  Treatment,
+  UserRole,
+  Zone,
+} from "@/lib/types";
 import { useAppStore } from "@/store/app-store";
 
 const MGMT_LIST_PAGE_SIZE = 20;
 
-type SectionId = "animals" | "zones" | "lactations" | "treatments" | "employees" | "machinery";
+type SectionId =
+  | "animals"
+  | "zones"
+  | "lactations"
+  | "treatments"
+  | "employees"
+  | "machinery";
 
 type AnimalForm = {
   crotal_oficial: string;
@@ -93,8 +108,10 @@ type MachineryForm = {
 };
 
 const today = () => new Date().toISOString().slice(0, 10);
-const numberOrUndefined = (value: string) => (value.trim() === "" ? undefined : Number(value));
-const emptyToUndefined = (value: string) => (value.trim() === "" ? undefined : value.trim());
+const numberOrUndefined = (value: string) =>
+  value.trim() === "" ? undefined : Number(value);
+const emptyToUndefined = (value: string) =>
+  value.trim() === "" ? undefined : value.trim();
 
 const blankAnimal = (): AnimalForm => ({
   crotal_oficial: "",
@@ -155,7 +172,7 @@ const blankEmployee = (): EmployeeForm => ({
 
 const blankMachinery = (): MachineryForm => ({
   nombre: "",
-  tipo: "ordeno",
+  tipo: "robot_ordeno",
   zona_id: "",
   estado: "operativa",
   proxima_revision: "",
@@ -170,10 +187,30 @@ const sections: {
 }[] = [
   { id: "animals", label: "Animales", permission: "manageAnimals", Icon: Beef },
   { id: "zones", label: "Zonas", permission: "manageZones", Icon: MapPin },
-  { id: "lactations", label: "Lactaciones", permission: "manageQuality", Icon: Milk },
-  { id: "treatments", label: "Tratamientos", permission: "manageClinical", Icon: Stethoscope },
-  { id: "employees", label: "Empleados", permission: "manageEmployees", Icon: UserRoundCog },
-  { id: "machinery", label: "Maquinaria", permission: "manageOperations", Icon: Factory },
+  {
+    id: "lactations",
+    label: "Lactaciones",
+    permission: "manageQuality",
+    Icon: Milk,
+  },
+  {
+    id: "treatments",
+    label: "Tratamientos",
+    permission: "manageClinical",
+    Icon: Stethoscope,
+  },
+  {
+    id: "employees",
+    label: "Empleados",
+    permission: "manageEmployees",
+    Icon: UserRoundCog,
+  },
+  {
+    id: "machinery",
+    label: "Maquinaria",
+    permission: "manageOperations",
+    Icon: Factory,
+  },
 ];
 
 function TextField({
@@ -265,17 +302,28 @@ function ToggleField({
       }`}
     >
       <span>{label}</span>
-      <span className={`h-3 w-3 rounded-full ${checked ? "bg-brand" : "bg-app-dim"}`} />
+      <span
+        className={`h-3 w-3 rounded-full ${checked ? "bg-brand" : "bg-app-dim"}`}
+      />
     </button>
   );
 }
 
-function PermissionNotice({ role, permission }: { role: UserRole | undefined; permission: Permission }) {
+function PermissionNotice({
+  role,
+  permission,
+}: {
+  role: UserRole | undefined;
+  permission: Permission;
+}) {
   if (hasPermission(role, permission)) return null;
   return (
     <div className="flex items-start gap-2 rounded-[10px] border border-state-atencion/30 bg-state-atencion/10 px-3 py-3 text-sm font-semibold text-state-atencion">
       <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
-      <span>Tu rol actual ({roleLabel(role)}) puede consultar estos datos, pero no modificarlos.</span>
+      <span>
+        Tu rol actual ({roleLabel(role)}) puede consultar estos datos, pero no
+        modificarlos.
+      </span>
     </div>
   );
 }
@@ -292,7 +340,9 @@ function Panel({
   return (
     <section className="rounded-[10px] border border-app-border bg-white shadow-card p-5">
       <div className="mb-5">
-        <h2 className="font-heading text-lg font-bold text-app-text">{title}</h2>
+        <h2 className="font-heading text-lg font-bold text-app-text">
+          {title}
+        </h2>
         <p className="mt-1 text-sm text-app-dim">{subtitle}</p>
       </div>
       {children}
@@ -300,7 +350,13 @@ function Panel({
   );
 }
 
-function SaveButton({ isPending, editing }: { isPending: boolean; editing: boolean }) {
+function SaveButton({
+  isPending,
+  editing,
+}: {
+  isPending: boolean;
+  editing: boolean;
+}) {
   return (
     <button
       type="submit"
@@ -308,12 +364,22 @@ function SaveButton({ isPending, editing }: { isPending: boolean; editing: boole
       className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-brand px-5 text-sm font-bold text-white shadow-brand transition hover:bg-[#135532] disabled:opacity-50"
     >
       <Save className="h-4 w-4" />
-      {isPending ? "Guardando..." : editing ? "Guardar cambios" : "Crear registro"}
+      {isPending
+        ? "Guardando..."
+        : editing
+          ? "Guardar cambios"
+          : "Crear registro"}
     </button>
   );
 }
 
-function EditButton({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
+function EditButton({
+  onClick,
+  disabled,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+}) {
   return (
     <button
       type="button"
@@ -343,21 +409,39 @@ export default function ManagementPage() {
   const [editingAnimal, setEditingAnimal] = useState<Animal | null>(null);
   const [zoneForm, setZoneForm] = useState<ZoneForm>(() => blankZone());
   const [editingZone, setEditingZone] = useState<Zone | null>(null);
-  const [lactationForm, setLactationForm] = useState<LactationForm>(() => blankLactation());
-  const [editingLactation, setEditingLactation] = useState<Lactation | null>(null);
-  const [treatmentForm, setTreatmentForm] = useState<TreatmentForm>(() => blankTreatment());
-  const [editingTreatment, setEditingTreatment] = useState<Treatment | null>(null);
-  const [employeeForm, setEmployeeForm] = useState<EmployeeForm>(() => blankEmployee());
+  const [lactationForm, setLactationForm] = useState<LactationForm>(() =>
+    blankLactation(),
+  );
+  const [editingLactation, setEditingLactation] = useState<Lactation | null>(
+    null,
+  );
+  const [treatmentForm, setTreatmentForm] = useState<TreatmentForm>(() =>
+    blankTreatment(),
+  );
+  const [editingTreatment, setEditingTreatment] = useState<Treatment | null>(
+    null,
+  );
+  const [employeeForm, setEmployeeForm] = useState<EmployeeForm>(() =>
+    blankEmployee(),
+  );
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
-  const [machineryForm, setMachineryForm] = useState<MachineryForm>(() => blankMachinery());
-  const [editingMachinery, setEditingMachinery] = useState<Machinery | null>(null);
+  const [machineryForm, setMachineryForm] = useState<MachineryForm>(() =>
+    blankMachinery(),
+  );
+  const [editingMachinery, setEditingMachinery] = useState<Machinery | null>(
+    null,
+  );
 
   const animalsQuery = useQuery({
     queryKey: ["management-animals"],
     queryFn: () => api.animals({ limit: 500 }),
     staleTime: 30_000,
   });
-  const zonesQuery = useQuery({ queryKey: ["management-zones"], queryFn: api.zones, staleTime: 60_000 });
+  const zonesQuery = useQuery({
+    queryKey: ["management-zones"],
+    queryFn: api.zones,
+    staleTime: 60_000,
+  });
   const lactationsQuery = useQuery({
     queryKey: ["management-lactations"],
     queryFn: () => api.lactations({ limit: 500 }),
@@ -383,13 +467,20 @@ export default function ManagementPage() {
   const zones = useMemo(() => zonesQuery.data ?? [], [zonesQuery.data]);
 
   const animalOptions = useMemo(
-    () => animals.map((animal) => ({ value: animal.id, label: `${animal.crotal_oficial} - ${animal.nombre ?? "Sin nombre"}` })),
+    () =>
+      animals.map((animal) => ({
+        value: animal.id,
+        label: `${animal.crotal_oficial} - ${animal.nombre ?? "Sin nombre"}`,
+      })),
     [animals],
   );
   const zoneOptions = useMemo(
     () => [
       { value: "", label: "Sin zona asignada" },
-      ...zones.map((zone) => ({ value: zone.id, label: `${zone.codigo} - ${zone.nombre}` })),
+      ...zones.map((zone) => ({
+        value: zone.id,
+        label: `${zone.codigo} - ${zone.nombre}`,
+      })),
     ],
     [zones],
   );
@@ -403,7 +494,9 @@ export default function ManagementPage() {
         estado_reproductivo: emptyToUndefined(animalForm.estado_reproductivo),
         notas: emptyToUndefined(animalForm.notas),
       };
-      return editingAnimal ? api.updateAnimal(editingAnimal.id, payload) : api.createAnimal(payload);
+      return editingAnimal
+        ? api.updateAnimal(editingAnimal.id, payload)
+        : api.createAnimal(payload);
     },
     onSuccess: () => {
       setAnimalForm(blankAnimal());
@@ -421,7 +514,9 @@ export default function ManagementPage() {
         descripcion: emptyToUndefined(zoneForm.descripcion),
         tipo: emptyToUndefined(zoneForm.tipo),
       };
-      return editingZone ? api.updateZone(editingZone.id, payload) : api.createZone(payload);
+      return editingZone
+        ? api.updateZone(editingZone.id, payload)
+        : api.createZone(payload);
     },
     onSuccess: () => {
       setZoneForm(blankZone());
@@ -438,7 +533,9 @@ export default function ManagementPage() {
         numero_lactacion: numberOrUndefined(lactationForm.numero_lactacion),
         fecha_inicio: emptyToUndefined(lactationForm.fecha_inicio),
         fecha_fin: emptyToUndefined(lactationForm.fecha_fin),
-        produccion_promedio: numberOrUndefined(lactationForm.produccion_promedio),
+        produccion_promedio: numberOrUndefined(
+          lactationForm.produccion_promedio,
+        ),
         produccion_total: numberOrUndefined(lactationForm.produccion_total),
         grasa_promedio: numberOrUndefined(lactationForm.grasa_promedio),
         proteina_promedio: numberOrUndefined(lactationForm.proteina_promedio),
@@ -453,7 +550,9 @@ export default function ManagementPage() {
       setLactationForm(blankLactation());
       setEditingLactation(null);
       queryClient.invalidateQueries({ queryKey: ["management-lactations"] });
-      queryClient.invalidateQueries({ queryKey: ["animals-produccion-quality"] });
+      queryClient.invalidateQueries({
+        queryKey: ["animals-produccion-quality"],
+      });
       queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
     },
   });
@@ -467,7 +566,9 @@ export default function ManagementPage() {
         via_administracion: emptyToUndefined(treatmentForm.via_administracion),
         fecha_inicio: treatmentForm.fecha_inicio,
         fecha_fin: emptyToUndefined(treatmentForm.fecha_fin),
-        periodo_retirada_dias: numberOrUndefined(treatmentForm.periodo_retirada_dias),
+        periodo_retirada_dias: numberOrUndefined(
+          treatmentForm.periodo_retirada_dias,
+        ),
         fecha_fin_retirada: emptyToUndefined(treatmentForm.fecha_fin_retirada),
         activo: treatmentForm.activo,
         motivo: emptyToUndefined(treatmentForm.motivo),
@@ -531,7 +632,11 @@ export default function ManagementPage() {
 
   return (
     <div className="min-h-full">
-      <PageHeader eyebrow="Operación de datos" title="Gestión" EyebrowIcon={Wrench}>
+      <PageHeader
+        eyebrow="Operación de datos"
+        title="Gestión"
+        EyebrowIcon={Wrench}
+      >
         <span className="rounded-full border border-app-border bg-white px-3 py-1.5 text-sm font-bold text-app-text">
           Rol: {roleLabel(role)}
         </span>
@@ -554,8 +659,12 @@ export default function ManagementPage() {
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <Icon className={`h-4 w-4 ${allowed ? "text-brand" : "text-state-atencion"}`} />
-                  {!allowed && <ShieldAlert className="h-3.5 w-3.5 text-state-atencion" />}
+                  <Icon
+                    className={`h-4 w-4 ${allowed ? "text-brand" : "text-state-atencion"}`}
+                  />
+                  {!allowed && (
+                    <ShieldAlert className="h-3.5 w-3.5 text-state-atencion" />
+                  )}
                 </div>
                 <div className="mt-2 text-sm font-bold">{label}</div>
               </button>
@@ -566,7 +675,10 @@ export default function ManagementPage() {
         <PermissionNotice role={role} permission={active.permission} />
 
         {section === "animals" && (
-          <Panel title="Animales" subtitle="Alta y edicion del censo activo. Requiere admin o veterinario.">
+          <Panel
+            title="Animales"
+            subtitle="Alta y edicion del censo activo. Requiere admin o veterinario."
+          >
             <form
               className="grid gap-3 lg:grid-cols-4"
               onSubmit={(event) => {
@@ -574,104 +686,312 @@ export default function ManagementPage() {
                 if (canEditActive) animalMutation.mutate();
               }}
             >
-              <TextField label="Crotal oficial" value={animalForm.crotal_oficial} required disabled={!canEditActive} onChange={(value) => setAnimalForm({ ...animalForm, crotal_oficial: value })} />
-              <TextField label="Nombre" value={animalForm.nombre} disabled={!canEditActive} onChange={(value) => setAnimalForm({ ...animalForm, nombre: value })} />
-              <SelectField label="Estado" value={animalForm.estado} disabled={!canEditActive} onChange={(value) => setAnimalForm({ ...animalForm, estado: value })} options={[
-                { value: "recria", label: "Recria" },
-                { value: "crianza", label: "Crianza" },
-                { value: "produccion", label: "Produccion" },
-                { value: "baja", label: "Baja" },
-              ]} />
-              <SelectField label="Sexo" value={animalForm.sexo} disabled={!canEditActive} onChange={(value) => setAnimalForm({ ...animalForm, sexo: value })} options={[
-                { value: "hembra", label: "Hembra" },
-                { value: "macho", label: "Macho" },
-              ]} />
-              <TextField type="date" label="Nacimiento" value={animalForm.fecha_nacimiento} disabled={!canEditActive} onChange={(value) => setAnimalForm({ ...animalForm, fecha_nacimiento: value })} />
-              <TextField label="Raza" value={animalForm.raza} disabled={!canEditActive} onChange={(value) => setAnimalForm({ ...animalForm, raza: value })} />
-              <TextField label="Estado reproductivo" value={animalForm.estado_reproductivo} disabled={!canEditActive} onChange={(value) => setAnimalForm({ ...animalForm, estado_reproductivo: value })} />
-              <TextField type="date" label="Entrada" value={animalForm.fecha_entrada} disabled={!canEditActive} onChange={(value) => setAnimalForm({ ...animalForm, fecha_entrada: value })} />
+              <TextField
+                label="Crotal oficial"
+                value={animalForm.crotal_oficial}
+                required
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setAnimalForm({ ...animalForm, crotal_oficial: value })
+                }
+              />
+              <TextField
+                label="Nombre"
+                value={animalForm.nombre}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setAnimalForm({ ...animalForm, nombre: value })
+                }
+              />
+              <SelectField
+                label="Estado"
+                value={animalForm.estado}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setAnimalForm({ ...animalForm, estado: value })
+                }
+                options={[
+                  { value: "recria", label: "Recria" },
+                  { value: "crianza", label: "Crianza" },
+                  { value: "produccion", label: "Produccion" },
+                  { value: "baja", label: "Baja" },
+                ]}
+              />
+              <SelectField
+                label="Sexo"
+                value={animalForm.sexo}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setAnimalForm({ ...animalForm, sexo: value })
+                }
+                options={[
+                  { value: "hembra", label: "Hembra" },
+                  { value: "macho", label: "Macho" },
+                ]}
+              />
+              <TextField
+                type="date"
+                label="Nacimiento"
+                value={animalForm.fecha_nacimiento}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setAnimalForm({ ...animalForm, fecha_nacimiento: value })
+                }
+              />
+              <TextField
+                label="Raza"
+                value={animalForm.raza}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setAnimalForm({ ...animalForm, raza: value })
+                }
+              />
+              <SelectField
+                label="Estado reproductivo"
+                value={animalForm.estado_reproductivo}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setAnimalForm({ ...animalForm, estado_reproductivo: value })
+                }
+                options={[
+                  { value: "vacia", label: "Sin estado reproductivo" },
+                  { value: "en_celo", label: "En celo" },
+                  { value: "inseminada", label: "Inseminada" },
+                  {
+                    value: "confirmada_gestante",
+                    label: "Confirmada Gestante",
+                  },
+                  { value: "parto_reciente", label: "Parto Reciente" },
+                ]}
+              />
+              <TextField
+                type="date"
+                label="Entrada"
+                value={animalForm.fecha_entrada}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setAnimalForm({ ...animalForm, fecha_entrada: value })
+                }
+              />
               <div className="lg:col-span-4">
-                <TextField label="Notas" value={animalForm.notas} disabled={!canEditActive} onChange={(value) => setAnimalForm({ ...animalForm, notas: value })} />
+                <TextField
+                  label="Notas"
+                  value={animalForm.notas}
+                  disabled={!canEditActive}
+                  onChange={(value) =>
+                    setAnimalForm({ ...animalForm, notas: value })
+                  }
+                />
               </div>
               <div className="flex flex-wrap gap-3 lg:col-span-4">
-                {canEditActive && <SaveButton isPending={animalMutation.isPending} editing={Boolean(editingAnimal)} />}
+                {canEditActive && (
+                  <SaveButton
+                    isPending={animalMutation.isPending}
+                    editing={Boolean(editingAnimal)}
+                  />
+                )}
                 {editingAnimal && (
-                  <button type="button" onClick={() => { setEditingAnimal(null); setAnimalForm(blankAnimal()); }} className="h-11 rounded-[10px] border border-app-border px-4 text-sm font-bold text-app-dim hover:text-app-text">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingAnimal(null);
+                      setAnimalForm(blankAnimal());
+                    }}
+                    className="h-11 rounded-[10px] border border-app-border px-4 text-sm font-bold text-app-dim hover:text-app-text"
+                  >
                     Cancelar edicion
                   </button>
                 )}
               </div>
             </form>
-            {animalMutation.isError && <p className="mt-3 text-sm font-semibold text-state-critica">{animalMutation.error.message}</p>}
+            {animalMutation.isError && (
+              <p className="mt-3 text-sm font-semibold text-state-critica">
+                {animalMutation.error.message}
+              </p>
+            )}
             <div className="mt-6 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {animals.slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).map((animal) => (
-                <div key={animal.id} className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-app-text">{animal.crotal_oficial} - {animal.nombre ?? "Sin nombre"}</p>
-                    <p className="text-xs capitalize text-app-dim">{animal.estado}</p>
+              {animals
+                .slice(
+                  (listPage - 1) * MGMT_LIST_PAGE_SIZE,
+                  listPage * MGMT_LIST_PAGE_SIZE,
+                )
+                .map((animal) => (
+                  <div
+                    key={animal.id}
+                    className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-app-text">
+                        {animal.crotal_oficial} -{" "}
+                        {animal.nombre ?? "Sin nombre"}
+                      </p>
+                      <p className="text-xs capitalize text-app-dim">
+                        {animal.estado}
+                      </p>
+                    </div>
+                    <EditButton
+                      disabled={!canEditActive}
+                      onClick={() => {
+                        setEditingAnimal(animal);
+                        setAnimalForm({
+                          crotal_oficial: animal.crotal_oficial,
+                          nombre: animal.nombre ?? "",
+                          sexo: animal.sexo,
+                          fecha_nacimiento: animal.fecha_nacimiento,
+                          raza: animal.raza ?? "",
+                          estado: animal.estado,
+                          estado_reproductivo: animal.estado_reproductivo ?? "",
+                          fecha_entrada: animal.fecha_entrada,
+                          notas: animal.notas ?? "",
+                        });
+                      }}
+                    />
                   </div>
-                  <EditButton disabled={!canEditActive} onClick={() => {
-                    setEditingAnimal(animal);
-                    setAnimalForm({
-                      crotal_oficial: animal.crotal_oficial,
-                      nombre: animal.nombre ?? "",
-                      sexo: animal.sexo,
-                      fecha_nacimiento: animal.fecha_nacimiento,
-                      raza: animal.raza ?? "",
-                      estado: animal.estado,
-                      estado_reproductivo: animal.estado_reproductivo ?? "",
-                      fecha_entrada: animal.fecha_entrada,
-                      notas: animal.notas ?? "",
-                    });
-                  }} />
-                </div>
-              ))}
+                ))}
             </div>
             {animals.length > MGMT_LIST_PAGE_SIZE && (
               <div className="mt-4">
-                <Pagination page={listPage} pageSize={MGMT_LIST_PAGE_SIZE}
-                  currentCount={animals.slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).length}
-                  totalItems={animals.length} isLoading={animalsQuery.isFetching} onPageChange={setListPage} />
+                <Pagination
+                  page={listPage}
+                  pageSize={MGMT_LIST_PAGE_SIZE}
+                  currentCount={
+                    animals.slice(
+                      (listPage - 1) * MGMT_LIST_PAGE_SIZE,
+                      listPage * MGMT_LIST_PAGE_SIZE,
+                    ).length
+                  }
+                  totalItems={animals.length}
+                  isLoading={animalsQuery.isFetching}
+                  onPageChange={setListPage}
+                />
               </div>
             )}
           </Panel>
         )}
 
         {section === "zones" && (
-          <Panel title="Zonas" subtitle="Alta y edicion de zonas operativas. Requiere admin.">
-            <form className="grid gap-3 lg:grid-cols-4" onSubmit={(event) => { event.preventDefault(); if (canEditActive) zoneMutation.mutate(); }}>
-              <TextField label="Nombre" value={zoneForm.nombre} required disabled={!canEditActive} onChange={(value) => setZoneForm({ ...zoneForm, nombre: value })} />
-              <TextField label="Codigo" value={zoneForm.codigo} required disabled={!canEditActive} onChange={(value) => setZoneForm({ ...zoneForm, codigo: value.toUpperCase() })} />
-              <TextField label="Tipo" value={zoneForm.tipo} disabled={!canEditActive} onChange={(value) => setZoneForm({ ...zoneForm, tipo: value })} />
-              <TextField label="Descripcion" value={zoneForm.descripcion} disabled={!canEditActive} onChange={(value) => setZoneForm({ ...zoneForm, descripcion: value })} />
-              <ToggleField label="TV" checked={zoneForm.tiene_pantalla_tv} disabled={!canEditActive} onChange={(value) => setZoneForm({ ...zoneForm, tiene_pantalla_tv: value })} />
-              <ToggleField label="Tablet" checked={zoneForm.tiene_tablet} disabled={!canEditActive} onChange={(value) => setZoneForm({ ...zoneForm, tiene_tablet: value })} />
-              <ToggleField label="Activa" checked={zoneForm.activa} disabled={!canEditActive} onChange={(value) => setZoneForm({ ...zoneForm, activa: value })} />
+          <Panel
+            title="Zonas"
+            subtitle="Alta y edicion de zonas operativas. Requiere admin."
+          >
+            <form
+              className="grid gap-3 lg:grid-cols-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (canEditActive) zoneMutation.mutate();
+              }}
+            >
+              <TextField
+                label="Nombre"
+                value={zoneForm.nombre}
+                required
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setZoneForm({ ...zoneForm, nombre: value })
+                }
+              />
+              <TextField
+                label="Codigo"
+                value={zoneForm.codigo}
+                required
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setZoneForm({ ...zoneForm, codigo: value.toUpperCase() })
+                }
+              />
+              <TextField
+                label="Tipo"
+                value={zoneForm.tipo}
+                disabled={!canEditActive}
+                onChange={(value) => setZoneForm({ ...zoneForm, tipo: value })}
+              />
+              <TextField
+                label="Descripcion"
+                value={zoneForm.descripcion}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setZoneForm({ ...zoneForm, descripcion: value })
+                }
+              />
+              <ToggleField
+                label="TV"
+                checked={zoneForm.tiene_pantalla_tv}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setZoneForm({ ...zoneForm, tiene_pantalla_tv: value })
+                }
+              />
+              <ToggleField
+                label="Tablet"
+                checked={zoneForm.tiene_tablet}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setZoneForm({ ...zoneForm, tiene_tablet: value })
+                }
+              />
+              <ToggleField
+                label="Activa"
+                checked={zoneForm.activa}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setZoneForm({ ...zoneForm, activa: value })
+                }
+              />
               <div className="flex flex-wrap gap-3">
-                {canEditActive && <SaveButton isPending={zoneMutation.isPending} editing={Boolean(editingZone)} />}
-                {editingZone && <button type="button" onClick={() => { setEditingZone(null); setZoneForm(blankZone()); }} className="h-11 rounded-[10px] border border-app-border px-4 text-sm font-bold text-app-dim hover:text-app-text">Cancelar</button>}
+                {canEditActive && (
+                  <SaveButton
+                    isPending={zoneMutation.isPending}
+                    editing={Boolean(editingZone)}
+                  />
+                )}
+                {editingZone && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingZone(null);
+                      setZoneForm(blankZone());
+                    }}
+                    className="h-11 rounded-[10px] border border-app-border px-4 text-sm font-bold text-app-dim hover:text-app-text"
+                  >
+                    Cancelar
+                  </button>
+                )}
               </div>
             </form>
-            {zoneMutation.isError && <p className="mt-3 text-sm font-semibold text-state-critica">{zoneMutation.error.message}</p>}
+            {zoneMutation.isError && (
+              <p className="mt-3 text-sm font-semibold text-state-critica">
+                {zoneMutation.error.message}
+              </p>
+            )}
             <div className="mt-6 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
               {zones.map((zone) => (
-                <div key={zone.id} className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3">
+                <div
+                  key={zone.id}
+                  className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3"
+                >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-app-text">{zone.codigo} - {zone.nombre}</p>
-                    <p className="text-xs text-app-dim">{zone.tipo ?? "operativa"}</p>
+                    <p className="truncate text-sm font-bold text-app-text">
+                      {zone.codigo} - {zone.nombre}
+                    </p>
+                    <p className="text-xs text-app-dim">
+                      {zone.tipo ?? "operativa"}
+                    </p>
                   </div>
-                  <EditButton disabled={!canEditActive} onClick={() => {
-                    setEditingZone(zone);
-                    setZoneForm({
-                      nombre: zone.nombre,
-                      codigo: zone.codigo,
-                      descripcion: zone.descripcion ?? "",
-                      tipo: zone.tipo ?? "",
-                      tiene_pantalla_tv: zone.tiene_pantalla_tv,
-                      tiene_tablet: zone.tiene_tablet,
-                      activa: zone.activa ?? true,
-                    });
-                  }} />
+                  <EditButton
+                    disabled={!canEditActive}
+                    onClick={() => {
+                      setEditingZone(zone);
+                      setZoneForm({
+                        nombre: zone.nombre,
+                        codigo: zone.codigo,
+                        descripcion: zone.descripcion ?? "",
+                        tipo: zone.tipo ?? "",
+                        tiene_pantalla_tv: zone.tiene_pantalla_tv,
+                        tiene_tablet: zone.tiene_tablet,
+                        activa: zone.activa ?? true,
+                      });
+                    }}
+                  />
                 </div>
               ))}
             </div>
@@ -679,226 +999,738 @@ export default function ManagementPage() {
         )}
 
         {section === "lactations" && (
-          <Panel title="Lactaciones" subtitle="Registros productivos y composicion de leche. Requiere admin, veterinario o alimentacion.">
-            <form className="grid gap-3 lg:grid-cols-5" onSubmit={(event) => { event.preventDefault(); if (canEditActive) lactationMutation.mutate(); }}>
-              <SelectField label="Animal" value={lactationForm.animal_id} disabled={!canEditActive} onChange={(value) => setLactationForm({ ...lactationForm, animal_id: value })} options={[{ value: "", label: "Seleccionar animal" }, ...animalOptions]} />
-              <TextField label="Numero" value={lactationForm.numero_lactacion} type="number" disabled={!canEditActive} onChange={(value) => setLactationForm({ ...lactationForm, numero_lactacion: value })} />
-              <TextField label="Inicio" value={lactationForm.fecha_inicio} type="date" disabled={!canEditActive} onChange={(value) => setLactationForm({ ...lactationForm, fecha_inicio: value })} />
-              <TextField label="Fin" value={lactationForm.fecha_fin} type="date" disabled={!canEditActive} onChange={(value) => setLactationForm({ ...lactationForm, fecha_fin: value })} />
-              <ToggleField label="Activa" checked={lactationForm.activa} disabled={!canEditActive} onChange={(value) => setLactationForm({ ...lactationForm, activa: value })} />
-              <TextField label="Promedio L" value={lactationForm.produccion_promedio} type="number" disabled={!canEditActive} onChange={(value) => setLactationForm({ ...lactationForm, produccion_promedio: value })} />
-              <TextField label="Total L" value={lactationForm.produccion_total} type="number" disabled={!canEditActive} onChange={(value) => setLactationForm({ ...lactationForm, produccion_total: value })} />
-              <TextField label="Grasa %" value={lactationForm.grasa_promedio} type="number" disabled={!canEditActive} onChange={(value) => setLactationForm({ ...lactationForm, grasa_promedio: value })} />
-              <TextField label="Proteina %" value={lactationForm.proteina_promedio} type="number" disabled={!canEditActive} onChange={(value) => setLactationForm({ ...lactationForm, proteina_promedio: value })} />
-              <TextField label="RCS" value={lactationForm.rcs_promedio} type="number" disabled={!canEditActive} onChange={(value) => setLactationForm({ ...lactationForm, rcs_promedio: value })} />
+          <Panel
+            title="Lactaciones"
+            subtitle="Registros productivos y composicion de leche. Requiere admin, veterinario o alimentacion."
+          >
+            <form
+              className="grid gap-3 lg:grid-cols-5"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (canEditActive) lactationMutation.mutate();
+              }}
+            >
+              <SelectField
+                label="Animal"
+                value={lactationForm.animal_id}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setLactationForm({ ...lactationForm, animal_id: value })
+                }
+                options={[
+                  { value: "", label: "Seleccionar animal" },
+                  ...animalOptions,
+                ]}
+              />
+              <TextField
+                label="Numero"
+                value={lactationForm.numero_lactacion}
+                type="number"
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setLactationForm({
+                    ...lactationForm,
+                    numero_lactacion: value,
+                  })
+                }
+              />
+              <TextField
+                label="Inicio"
+                value={lactationForm.fecha_inicio}
+                type="date"
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setLactationForm({ ...lactationForm, fecha_inicio: value })
+                }
+              />
+              <TextField
+                label="Fin"
+                value={lactationForm.fecha_fin}
+                type="date"
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setLactationForm({ ...lactationForm, fecha_fin: value })
+                }
+              />
+              <ToggleField
+                label="Activa"
+                checked={lactationForm.activa}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setLactationForm({ ...lactationForm, activa: value })
+                }
+              />
+              <TextField
+                label="Promedio L"
+                value={lactationForm.produccion_promedio}
+                type="number"
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setLactationForm({
+                    ...lactationForm,
+                    produccion_promedio: value,
+                  })
+                }
+              />
+              <TextField
+                label="Total L"
+                value={lactationForm.produccion_total}
+                type="number"
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setLactationForm({
+                    ...lactationForm,
+                    produccion_total: value,
+                  })
+                }
+              />
+              <TextField
+                label="Grasa %"
+                value={lactationForm.grasa_promedio}
+                type="number"
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setLactationForm({ ...lactationForm, grasa_promedio: value })
+                }
+              />
+              <TextField
+                label="Proteina %"
+                value={lactationForm.proteina_promedio}
+                type="number"
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setLactationForm({
+                    ...lactationForm,
+                    proteina_promedio: value,
+                  })
+                }
+              />
+              <TextField
+                label="RCS"
+                value={lactationForm.rcs_promedio}
+                type="number"
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setLactationForm({ ...lactationForm, rcs_promedio: value })
+                }
+              />
               <div className="flex flex-wrap gap-3 lg:col-span-5">
-                {canEditActive && <SaveButton isPending={lactationMutation.isPending} editing={Boolean(editingLactation)} />}
-                {editingLactation && <button type="button" onClick={() => { setEditingLactation(null); setLactationForm(blankLactation()); }} className="h-11 rounded-[10px] border border-app-border px-4 text-sm font-bold text-app-dim hover:text-app-text">Cancelar</button>}
+                {canEditActive && (
+                  <SaveButton
+                    isPending={lactationMutation.isPending}
+                    editing={Boolean(editingLactation)}
+                  />
+                )}
+                {editingLactation && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingLactation(null);
+                      setLactationForm(blankLactation());
+                    }}
+                    className="h-11 rounded-[10px] border border-app-border px-4 text-sm font-bold text-app-dim hover:text-app-text"
+                  >
+                    Cancelar
+                  </button>
+                )}
               </div>
             </form>
-            {lactationMutation.isError && <p className="mt-3 text-sm font-semibold text-state-critica">{lactationMutation.error.message}</p>}
+            {lactationMutation.isError && (
+              <p className="mt-3 text-sm font-semibold text-state-critica">
+                {lactationMutation.error.message}
+              </p>
+            )}
             <div className="mt-6 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {(lactationsQuery.data ?? []).slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-app-text">{item.animal_id} - {item.produccion_promedio ?? 0} L</p>
-                    <p className="text-xs text-app-dim">Grasa {item.grasa_promedio ?? "-"} / RCS {item.rcs_promedio ?? "-"}</p>
+              {(lactationsQuery.data ?? [])
+                .slice(
+                  (listPage - 1) * MGMT_LIST_PAGE_SIZE,
+                  listPage * MGMT_LIST_PAGE_SIZE,
+                )
+                .map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-app-text">
+                        {item.animal_id} - {item.produccion_promedio ?? 0} L
+                      </p>
+                      <p className="text-xs text-app-dim">
+                        Grasa {item.grasa_promedio ?? "-"} / RCS{" "}
+                        {item.rcs_promedio ?? "-"}
+                      </p>
+                    </div>
+                    <EditButton
+                      disabled={!canEditActive}
+                      onClick={() => {
+                        setEditingLactation(item);
+                        setLactationForm({
+                          animal_id: item.animal_id,
+                          numero_lactacion: String(item.numero_lactacion ?? ""),
+                          fecha_inicio: item.fecha_inicio ?? "",
+                          fecha_fin: item.fecha_fin ?? "",
+                          produccion_promedio: String(
+                            item.produccion_promedio ?? "",
+                          ),
+                          produccion_total: String(item.produccion_total ?? ""),
+                          grasa_promedio: String(item.grasa_promedio ?? ""),
+                          proteina_promedio: String(
+                            item.proteina_promedio ?? "",
+                          ),
+                          rcs_promedio: String(item.rcs_promedio ?? ""),
+                          activa: item.activa ?? true,
+                        });
+                      }}
+                    />
                   </div>
-                  <EditButton disabled={!canEditActive} onClick={() => {
-                    setEditingLactation(item);
-                    setLactationForm({
-                      animal_id: item.animal_id,
-                      numero_lactacion: String(item.numero_lactacion ?? ""),
-                      fecha_inicio: item.fecha_inicio ?? "",
-                      fecha_fin: item.fecha_fin ?? "",
-                      produccion_promedio: String(item.produccion_promedio ?? ""),
-                      produccion_total: String(item.produccion_total ?? ""),
-                      grasa_promedio: String(item.grasa_promedio ?? ""),
-                      proteina_promedio: String(item.proteina_promedio ?? ""),
-                      rcs_promedio: String(item.rcs_promedio ?? ""),
-                      activa: item.activa ?? true,
-                    });
-                  }} />
-                </div>
-              ))}
+                ))}
             </div>
             {(lactationsQuery.data?.length ?? 0) > MGMT_LIST_PAGE_SIZE && (
               <div className="mt-4">
-                <Pagination page={listPage} pageSize={MGMT_LIST_PAGE_SIZE}
-                  currentCount={(lactationsQuery.data ?? []).slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).length}
-                  totalItems={lactationsQuery.data?.length} isLoading={lactationsQuery.isFetching} onPageChange={setListPage} />
+                <Pagination
+                  page={listPage}
+                  pageSize={MGMT_LIST_PAGE_SIZE}
+                  currentCount={
+                    (lactationsQuery.data ?? []).slice(
+                      (listPage - 1) * MGMT_LIST_PAGE_SIZE,
+                      listPage * MGMT_LIST_PAGE_SIZE,
+                    ).length
+                  }
+                  totalItems={lactationsQuery.data?.length}
+                  isLoading={lactationsQuery.isFetching}
+                  onPageChange={setListPage}
+                />
               </div>
             )}
           </Panel>
         )}
 
         {section === "treatments" && (
-          <Panel title="Tratamientos" subtitle="Alta y edicion sanitaria. Requiere admin o veterinario.">
-            <form className="grid gap-3 lg:grid-cols-4" onSubmit={(event) => { event.preventDefault(); if (canEditActive) treatmentMutation.mutate(); }}>
-              <SelectField label="Animal" value={treatmentForm.animal_id} disabled={!canEditActive} onChange={(value) => setTreatmentForm({ ...treatmentForm, animal_id: value })} options={[{ value: "", label: "Seleccionar animal" }, ...animalOptions]} />
-              <TextField label="Medicamento" value={treatmentForm.medicamento} required disabled={!canEditActive} onChange={(value) => setTreatmentForm({ ...treatmentForm, medicamento: value })} />
-              <TextField label="Dosis" value={treatmentForm.dosis} disabled={!canEditActive} onChange={(value) => setTreatmentForm({ ...treatmentForm, dosis: value })} />
-              <TextField label="Via" value={treatmentForm.via_administracion} disabled={!canEditActive} onChange={(value) => setTreatmentForm({ ...treatmentForm, via_administracion: value })} />
-              <TextField label="Inicio" value={treatmentForm.fecha_inicio} type="date" disabled={!canEditActive} onChange={(value) => setTreatmentForm({ ...treatmentForm, fecha_inicio: value })} />
-              <TextField label="Fin" value={treatmentForm.fecha_fin} type="date" disabled={!canEditActive} onChange={(value) => setTreatmentForm({ ...treatmentForm, fecha_fin: value })} />
-              <TextField label="Retirada dias" value={treatmentForm.periodo_retirada_dias} type="number" disabled={!canEditActive} onChange={(value) => setTreatmentForm({ ...treatmentForm, periodo_retirada_dias: value })} />
-              <TextField label="Fin retirada" value={treatmentForm.fecha_fin_retirada} type="date" disabled={!canEditActive} onChange={(value) => setTreatmentForm({ ...treatmentForm, fecha_fin_retirada: value })} />
-              <TextField label="Motivo" value={treatmentForm.motivo} disabled={!canEditActive} onChange={(value) => setTreatmentForm({ ...treatmentForm, motivo: value })} />
-              <TextField label="Veterinario" value={treatmentForm.veterinario} disabled={!canEditActive} onChange={(value) => setTreatmentForm({ ...treatmentForm, veterinario: value })} />
-              <TextField label="Observaciones" value={treatmentForm.observaciones} disabled={!canEditActive} onChange={(value) => setTreatmentForm({ ...treatmentForm, observaciones: value })} />
-              <ToggleField label="Activo" checked={treatmentForm.activo} disabled={!canEditActive} onChange={(value) => setTreatmentForm({ ...treatmentForm, activo: value })} />
+          <Panel
+            title="Tratamientos"
+            subtitle="Alta y edicion sanitaria. Requiere admin o veterinario."
+          >
+            <form
+              className="grid gap-3 lg:grid-cols-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (canEditActive) treatmentMutation.mutate();
+              }}
+            >
+              <SelectField
+                label="Animal"
+                value={treatmentForm.animal_id}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setTreatmentForm({ ...treatmentForm, animal_id: value })
+                }
+                options={[
+                  { value: "", label: "Seleccionar animal" },
+                  ...animalOptions,
+                ]}
+              />
+              <TextField
+                label="Medicamento"
+                value={treatmentForm.medicamento}
+                required
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setTreatmentForm({ ...treatmentForm, medicamento: value })
+                }
+              />
+              <TextField
+                label="Dosis"
+                value={treatmentForm.dosis}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setTreatmentForm({ ...treatmentForm, dosis: value })
+                }
+              />
+              <TextField
+                label="Via"
+                value={treatmentForm.via_administracion}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setTreatmentForm({
+                    ...treatmentForm,
+                    via_administracion: value,
+                  })
+                }
+              />
+              <TextField
+                label="Inicio"
+                value={treatmentForm.fecha_inicio}
+                type="date"
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setTreatmentForm({ ...treatmentForm, fecha_inicio: value })
+                }
+              />
+              <TextField
+                label="Fin"
+                value={treatmentForm.fecha_fin}
+                type="date"
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setTreatmentForm({ ...treatmentForm, fecha_fin: value })
+                }
+              />
+              <TextField
+                label="Retirada dias"
+                value={treatmentForm.periodo_retirada_dias}
+                type="number"
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setTreatmentForm({
+                    ...treatmentForm,
+                    periodo_retirada_dias: value,
+                  })
+                }
+              />
+              <TextField
+                label="Fin retirada"
+                value={treatmentForm.fecha_fin_retirada}
+                type="date"
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setTreatmentForm({
+                    ...treatmentForm,
+                    fecha_fin_retirada: value,
+                  })
+                }
+              />
+              <TextField
+                label="Motivo"
+                value={treatmentForm.motivo}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setTreatmentForm({ ...treatmentForm, motivo: value })
+                }
+              />
+              <TextField
+                label="Veterinario"
+                value={treatmentForm.veterinario}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setTreatmentForm({ ...treatmentForm, veterinario: value })
+                }
+              />
+              <TextField
+                label="Observaciones"
+                value={treatmentForm.observaciones}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setTreatmentForm({ ...treatmentForm, observaciones: value })
+                }
+              />
+              <ToggleField
+                label="Activo"
+                checked={treatmentForm.activo}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setTreatmentForm({ ...treatmentForm, activo: value })
+                }
+              />
               <div className="flex flex-wrap gap-3 lg:col-span-4">
-                {canEditActive && <SaveButton isPending={treatmentMutation.isPending} editing={Boolean(editingTreatment)} />}
-                {editingTreatment && <button type="button" onClick={() => { setEditingTreatment(null); setTreatmentForm(blankTreatment()); }} className="h-11 rounded-[10px] border border-app-border px-4 text-sm font-bold text-app-dim hover:text-app-text">Cancelar</button>}
+                {canEditActive && (
+                  <SaveButton
+                    isPending={treatmentMutation.isPending}
+                    editing={Boolean(editingTreatment)}
+                  />
+                )}
+                {editingTreatment && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingTreatment(null);
+                      setTreatmentForm(blankTreatment());
+                    }}
+                    className="h-11 rounded-[10px] border border-app-border px-4 text-sm font-bold text-app-dim hover:text-app-text"
+                  >
+                    Cancelar
+                  </button>
+                )}
               </div>
             </form>
-            {treatmentMutation.isError && <p className="mt-3 text-sm font-semibold text-state-critica">{treatmentMutation.error.message}</p>}
+            {treatmentMutation.isError && (
+              <p className="mt-3 text-sm font-semibold text-state-critica">
+                {treatmentMutation.error.message}
+              </p>
+            )}
             <div className="mt-6 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {(treatmentsQuery.data ?? []).slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-app-text">{item.medicamento ?? "Tratamiento"} - {item.animal_id}</p>
-                    <p className="text-xs text-app-dim">{item.activo ? "Activo" : "Cerrado"}</p>
+              {(treatmentsQuery.data ?? [])
+                .slice(
+                  (listPage - 1) * MGMT_LIST_PAGE_SIZE,
+                  listPage * MGMT_LIST_PAGE_SIZE,
+                )
+                .map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-app-text">
+                        {item.medicamento ?? "Tratamiento"} - {item.animal_id}
+                      </p>
+                      <p className="text-xs text-app-dim">
+                        {item.activo ? "Activo" : "Cerrado"}
+                      </p>
+                    </div>
+                    <EditButton
+                      disabled={!canEditActive}
+                      onClick={() => {
+                        setEditingTreatment(item);
+                        setTreatmentForm({
+                          animal_id: item.animal_id,
+                          medicamento: item.medicamento ?? "",
+                          dosis: item.dosis ?? "",
+                          via_administracion: item.via_administracion ?? "",
+                          fecha_inicio: item.fecha_inicio,
+                          fecha_fin: item.fecha_fin ?? "",
+                          periodo_retirada_dias: String(
+                            item.periodo_retirada_dias ?? "",
+                          ),
+                          fecha_fin_retirada: item.fecha_fin_retirada ?? "",
+                          activo: item.activo ?? true,
+                          motivo: item.motivo ?? "",
+                          veterinario: item.veterinario ?? "",
+                          observaciones: item.observaciones ?? "",
+                        });
+                      }}
+                    />
                   </div>
-                  <EditButton disabled={!canEditActive} onClick={() => {
-                    setEditingTreatment(item);
-                    setTreatmentForm({
-                      animal_id: item.animal_id,
-                      medicamento: item.medicamento ?? "",
-                      dosis: item.dosis ?? "",
-                      via_administracion: item.via_administracion ?? "",
-                      fecha_inicio: item.fecha_inicio,
-                      fecha_fin: item.fecha_fin ?? "",
-                      periodo_retirada_dias: String(item.periodo_retirada_dias ?? ""),
-                      fecha_fin_retirada: item.fecha_fin_retirada ?? "",
-                      activo: item.activo ?? true,
-                      motivo: item.motivo ?? "",
-                      veterinario: item.veterinario ?? "",
-                      observaciones: item.observaciones ?? "",
-                    });
-                  }} />
-                </div>
-              ))}
+                ))}
             </div>
             {(treatmentsQuery.data?.length ?? 0) > MGMT_LIST_PAGE_SIZE && (
               <div className="mt-4">
-                <Pagination page={listPage} pageSize={MGMT_LIST_PAGE_SIZE}
-                  currentCount={(treatmentsQuery.data ?? []).slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).length}
-                  totalItems={treatmentsQuery.data?.length} isLoading={treatmentsQuery.isFetching} onPageChange={setListPage} />
+                <Pagination
+                  page={listPage}
+                  pageSize={MGMT_LIST_PAGE_SIZE}
+                  currentCount={
+                    (treatmentsQuery.data ?? []).slice(
+                      (listPage - 1) * MGMT_LIST_PAGE_SIZE,
+                      listPage * MGMT_LIST_PAGE_SIZE,
+                    ).length
+                  }
+                  totalItems={treatmentsQuery.data?.length}
+                  isLoading={treatmentsQuery.isFetching}
+                  onPageChange={setListPage}
+                />
               </div>
             )}
           </Panel>
         )}
 
         {section === "employees" && (
-          <Panel title="Empleados" subtitle="Alta y edicion de empleados. Requiere admin.">
-            <form className="grid gap-3 lg:grid-cols-4" onSubmit={(event) => { event.preventDefault(); if (canEditActive) employeeMutation.mutate(); }}>
-              <TextField label="Nombre" value={employeeForm.nombre} required disabled={!canEditActive} onChange={(value) => setEmployeeForm({ ...employeeForm, nombre: value })} />
-              <TextField label="Apellidos" value={employeeForm.apellidos} disabled={!canEditActive} onChange={(value) => setEmployeeForm({ ...employeeForm, apellidos: value })} />
-              <SelectField label="Rol" value={employeeForm.role} disabled={!canEditActive} onChange={(value) => setEmployeeForm({ ...employeeForm, role: value })} options={[
-                { value: "encargado", label: "Encargado" },
-                { value: "auxiliar", label: "Auxiliar" },
-                { value: "veterinario", label: "Veterinario" },
-                { value: "mecanico", label: "Mecanico" },
-              ]} />
-              <ToggleField label="Activo" checked={employeeForm.activo} disabled={!canEditActive} onChange={(value) => setEmployeeForm({ ...employeeForm, activo: value })} />
+          <Panel
+            title="Empleados"
+            subtitle="Alta y edicion de empleados. Requiere admin."
+          >
+            <form
+              className="grid gap-3 lg:grid-cols-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (canEditActive) employeeMutation.mutate();
+              }}
+            >
+              <TextField
+                label="Nombre"
+                value={employeeForm.nombre}
+                required
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setEmployeeForm({ ...employeeForm, nombre: value })
+                }
+              />
+              <TextField
+                label="Apellidos"
+                value={employeeForm.apellidos}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setEmployeeForm({ ...employeeForm, apellidos: value })
+                }
+              />
+              <SelectField
+                label="Rol"
+                value={employeeForm.role}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setEmployeeForm({ ...employeeForm, role: value })
+                }
+                options={[
+                  { value: "encargado", label: "Encargado" },
+                  { value: "auxiliar", label: "Auxiliar" },
+                  { value: "veterinario", label: "Veterinario" },
+                  { value: "mecanico", label: "Mecanico" },
+                ]}
+              />
+              <ToggleField
+                label="Activo"
+                checked={employeeForm.activo}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setEmployeeForm({ ...employeeForm, activo: value })
+                }
+              />
               <div className="flex flex-wrap gap-3 lg:col-span-4">
-                {canEditActive && <SaveButton isPending={employeeMutation.isPending} editing={Boolean(editingEmployee)} />}
-                {editingEmployee && <button type="button" onClick={() => { setEditingEmployee(null); setEmployeeForm(blankEmployee()); }} className="h-11 rounded-[10px] border border-app-border px-4 text-sm font-bold text-app-dim hover:text-app-text">Cancelar</button>}
+                {canEditActive && (
+                  <SaveButton
+                    isPending={employeeMutation.isPending}
+                    editing={Boolean(editingEmployee)}
+                  />
+                )}
+                {editingEmployee && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingEmployee(null);
+                      setEmployeeForm(blankEmployee());
+                    }}
+                    className="h-11 rounded-[10px] border border-app-border px-4 text-sm font-bold text-app-dim hover:text-app-text"
+                  >
+                    Cancelar
+                  </button>
+                )}
               </div>
             </form>
-            {employeeMutation.isError && <p className="mt-3 text-sm font-semibold text-state-critica">{employeeMutation.error.message}</p>}
+            {employeeMutation.isError && (
+              <p className="mt-3 text-sm font-semibold text-state-critica">
+                {employeeMutation.error.message}
+              </p>
+            )}
             <div className="mt-6 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {(employeesQuery.data ?? []).slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-app-text">{item.nombre} {item.apellidos ?? ""}</p>
-                    <p className="text-xs capitalize text-app-dim">{item.role ?? "sin rol"}</p>
+              {(employeesQuery.data ?? [])
+                .slice(
+                  (listPage - 1) * MGMT_LIST_PAGE_SIZE,
+                  listPage * MGMT_LIST_PAGE_SIZE,
+                )
+                .map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-app-text">
+                        {item.nombre} {item.apellidos ?? ""}
+                      </p>
+                      <p className="text-xs capitalize text-app-dim">
+                        {item.role ?? "sin rol"}
+                      </p>
+                    </div>
+                    <EditButton
+                      disabled={!canEditActive}
+                      onClick={() => {
+                        setEditingEmployee(item);
+                        setEmployeeForm({
+                          nombre: item.nombre,
+                          apellidos: item.apellidos ?? "",
+                          role: (item.role as EmployeeRol | null) ?? "auxiliar",
+                          activo: item.activo ?? true,
+                        });
+                      }}
+                    />
                   </div>
-                  <EditButton disabled={!canEditActive} onClick={() => {
-                    setEditingEmployee(item);
-                    setEmployeeForm({
-                      nombre: item.nombre,
-                      apellidos: item.apellidos ?? "",
-                      role: (item.role as EmployeeRol | null) ?? "auxiliar",
-                      activo: item.activo ?? true,
-                    });
-                  }} />
-                </div>
-              ))}
+                ))}
             </div>
             {(employeesQuery.data?.length ?? 0) > MGMT_LIST_PAGE_SIZE && (
               <div className="mt-4">
-                <Pagination page={listPage} pageSize={MGMT_LIST_PAGE_SIZE}
-                  currentCount={(employeesQuery.data ?? []).slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).length}
-                  totalItems={employeesQuery.data?.length} isLoading={employeesQuery.isFetching} onPageChange={setListPage} />
+                <Pagination
+                  page={listPage}
+                  pageSize={MGMT_LIST_PAGE_SIZE}
+                  currentCount={
+                    (employeesQuery.data ?? []).slice(
+                      (listPage - 1) * MGMT_LIST_PAGE_SIZE,
+                      listPage * MGMT_LIST_PAGE_SIZE,
+                    ).length
+                  }
+                  totalItems={employeesQuery.data?.length}
+                  isLoading={employeesQuery.isFetching}
+                  onPageChange={setListPage}
+                />
               </div>
             )}
           </Panel>
         )}
 
         {section === "machinery" && (
-          <Panel title="Maquinaria" subtitle="Alta y edicion de equipos por zona. Requiere admin, operario o alimentacion.">
-            <form className="grid gap-3 lg:grid-cols-4" onSubmit={(event) => { event.preventDefault(); if (canEditActive) machineryMutation.mutate(); }}>
-              <TextField label="Nombre" value={machineryForm.nombre} required disabled={!canEditActive} onChange={(value) => setMachineryForm({ ...machineryForm, nombre: value })} />
-              <TextField label="Tipo" value={machineryForm.tipo} disabled={!canEditActive} onChange={(value) => setMachineryForm({ ...machineryForm, tipo: value })} />
-              <SelectField label="Zona" value={machineryForm.zona_id} disabled={!canEditActive} onChange={(value) => setMachineryForm({ ...machineryForm, zona_id: value })} options={zoneOptions} />
-              <SelectField label="Estado" value={machineryForm.estado} disabled={!canEditActive} onChange={(value) => setMachineryForm({ ...machineryForm, estado: value })} options={[
-                { value: "operativa", label: "Operativa" },
-                { value: "revision", label: "Revision" },
-                { value: "averiada", label: "Averiada" },
-                { value: "inactiva", label: "Inactiva" },
-              ]} />
-              <TextField label="Proxima revision" value={machineryForm.proxima_revision} type="date" disabled={!canEditActive} onChange={(value) => setMachineryForm({ ...machineryForm, proxima_revision: value })} />
+          <Panel
+            title="Maquinaria"
+            subtitle="Alta y edicion de equipos por zona. Requiere admin, operario o alimentacion."
+          >
+            <form
+              className="grid gap-3 lg:grid-cols-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (canEditActive) machineryMutation.mutate();
+              }}
+            >
+              <TextField
+                label="Nombre"
+                value={machineryForm.nombre}
+                required
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setMachineryForm({ ...machineryForm, nombre: value })
+                }
+              />
+              <SelectField
+                label="Tipo"
+                value={machineryForm.tipo}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setMachineryForm({ ...machineryForm, tipo: value })
+                }
+                options={[
+                  { value: "robot_ordeno", label: "Robot de Ordeño" },
+                  { value: "carro_mezclador", label: "Carro Mezclador" },
+                  { value: "amamantadora", label: "Amamantadora" },
+                  { value: "bomba", label: "Bomba" },
+                  { value: "otro", label: "Otro" },
+                ]}
+              />
+              <SelectField
+                label="Zona"
+                value={machineryForm.zona_id}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setMachineryForm({ ...machineryForm, zona_id: value })
+                }
+                options={zoneOptions}
+              />
+              <SelectField
+                label="Estado"
+                value={machineryForm.estado}
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setMachineryForm({ ...machineryForm, estado: value })
+                }
+                options={[
+                  { value: "operativa", label: "Operativa" },
+                  { value: "revision", label: "Revision" },
+                  { value: "averiada", label: "Averiada" },
+                  { value: "inactiva", label: "Inactiva" },
+                ]}
+              />
+              <TextField
+                label="Proxima revision"
+                value={machineryForm.proxima_revision}
+                type="date"
+                disabled={!canEditActive}
+                onChange={(value) =>
+                  setMachineryForm({
+                    ...machineryForm,
+                    proxima_revision: value,
+                  })
+                }
+              />
               <div className="lg:col-span-3">
-                <TextField label="Observaciones" value={machineryForm.observaciones} disabled={!canEditActive} onChange={(value) => setMachineryForm({ ...machineryForm, observaciones: value })} />
+                <TextField
+                  label="Observaciones"
+                  value={machineryForm.observaciones}
+                  disabled={!canEditActive}
+                  onChange={(value) =>
+                    setMachineryForm({ ...machineryForm, observaciones: value })
+                  }
+                />
               </div>
               <div className="flex flex-wrap gap-3 lg:col-span-4">
-                {canEditActive && <SaveButton isPending={machineryMutation.isPending} editing={Boolean(editingMachinery)} />}
-                {editingMachinery && <button type="button" onClick={() => { setEditingMachinery(null); setMachineryForm(blankMachinery()); }} className="h-11 rounded-[10px] border border-app-border px-4 text-sm font-bold text-app-dim hover:text-app-text">Cancelar</button>}
+                {canEditActive && (
+                  <SaveButton
+                    isPending={machineryMutation.isPending}
+                    editing={Boolean(editingMachinery)}
+                  />
+                )}
+                {editingMachinery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingMachinery(null);
+                      setMachineryForm(blankMachinery());
+                    }}
+                    className="h-11 rounded-[10px] border border-app-border px-4 text-sm font-bold text-app-dim hover:text-app-text"
+                  >
+                    Cancelar
+                  </button>
+                )}
               </div>
             </form>
-            {machineryMutation.isError && <p className="mt-3 text-sm font-semibold text-state-critica">{machineryMutation.error.message}</p>}
+            {machineryMutation.isError && (
+              <p className="mt-3 text-sm font-semibold text-state-critica">
+                {machineryMutation.error.message}
+              </p>
+            )}
             <div className="mt-6 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {(machineryQuery.data ?? []).slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-app-text">{item.nombre}</p>
-                    <p className="text-xs capitalize text-app-dim">{item.tipo} - {item.estado}</p>
+              {(machineryQuery.data ?? [])
+                .slice(
+                  (listPage - 1) * MGMT_LIST_PAGE_SIZE,
+                  listPage * MGMT_LIST_PAGE_SIZE,
+                )
+                .map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-3 rounded-[10px] bg-app-bg px-3 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-app-text">
+                        {item.nombre}
+                      </p>
+                      <p className="text-xs capitalize text-app-dim">
+                        {item.tipo} - {item.estado}
+                      </p>
+                    </div>
+                    <EditButton
+                      disabled={!canEditActive}
+                      onClick={() => {
+                        setEditingMachinery(item);
+                        setMachineryForm({
+                          nombre: item.nombre,
+                          tipo: item.tipo,
+                          zona_id: item.zona_id ?? "",
+                          estado: item.estado,
+                          proxima_revision: item.proxima_revision ?? "",
+                          observaciones: item.observaciones ?? "",
+                        });
+                      }}
+                    />
                   </div>
-                  <EditButton disabled={!canEditActive} onClick={() => {
-                    setEditingMachinery(item);
-                    setMachineryForm({
-                      nombre: item.nombre,
-                      tipo: item.tipo,
-                      zona_id: item.zona_id ?? "",
-                      estado: item.estado,
-                      proxima_revision: item.proxima_revision ?? "",
-                      observaciones: item.observaciones ?? "",
-                    });
-                  }} />
-                </div>
-              ))}
+                ))}
             </div>
             {(machineryQuery.data?.length ?? 0) > MGMT_LIST_PAGE_SIZE && (
               <div className="mt-4">
-                <Pagination page={listPage} pageSize={MGMT_LIST_PAGE_SIZE}
-                  currentCount={(machineryQuery.data ?? []).slice((listPage - 1) * MGMT_LIST_PAGE_SIZE, listPage * MGMT_LIST_PAGE_SIZE).length}
-                  totalItems={machineryQuery.data?.length} isLoading={machineryQuery.isFetching} onPageChange={setListPage} />
+                <Pagination
+                  page={listPage}
+                  pageSize={MGMT_LIST_PAGE_SIZE}
+                  currentCount={
+                    (machineryQuery.data ?? []).slice(
+                      (listPage - 1) * MGMT_LIST_PAGE_SIZE,
+                      listPage * MGMT_LIST_PAGE_SIZE,
+                    ).length
+                  }
+                  totalItems={machineryQuery.data?.length}
+                  isLoading={machineryQuery.isFetching}
+                  onPageChange={setListPage}
+                />
               </div>
             )}
           </Panel>
         )}
 
-        {(animalsQuery.isError || zonesQuery.isError || lactationsQuery.isError || treatmentsQuery.isError || employeesQuery.isError || machineryQuery.isError) && (
+        {(animalsQuery.isError ||
+          zonesQuery.isError ||
+          lactationsQuery.isError ||
+          treatmentsQuery.isError ||
+          employeesQuery.isError ||
+          machineryQuery.isError) && (
           <div className="rounded-[10px] border border-state-critica/30 bg-state-critica/10 px-4 py-3 text-sm font-semibold text-state-critica">
-            Alguna lista no se ha podido cargar. Revisa la sesion o permisos del backend.
+            Alguna lista no se ha podido cargar. Revisa la sesion o permisos del
+            backend.
           </div>
         )}
 
         <div className="flex items-center gap-2 rounded-[10px] border border-app-border bg-white px-4 py-3 text-xs font-semibold text-app-dim">
           <CalendarDays className="h-4 w-4" />
-          Los cambios se guardan en la API y se refrescan en las pantallas operativas.
+          Los cambios se guardan en la API y se refrescan en las pantallas
+          operativas.
         </div>
       </div>
     </div>

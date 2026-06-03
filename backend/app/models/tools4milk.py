@@ -57,6 +57,13 @@ class Zona(Base):
 # ---------------------------------------------------------------------------
 
 
+class RolEmpleado(str, enum.Enum):
+    encargado = "encargado"
+    auxiliar = "auxiliar"
+    veterinario = "veterinario"
+    mecanico = "mecanico"
+
+
 class Empleado(Base):
     __tablename__ = "empleados"
 
@@ -65,7 +72,12 @@ class Empleado(Base):
     )
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
     apellidos: Mapped[str] = mapped_column(String(150), nullable=False)
-    rol: Mapped[str] = mapped_column(String(40), nullable=False)
+    rol: Mapped[RolEmpleado] = mapped_column(
+        Enum(
+            RolEmpleado, name="rol_empleado", create_type=False
+        ),  # create_type=false para que sqlalchemy sepa que ese tipo existe en postgres
+        nullable=False,
+    )
     cualificaciones: Mapped[list[str] | None] = mapped_column(ARRAY(Text), default=list)
     telefono: Mapped[str | None] = mapped_column(String(20))
     email: Mapped[str | None] = mapped_column(String(150))
@@ -79,6 +91,49 @@ class Empleado(Base):
 # ---------------------------------------------------------------------------
 
 
+class TipoMaquinaria(str, enum.Enum):
+    robot_ordeno = "robot_ordeno"
+    carro_mezclador = "carro_mezclador"
+    amamantadora = "amamantadora"
+    bomba = "bomba"
+    otro = "otro"
+
+
+class EstadoTarea(str, enum.Enum):
+    pendiente = "pendiente"
+    en_curso = "en_curso"
+    completada = "completada"
+    vencida = "vencida"
+    cancelada = "cancelada"
+
+
+# ---------------------------------------------------------------------------
+# Incidencias enums (coinciden con los tipos definidos en database/init.sql)
+# ---------------------------------------------------------------------------
+
+
+class TipoIncidencia(str, enum.Enum):
+    averia_maquinaria = "averia_maquinaria"
+    infraestructura = "infraestructura"
+    sanidad_animal = "sanidad_animal"
+    calidad_leche = "calidad_leche"
+    alimentacion = "alimentacion"
+    pedidos = "pedidos"
+
+
+class NivelSeveridad(str, enum.Enum):
+    baja = "baja"
+    media = "media"
+    alta = "alta"
+
+
+class EstadoIncidencia(str, enum.Enum):
+    abierta = "abierta"
+    en_gestion = "en_gestion"
+    resuelta = "resuelta"
+    cerrada = "cerrada"
+
+
 class Maquinaria(Base):
     __tablename__ = "maquinaria"
 
@@ -86,7 +141,12 @@ class Maquinaria(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
-    tipo: Mapped[str] = mapped_column(String(40), nullable=False)
+    tipo: Mapped[TipoMaquinaria] = mapped_column(
+        Enum(
+            TipoMaquinaria, name="tipo_maquinaria", create_type=False
+        ),  # create_type=false para que sqlalchemy sepa que ese tipo existe en postgres
+        nullable=False,
+    )
     zona_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("zonas.id", ondelete="SET NULL")
     )
@@ -263,11 +323,22 @@ class Incidencia(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    tipo: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    tipo: Mapped[TipoIncidencia] = mapped_column(
+        Enum(TipoIncidencia, name="tipo_incidencia", create_type=False),
+        nullable=False,
+        index=True,
+    )
     subtipo: Mapped[str | None] = mapped_column(String(80))
-    severidad: Mapped[str] = mapped_column(String(20), nullable=False, default="media")
-    estado: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="abierta", index=True
+    severidad: Mapped[NivelSeveridad] = mapped_column(
+        Enum(NivelSeveridad, name="nivel_severidad", create_type=False),
+        nullable=False,
+        default=NivelSeveridad.media,
+    )
+    estado: Mapped[EstadoIncidencia] = mapped_column(
+        Enum(EstadoIncidencia, name="estado_incidencia", create_type=False),
+        nullable=False,
+        default=EstadoIncidencia.abierta,
+        index=True,
     )
     titulo: Mapped[str] = mapped_column(String(200), nullable=False)
     descripcion: Mapped[str | None] = mapped_column(Text)
@@ -434,8 +505,15 @@ class TareaEjecucion(Base):
     maquinaria_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("maquinaria.id")
     )
-    estado: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="pendiente", index=True
+    estado: Mapped[EstadoTarea] = mapped_column(
+        Enum(
+            EstadoTarea,
+            name="estado_tarea",
+            create_type=False,
+        ),
+        nullable=False,
+        default=EstadoTarea.pendiente,
+        index=True,
     )
     ts_planificada: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, index=True
@@ -458,6 +536,11 @@ class TareaEjecucion(Base):
 # ---------------------------------------------------------------------------
 
 
+class TipoTurno(str, enum.Enum):
+    manana = "manana"
+    tarde = "tarde"
+
+
 class Turno(Base):
     __tablename__ = "turnos"
     __table_args__ = (UniqueConstraint("fecha", "tipo_turno"),)
@@ -466,7 +549,12 @@ class Turno(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     fecha: Mapped[date] = mapped_column(Date, nullable=False)
-    tipo_turno: Mapped[str] = mapped_column(String(20), nullable=False)
+    tipo_turno: Mapped[TipoTurno] = mapped_column(
+        Enum(
+            TipoTurno, name="tipo_turno", create_type=False
+        ),  # create_type=false para que sqlalchemy sepa que ese tipo existe en postgres
+        nullable=False,
+    )
     hora_inicio: Mapped[time] = mapped_column(Time, nullable=False)
     hora_fin: Mapped[time] = mapped_column(Time, nullable=False)
     notas: Mapped[str | None] = mapped_column(Text)

@@ -668,6 +668,14 @@ CREATE TRIGGER trg_audit_pedidos
     AFTER INSERT OR UPDATE OR DELETE ON pedidos
     FOR EACH ROW EXECUTE FUNCTION fn_audit_trigger();
 
+CREATE TRIGGER trg_audit_tareas_catalogo
+    AFTER INSERT OR UPDATE OR DELETE ON tareas_catalogo
+    FOR EACH ROW EXECUTE FUNCTION fn_audit_trigger();
+
+CREATE TRIGGER trg_audit_tareas_ejecuciones
+    AFTER INSERT OR UPDATE OR DELETE ON tareas_ejecuciones
+    FOR EACH ROW EXECUTE FUNCTION fn_audit_trigger();
+
 
 -- =============================================================================
 -- VISTAS

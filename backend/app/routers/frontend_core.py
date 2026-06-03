@@ -7,7 +7,13 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Usuario
-from app.models.tools4milk import Alerta, Animal, TareaEjecucion, TareaCatalogo, TratamientoActivo
+from app.models.tools4milk import (
+    Alerta,
+    Animal,
+    TareaEjecucion,
+    TareaCatalogo,
+    TratamientoActivo,
+)
 from app.repositories import (
     alerts_repository,
     animals_repository,
@@ -35,14 +41,22 @@ from app.services import (
 from app.time_utils import utc_now
 
 
-router = APIRouter(prefix="/api/v1", tags=["Frontend Core"], dependencies=[Depends(get_current_user)])
+router = APIRouter(
+    prefix="/api/v1", tags=["Frontend Core"], dependencies=[Depends(get_current_user)]
+)
 DbSession = Annotated[Session, Depends(get_db)]
 AdminOnly = Annotated[Usuario, Depends(require_roles("admin"))]
 AnimalManager = Annotated[Usuario, Depends(require_roles("admin", "veterinario"))]
-TaskManager = Annotated[Usuario, Depends(require_roles("admin", "operario", "alimentacion"))]
+TaskManager = Annotated[
+    Usuario, Depends(require_roles("admin", "operario", "alimentacion"))
+]
 ClinicalManager = Annotated[Usuario, Depends(require_roles("admin", "veterinario"))]
-QualityManager = Annotated[Usuario, Depends(require_roles("admin", "veterinario", "alimentacion"))]
-OperationsManager = Annotated[Usuario, Depends(require_roles("admin", "operario", "alimentacion"))]
+QualityManager = Annotated[
+    Usuario, Depends(require_roles("admin", "veterinario", "alimentacion"))
+]
+OperationsManager = Annotated[
+    Usuario, Depends(require_roles("admin", "operario", "alimentacion"))
+]
 
 
 def _alerts_response(
@@ -78,7 +92,9 @@ def _resolve_catalogo_id(db: Session, payload: dict) -> uuid.UUID | None:
                 return uid
         except (ValueError, AttributeError):
             pass
-    catalog = db.scalar(select(TareaCatalogo).where(TareaCatalogo.activa.is_(True)).limit(1))
+    catalog = db.scalar(
+        select(TareaCatalogo).where(TareaCatalogo.activa.is_(True)).limit(1)
+    )
     return catalog.id if catalog else None
 
 
@@ -98,15 +114,38 @@ def dashboard_summary(db: DbSession) -> dict[str, Any]:
             "altas": len([a for a in pending_alerts if a.nivel == "alta"]),
         },
         "tareas": {
-            "programadas": db.scalar(select(func.count()).select_from(TareaEjecucion).where(TareaEjecucion.estado == "pendiente")) or 0,
-            "ejecutadas": db.scalar(select(func.count()).select_from(TareaEjecucion).where(TareaEjecucion.estado == "completada")) or 0,
-            "retrasadas": db.scalar(select(func.count()).select_from(TareaEjecucion).where(TareaEjecucion.estado == "vencida")) or 0,
+            "programadas": db.scalar(
+                select(func.count())
+                .select_from(TareaEjecucion)
+                .where(TareaEjecucion.estado == "pendiente")
+            )
+            or 0,
+            "ejecutadas": db.scalar(
+                select(func.count())
+                .select_from(TareaEjecucion)
+                .where(TareaEjecucion.estado == "completada")
+            )
+            or 0,
+            "retrasadas": db.scalar(
+                select(func.count())
+                .select_from(TareaEjecucion)
+                .where(TareaEjecucion.estado == "vencida")
+            )
+            or 0,
         },
         "animales": {
-            "activos": db.scalar(select(func.count()).select_from(Animal).where(Animal.estado != "baja")) or 0,
+            "activos": db.scalar(
+                select(func.count()).select_from(Animal).where(Animal.estado != "baja")
+            )
+            or 0,
         },
         "tratamientos": {
-            "activos": db.scalar(select(func.count()).select_from(TratamientoActivo).where(TratamientoActivo.activo.is_(True))) or 0,
+            "activos": db.scalar(
+                select(func.count())
+                .select_from(TratamientoActivo)
+                .where(TratamientoActivo.activo.is_(True))
+            )
+            or 0,
         },
     }
 
@@ -137,7 +176,9 @@ def dashboard_summary(db: DbSession) -> dict[str, Any]:
         500: {"description": "Error interno"},
     },
 )
-def animals(db: DbSession, skip: int = 0, limit: int = 50, estado: str | None = None) -> list[dict[str, Any]]:
+def animals(
+    db: DbSession, skip: int = 0, limit: int = 50, estado: str | None = None
+) -> list[dict[str, Any]]:
     items = animals_repository.get_all(db, skip=skip, limit=limit, estado=estado)
     return [animals_service.serialize(a) for a in items]
 
@@ -148,7 +189,9 @@ def animals_active_count(db: DbSession) -> int:
 
 
 @router.post("/animals", status_code=201)
-def create_animal(payload: dict[str, Any], db: DbSession, _user: AnimalManager) -> dict[str, Any]:
+def create_animal(
+    payload: dict[str, Any], db: DbSession, _user: AnimalManager
+) -> dict[str, Any]:
     item = animals_repository.create(db, payload)
     return animals_service.serialize(item)
 
@@ -170,7 +213,9 @@ def animal_detail(animal_id: str, db: DbSession) -> dict[str, Any]:
 
 
 @router.put("/animals/{animal_id}")
-def update_animal(animal_id: str, payload: dict[str, Any], db: DbSession, _user: AnimalManager) -> dict[str, Any]:
+def update_animal(
+    animal_id: str, payload: dict[str, Any], db: DbSession, _user: AnimalManager
+) -> dict[str, Any]:
     item = animals_repository.get_by_id(db, animal_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Animal no encontrado")
@@ -187,7 +232,10 @@ def zones(db: DbSession) -> list[dict[str, Any]]:
     "/zones",
     status_code=201,
     operation_id="create_zone",
-    responses={422: {"description": "Payload invalido"}, 500: {"description": "Error interno"}},
+    responses={
+        422: {"description": "Payload invalido"},
+        500: {"description": "Error interno"},
+    },
     openapi_extra={
         "requestBody": {
             "content": {
@@ -207,7 +255,9 @@ def zones(db: DbSession) -> list[dict[str, Any]]:
         }
     },
 )
-def create_zone(payload: dict[str, Any], db: DbSession, _user: AdminOnly) -> dict[str, Any]:
+def create_zone(
+    payload: dict[str, Any], db: DbSession, _user: AdminOnly
+) -> dict[str, Any]:
     zone = zones_repository.create(db, payload)
     return zones_service.serialize(zone)
 
@@ -221,7 +271,9 @@ def zone_detail(zone_id: str, db: DbSession) -> dict[str, Any]:
 
 
 @router.put("/zones/{zone_id}")
-def update_zone(zone_id: str, payload: dict[str, Any], db: DbSession, _user: AdminOnly) -> dict[str, Any]:
+def update_zone(
+    zone_id: str, payload: dict[str, Any], db: DbSession, _user: AdminOnly
+) -> dict[str, Any]:
     item = zones_repository.get_by_id(db, zone_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Zona no encontrada")
@@ -261,17 +313,67 @@ def tasks(
     estado: str | None = None,
     zona_id: str | None = None,
 ) -> list[dict[str, Any]]:
-    rows = tasks_repository.get_all(db, skip=skip, limit=limit, estado=estado, zona_id=zona_id)
-    return [tasks_service.serialize(ejecucion, catalogo) for ejecucion, catalogo in rows]
+    rows = tasks_repository.get_all(
+        db, skip=skip, limit=limit, estado=estado, zona_id=zona_id
+    )
+    return [
+        tasks_service.serialize(ejecucion, catalogo) for ejecucion, catalogo in rows
+    ]
 
 
 @router.post("/tasks", status_code=201)
-def create_task(payload: dict[str, Any], db: DbSession, _user: TaskManager) -> dict[str, Any]:
+def create_task(
+    payload: dict[str, Any], db: DbSession, _user: TaskManager
+) -> dict[str, Any]:
     catalogo_id = _resolve_catalogo_id(db, payload)
     if catalogo_id is None:
-        raise HTTPException(status_code=400, detail="No hay tareas en el catalogo disponibles")
+        raise HTTPException(
+            status_code=400, detail="No hay tareas en el catalogo disponibles"
+        )
     ejecucion, catalogo = tasks_repository.create(db, catalogo_id, payload)
     return tasks_service.serialize(ejecucion, catalogo)
+
+
+@router.get("/tasks/catalog")
+def task_catalog(db: DbSession) -> list[dict[str, Any]]:
+    items = tasks_repository.get_catalog(db, limit=500, activa=True)
+    return [
+        {
+            "id": str(item.id),
+            "codigo": item.codigo,
+            "nombre": item.nombre,
+            "descripcion": item.descripcion,
+            "cualificacion_requerida": item.cualificacion_requerida,
+            "duracion_estimada_min": item.duracion_estimada_min,
+            "activa": item.activa,
+        }
+        for item in items
+    ]
+
+
+@router.post("/tasks/catalog", status_code=201)
+def create_task_catalog(
+    payload: dict[str, Any], db: DbSession, _user: TaskManager
+) -> dict[str, Any]:
+    codigo = str(payload.get("codigo", "")).strip()
+    nombre = str(payload.get("nombre", "")).strip()
+    if not codigo or not nombre:
+        raise HTTPException(status_code=422, detail="codigo y nombre son obligatorios")
+    existing = db.scalar(select(TareaCatalogo).where(TareaCatalogo.codigo == codigo))
+    if existing:
+        raise HTTPException(
+            status_code=400, detail="Ya existe una tarea de catálogo con ese código"
+        )
+    item = tasks_repository.create_catalog_item(db, payload)
+    return {
+        "id": str(item.id),
+        "codigo": item.codigo,
+        "nombre": item.nombre,
+        "descripcion": item.descripcion,
+        "cualificacion_requerida": item.cualificacion_requerida,
+        "duracion_estimada_min": item.duracion_estimada_min,
+        "activa": item.activa,
+    }
 
 
 @router.get("/tasks/{task_id}")
@@ -283,7 +385,9 @@ def task_detail(task_id: str, db: DbSession) -> dict[str, Any]:
 
 
 @router.put("/tasks/{task_id}")
-def update_task(task_id: str, payload: dict[str, Any], db: DbSession, _user: TaskManager) -> dict[str, Any]:
+def update_task(
+    task_id: str, payload: dict[str, Any], db: DbSession, _user: TaskManager
+) -> dict[str, Any]:
     row = tasks_repository.get_by_id(db, task_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
@@ -299,12 +403,16 @@ def lactations(
     animal_id: str | None = None,
     activa: bool | None = None,
 ) -> list[dict[str, Any]]:
-    items = lactations_repository.get_all(db, skip=skip, limit=limit, animal_id=animal_id, activa=activa)
+    items = lactations_repository.get_all(
+        db, skip=skip, limit=limit, animal_id=animal_id, activa=activa
+    )
     return [lactations_service.serialize(l) for l in items]
 
 
 @router.post("/lactations", status_code=201)
-def create_lactation(payload: dict[str, Any], db: DbSession, _user: QualityManager) -> dict[str, Any]:
+def create_lactation(
+    payload: dict[str, Any], db: DbSession, _user: QualityManager
+) -> dict[str, Any]:
     item = lactations_repository.create(db, payload)
     return lactations_service.serialize(item)
 
@@ -338,13 +446,17 @@ def critical_alerts(db: DbSession) -> AlertsResponse:
 
 
 @router.get("/alerts")
-def list_alerts(db: DbSession, skip: int = 0, limit: int = 50, severidad: str | None = None) -> AlertsResponse:
+def list_alerts(
+    db: DbSession, skip: int = 0, limit: int = 50, severidad: str | None = None
+) -> AlertsResponse:
     items = alerts_repository.get_all(db, skip=0, limit=10000, nivel=severidad)
     return _alerts_response(items, skip, limit)
 
 
 @router.post("/alerts", status_code=201)
-def create_alert(payload: AlertCreate, db: DbSession, _user: ClinicalManager) -> dict[str, Any]:
+def create_alert(
+    payload: AlertCreate, db: DbSession, _user: ClinicalManager
+) -> dict[str, Any]:
     item = alerts_repository.create(db, payload.model_dump())
     return alerts_service.serialize(item)
 
@@ -358,7 +470,9 @@ def alert_detail(alert_id: str, db: DbSession) -> dict[str, Any]:
 
 
 @router.patch("/alerts/{alert_id}")
-def review_alert(alert_id: str, payload: AlertUpdate, db: DbSession, _user: ClinicalManager) -> dict[str, Any]:
+def review_alert(
+    alert_id: str, payload: AlertUpdate, db: DbSession, _user: ClinicalManager
+) -> dict[str, Any]:
     item = alerts_repository.get_by_id(db, alert_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Alerta no encontrada")
@@ -367,13 +481,17 @@ def review_alert(alert_id: str, payload: AlertUpdate, db: DbSession, _user: Clin
 
 
 @router.get("/alerts/{animal_id}")
-def animal_alerts(animal_id: str, db: DbSession, skip: int = 0, limit: int = 50) -> AlertsResponse:
+def animal_alerts(
+    animal_id: str, db: DbSession, skip: int = 0, limit: int = 50
+) -> AlertsResponse:
     items = alerts_repository.get_by_animal(db, animal_id, skip=0, limit=10000)
     return _alerts_response(items, skip, limit, animal_id=animal_id)
 
 
 @router.post("/alerts/generate/{animal_id}")
-def generate_alerts(animal_id: str, db: DbSession, _user: ClinicalManager) -> dict[str, Any]:
+def generate_alerts(
+    animal_id: str, db: DbSession, _user: ClinicalManager
+) -> dict[str, Any]:
     animal = animals_repository.get_by_id(db, animal_id)
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal no encontrado")
@@ -388,7 +506,9 @@ def predictions(animal_id: str, db: DbSession) -> dict[str, Any]:
 
     lactation = lactations_repository.get_active_for_animal(db, animal_id)
     active_treatments = db.scalars(
-        select(TratamientoActivo).where(TratamientoActivo.animal_id == animal.id, TratamientoActivo.activo.is_(True))
+        select(TratamientoActivo).where(
+            TratamientoActivo.animal_id == animal.id, TratamientoActivo.activo.is_(True)
+        )
     ).all()
     pending_alerts = db.scalars(
         select(Alerta).where(Alerta.animal_id == animal.id, Alerta.activa.is_(True))
@@ -401,9 +521,16 @@ def predictions(animal_id: str, db: DbSession) -> dict[str, Any]:
     )
     treatment_penalty = 0.08 if active_treatments else 0
     alert_penalty = min(len(pending_alerts) * 0.03, 0.12)
-    expected = round(base_production * (1 - treatment_penalty - alert_penalty), 1) if base_production else 0
+    expected = (
+        round(base_production * (1 - treatment_penalty - alert_penalty), 1)
+        if base_production
+        else 0
+    )
     trend = "descenso" if treatment_penalty or alert_penalty else "estable"
-    series = [round(expected * factor, 1) for factor in [0.98, 0.99, 1.0, 1.01, 1.0, 1.02, 1.01]]
+    series = [
+        round(expected * factor, 1)
+        for factor in [0.98, 0.99, 1.0, 1.01, 1.0, 1.02, 1.01]
+    ]
 
     risk_level = "alto" if active_treatments else "medio" if pending_alerts else "bajo"
     risk_factors = []
@@ -470,7 +597,9 @@ def incidents(db: DbSession, skip: int = 0, limit: int = 50) -> list[dict[str, A
 
 
 @router.post("/incidents", status_code=201)
-def create_incident(payload: dict[str, Any], db: DbSession, _user: OperationsManager) -> dict[str, Any]:
+def create_incident(
+    payload: dict[str, Any], db: DbSession, _user: OperationsManager
+) -> dict[str, Any]:
     item = incidents_repository.create(db, payload)
     return incidents_service.serialize(item)
 
@@ -484,7 +613,9 @@ def incident_detail(incident_id: str, db: DbSession) -> dict[str, Any]:
 
 
 @router.put("/incidents/{incident_id}")
-def update_incident(incident_id: str, payload: dict[str, Any], db: DbSession, _user: OperationsManager) -> dict[str, Any]:
+def update_incident(
+    incident_id: str, payload: dict[str, Any], db: DbSession, _user: OperationsManager
+) -> dict[str, Any]:
     item = incidents_repository.get_by_id(db, incident_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Incidencia no encontrada")
@@ -500,12 +631,16 @@ def treatments(
     animal_id: str | None = None,
     activo: bool | None = None,
 ) -> list[dict[str, Any]]:
-    items = treatments_repository.get_all(db, skip=skip, limit=limit, animal_id=animal_id, activo=activo)
+    items = treatments_repository.get_all(
+        db, skip=skip, limit=limit, animal_id=animal_id, activo=activo
+    )
     return [treatments_service.serialize(t) for t in items]
 
 
 @router.post("/treatments", status_code=201)
-def create_treatment(payload: dict[str, Any], db: DbSession, _user: ClinicalManager) -> dict[str, Any]:
+def create_treatment(
+    payload: dict[str, Any], db: DbSession, _user: ClinicalManager
+) -> dict[str, Any]:
     item = treatments_repository.create(db, payload)
     return treatments_service.serialize(item)
 
@@ -539,13 +674,17 @@ def employees(db: DbSession, activo: bool | None = None) -> list[dict[str, Any]]
 
 
 @router.post("/employees", status_code=201)
-def create_employee(payload: dict[str, Any], db: DbSession, _user: AdminOnly) -> dict[str, Any]:
+def create_employee(
+    payload: dict[str, Any], db: DbSession, _user: AdminOnly
+) -> dict[str, Any]:
     item = employees_repository.create(db, payload)
     return employees_service.serialize(item)
 
 
 @router.put("/employees/{employee_id}")
-def update_employee(employee_id: str, payload: dict[str, Any], db: DbSession, _user: AdminOnly) -> dict[str, Any]:
+def update_employee(
+    employee_id: str, payload: dict[str, Any], db: DbSession, _user: AdminOnly
+) -> dict[str, Any]:
     item = employees_repository.get_by_id(db, employee_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Empleado no encontrado")
@@ -568,7 +707,9 @@ def machinery(
 
 
 @router.post("/machinery", status_code=201)
-def create_machinery(payload: dict[str, Any], db: DbSession, _user: OperationsManager) -> dict[str, Any]:
+def create_machinery(
+    payload: dict[str, Any], db: DbSession, _user: OperationsManager
+) -> dict[str, Any]:
     item = machinery_repository.create(db, payload)
     return machinery_service.serialize(item)
 

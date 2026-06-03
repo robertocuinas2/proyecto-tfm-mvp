@@ -81,6 +81,16 @@ export type TareaCatalogo = {
   zona_aplicable?: string | null;
 };
 
+export type TaskCatalogItem = {
+  id: string;
+  codigo: string;
+  nombre: string;
+  descripcion?: string | null;
+  cualificacion_requerida?: string | null;
+  duracion_estimada_min?: number | null;
+  activa: boolean;
+};
+
 export type Task = {
   id: string;
   tarea_catalogo_id: string;
