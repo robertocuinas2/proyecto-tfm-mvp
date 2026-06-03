@@ -23,6 +23,12 @@ engine = create_engine(
     database_url,
     echo=settings.database_echo,
     connect_args=connect_args,
+    # pool_pre_ping descarta conexiones muertas antes de usarlas (Railway/proxies
+    # cierran conexiones inactivas; tras un cambio de esquema las conexiones del
+    # pool quedan invalidas). Evita errores intermitentes de "conexion cerrada".
+    pool_pre_ping=True,
+    # Recicla conexiones con mas de 30 min para no arrastrar sockets caducados.
+    pool_recycle=1800,
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

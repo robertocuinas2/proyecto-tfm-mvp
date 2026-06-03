@@ -2,6 +2,7 @@ import uuid
 from datetime import date
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.enums import TipoTurno
@@ -81,15 +82,32 @@ def get_all_asignaciones(
 
 
 def create_asignacion(db: Session, data: dict) -> AsignacionTurno:
+    turno_uid = uuid.UUID(data["turno_id"])
+    empleado_uid = uuid.UUID(data["empleado_id"])
     item = AsignacionTurno(
         id=uuid.uuid4(),
-        turno_id=uuid.UUID(data["turno_id"]),
-        empleado_id=uuid.UUID(data["empleado_id"]),
+        turno_id=turno_uid,
+        empleado_id=empleado_uid,
         zona_id=_to_uuid(data.get("zona_id")),
         rol=data.get("rol"),
     )
     db.add(item)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # El empleado ya esta asignado a este turno (UniqueConstraint
+        # turno_id+empleado_id). Hacemos la operacion idempotente devolviendo
+        # la asignacion existente en lugar de propagar el error.
+        db.rollback()
+        existing = db.scalar(
+            select(AsignacionTurno).where(
+                AsignacionTurno.turno_id == turno_uid,
+                AsignacionTurno.empleado_id == empleado_uid,
+            )
+        )
+        if existing is not None:
+            return existing
+        raise
     db.refresh(item)
     return item
 
