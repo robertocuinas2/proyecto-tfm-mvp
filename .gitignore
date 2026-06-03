@@ -80,6 +80,11 @@ temp/
 *.sqlite
 *.sqlite3
 
+# DB backups / dumps (contienen datos y hashes de credenciales)
+backups/
+*.sql.gz
+*.dump
+
 # ──────────────────────────────────────────────
 # Docker
 # ──────────────────────────────────────────────
