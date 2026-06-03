@@ -14,6 +14,7 @@ from app.config import settings
 from app.database import Base, engine
 from app.openapi import install_openapi
 from app.routers import (
+    admin,
     alerts,
     animals,
     audit,
@@ -231,6 +232,7 @@ def health_check() -> dict[str, str]:
 
 app.include_router(health.router)
 app.include_router(auth.router)
+app.include_router(admin.router)
 # Routers de dominio (antes el monolítico frontend_core.py), todos bajo /api/v1.
 app.include_router(dashboard.router)
 app.include_router(animals.router)
